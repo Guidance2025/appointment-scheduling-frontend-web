@@ -43,3 +43,7 @@ public/
 !.eslintrc.json
 !.eslintrc.yml
 !.eslintignore
+.eslintrc.json
+index.html
+vite.config.js
+public/
