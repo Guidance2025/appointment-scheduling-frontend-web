@@ -35,7 +35,7 @@ dist-ssr/
 Thumbs.db
 
 
-!public/
+public/
 
 # ESLint configs (keep in repo)
 !.eslintrc.js
