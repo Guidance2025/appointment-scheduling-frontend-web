@@ -1,0 +1,382 @@
+/* Navbar.css */
+.navbar {
+position: relative;
+  width: 25000px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  height: 70px;
+  background: linear-gradient(135deg, #fdfdfd 0%, #d1d1d1 100%);
+  position: fixed;
+  top: 0;
+  left: 230px;
+  right: 0;
+  z-index: 1000;
+  animation: fadeInUp 0.8s ease-out;
+
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  left:910px;
+}
+
+.navbar-item {
+  position: relative;
+}
+
+.navbar-btn {
+  position: relative;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  color: rgb(63, 60, 60);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-btn:hover {
+  background: rgba(57, 194, 50, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-btn:active {
+  transform: translateY(0);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+.dropdown-arrow {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.3s ease;
+}
+
+.profile-btn:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff4757;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse 2s infinite;
+}
+
+
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.profile-btn:hover .profile-avatar {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Dropdowns */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e1e8ed;
+  min-width: 280px;
+  overflow: hidden;
+  animation: dropdownSlide 0.3s ease;
+  z-index: 1001;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f3f4;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+}
+
+.dropdown-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.count {
+  background: #667eea;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Notification Dropdown */
+.notification-dropdown {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notification-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f3f4;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.notification-item:hover {
+  background: #f8f9fa;
+}
+
+.notification-item.unread {
+  background: #f0f4ff;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  margin: 0 0 0.25rem 0;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.time {
+  color: #718096;
+  font-size: 0.8rem;
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  background: #667eea;
+  border-radius: 50%;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.dropdown-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid #f1f3f4;
+  background: #f8f9fa;
+}
+
+.view-all-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.view-all-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.profile-header {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-avatar-large {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-avatar-large .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.profile-details h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.profile-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.profile-menu {
+  padding: 0.5rem 0;
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;
+}
+
+.menu-item:hover {
+  background: #f8f9fa;
+}
+
+.menu-item.logout {
+  color: #e74c3c;
+}
+
+.menu-item.logout:hover {
+  background: #ffeaea;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #f1f3f4;
+  margin: 0.5rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 1rem;
+    height: 60px;
+  }
+
+  .navbar-brand h3 {
+    font-size: 1.2rem;
+  }
+
+  .navbar-btn {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .dropdown {
+    min-width: 260px;
+    right: -10px;
+  }
+
+  .notification-dropdown {
+    width: 90vw;
+    max-width: 320px;
+    right: -20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-brand h3 {
+    font-size: 1rem;
+  }
+
+  .navbar-actions {
+    position: relative;
+    gap: 0.5rem;
+  }
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+  background: #f1f3f4;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}

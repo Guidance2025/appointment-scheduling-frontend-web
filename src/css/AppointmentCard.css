@@ -1,0 +1,142 @@
+.appointments-list {
+  list-style: none;
+  padding: 0;
+  max-height: 600px; /* adjust height to fit your layout */
+  height: 100vh;   /* full viewport height */
+  overflow-y: scroll;
+}
+
+.appointment-item {
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: all 0.2s ease;
+}
+
+.appointment-item:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  background-color: #ffffff;
+}
+
+.appointment-item p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+}
+
+.appointment-item p strong {
+  color: #333;
+  font-weight: 600;
+  display: inline-block;
+  min-width: 80px;
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.student-name {
+  font-size: 25px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.status-badge.scheduled {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-badge.completed {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status-badge.canceled,
+.status-badge.cancelled {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.appointment-details {
+  margin-bottom: 15px;
+}
+
+.appointment-details p:last-child {
+  margin-bottom: 0;
+}
+
+.appointment-item .appointment-time {
+  font-weight: bold;
+  color: #333;
+}
+
+.appointment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.appointment-meta small {
+  font-size: 12px;
+  color: #666;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .appointment-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .appointment-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .appointment-item p strong {
+    min-width: auto;
+    display: block;
+  }
+  
+  .viewButton {
+    right: 0;
+    margin-top: 10px;
+  }
+}
