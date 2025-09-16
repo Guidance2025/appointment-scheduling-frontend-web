@@ -88,7 +88,6 @@ function Calendar() {
             );
         });
 
-        console.log('Selected date appointments:', selectedAppointments);
     };
 
     const isToday = (day) => {
@@ -223,7 +222,6 @@ function Calendar() {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
                 const data = await response.json();
                 console.log('API Response:', data);
 
@@ -232,7 +230,6 @@ function Calendar() {
             } catch (error) {
                 setIsLoading(false);
                 setAppointments([]);
-                console.error("Error fetching appointments:", error);
             }
         };
         fetchAppointmentByStatusScheduled(status);

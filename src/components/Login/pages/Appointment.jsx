@@ -221,7 +221,7 @@ function Appointments() {
                       </td>
                       
                       <td className="counselor-cell">
-                        {appointment.employee?.person?.firstName || "TBA"} {appointment.employee?.person?.lastName || ""}
+                        {appointment.guidanceStaff?.person?.firstName || "TBA"} {appointment.guidanceStaff?.person?.lastName || ""}
                       </td>
                       
                       <td className="created-cell">

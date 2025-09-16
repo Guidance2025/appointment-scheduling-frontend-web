@@ -1,44 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../../../../css/AppointmentCard.css";
 
-const formatAppointmentDateTime = (scheduledDate, endDate) => {
-  if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
-  
-  const startDate = new Date(scheduledDate);
-  const actualEndDate = endDate ? new Date(endDate) : null;
-  
-  const formattedDate = startDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long', 
-    day: 'numeric'
-  });
-  
-  const startTime = startDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
-  
-  if (!actualEndDate) {
-    return { 
-      date: formattedDate, 
-      timeRange: startTime,
-    };
-  }
-  
-  const endTime = actualEndDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
-  });
-  
-  return { 
-    date: formattedDate, 
-    timeRange: `${startTime} - ${endTime}`,
-  };
-};
-
 function AppointmentCard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +17,6 @@ function AppointmentCard() {
         setLoading(false);
         return;
       }
-
       try {
         const response = await fetch("http://localhost:8080/counselor/retrieve-appointment", {
           method: "GET",
@@ -83,12 +44,43 @@ function AppointmentCard() {
     fetchAppointments();
   }, []);
 
+  const formatAppointmentDateTime = (scheduledDate, endDate) => {
+    if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
+    
+    const startDate = new Date(scheduledDate);
+    const actualEndDate = endDate ? new Date(endDate) : null;
+    
+    const formattedDate = startDate.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    
+    const startTime = startDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    
+    if (!actualEndDate) {
+      return { date: formattedDate, timeRange: startTime };
+    }
+    
+    const endTime = actualEndDate.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    
+    return { date: formattedDate, timeRange: `${startTime} - ${endTime}` };
+  };
+
   const searchFilteredAppointments = appointments.filter(appointment => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
     
-    // Search by student name
     const studentName = appointment.student 
       ? `${appointment.student.firstName} ${appointment.student.middleName || ""} ${appointment.student.lastName}`.toLowerCase()
       : "";
@@ -100,7 +92,12 @@ function AppointmentCard() {
   });
 
   if (loading) {
-    return <p>Loading appointments...</p>;
+    return (
+      <div className="loading-message">
+        <div className="loading-spinner"></div>
+        <p>Loading appointments...</p>
+      </div>
+    );
   }
 
   if (error) {
@@ -108,7 +105,7 @@ function AppointmentCard() {
   }
 
   return (
-    <div className="appointment-card-container">
+    <div className="page-container">
       {/* Search Bar */}
       <div className="search-container">
         <input
@@ -128,9 +125,13 @@ function AppointmentCard() {
           </button>
         )}
       </div>
+
+      {/* Content Area */}
       {searchFilteredAppointments.length === 0 && searchTerm ? (
         <div className="empty-message">
-          <p>No appointments found matching "{searchTerm}"</p>
+          <div className="empty-icon">🔍</div>
+          <h3 className="empty-title">No appointments found</h3>
+          <p className="empty-description">No appointments found matching "{searchTerm}"</p>
           <button 
             className="clear-search-btn clear-search-main"
             onClick={() => setSearchTerm("")}
@@ -138,51 +139,98 @@ function AppointmentCard() {
             Clear Search
           </button>
         </div>
+      ) : searchFilteredAppointments.length === 0 ? (
+        <div className="empty-message">
+          <div className="empty-icon">📅</div>
+          <h3 className="empty-title">No appointments found</h3>
+          <p className="empty-description">There are no appointments available.</p>
+        </div>
       ) : (
-        <ul className="appointments-list">
-          {searchFilteredAppointments.map((appointment) => {
-            const { date, timeRange} = formatAppointmentDateTime(
-              appointment.scheduledDate,
-              appointment.endDate 
-            );
-            return (
-              <li key={appointment.appointmentId} className="appointment-item">
-                <div className="appointment-header">
-                  <h3 className="student-name">
-                    {appointment.student
-                      ? `${appointment.student.firstName} ${appointment.student.middleName || ""} ${appointment.student.lastName}`.trim()
-                      : "N/A"}
-                      {appointment.student?.studentNumber && (
-                    <p>{appointment.student.studentNumber}</p>
-                  )}
-                  </h3>
-                  <span className={`status-badge ${appointment.status?.toLowerCase() || 'pending'}`}>
-                    {appointment.status || "PENDING"}
-                  </span>
-                </div>
-                <div className="appointment-details">
-                  <p><strong>Type:</strong> {appointment.appointmentType || "N/A"}</p>
-                  
-                  <p><strong>Date:</strong> {date}</p>
-                  <p className="appointment-time"><strong>Time:</strong> {timeRange}</p>
-                  {appointment.notes && (
-                    <p><strong>Notes:</strong> {appointment.notes}</p>
-                  )}
-                </div>
-                <div className="appointment-meta">
-                  <small>
-                      <strong>Counselor:</strong> {appointment.employee?.person?.firstName || "TBA"} {appointment.employee?.person?.lastName || ""}
-                  </small>
-                  <small>
-                    Created: {appointment.dateCreated 
-                      ? new Date(appointment.dateCreated).toLocaleDateString()
-                      : "N/A"}
-                  </small>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="appointments-table-container">
+          <table className="appointments-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Counselor</th>
+                <th>Created</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {searchFilteredAppointments.map((appointment) => {
+                const { date, timeRange } = formatAppointmentDateTime(
+                  appointment.scheduledDate,
+                  appointment.endDate
+                );
+                
+                return (
+                  <tr key={appointment.appointmentId} className="appointment-row">
+                    <td className="student-cell">
+                      <div className="student-info-table">
+                        <div className="student-details-table">
+                          <span className="student-name-table">
+                            {appointment.student
+                              ? `${appointment.student.firstName} ${appointment.student.middleName || ""} ${appointment.student.lastName}`.trim()
+                              : "N/A"}
+                          </span>
+                          {appointment.student?.studentNumber && (
+                            <span className="student-number-table">
+                              {appointment.student.studentNumber}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    
+                    <td className="type-cell">
+                      {appointment.appointmentType || "N/A"}
+                    </td>
+                    
+                    <td className="date-cell">
+                      {date}
+                    </td>
+                    
+                    <td className="time-cell">
+                      {timeRange}
+                    </td>
+                    
+                    <td className="status-cell">
+                      <span className={`status-badge-table ${appointment.status?.toLowerCase() || 'pending'}`}>
+                        {appointment.status || "PENDING"}
+                      </span>
+                    </td>
+                    
+                    <td className="counselor-cell">
+                      {appointment.guidanceStaff?.person?.firstName || "TBA"} {appointment.guidanceStaff?.person?.lastName || ""}
+                    </td>
+                    
+                    <td className="created-cell">
+                      {appointment.dateCreated 
+                        ? new Date(appointment.dateCreated).toLocaleDateString()
+                        : "N/A"}
+                    </td>
+                    
+                    <td className="notes-cell">
+                      {appointment.notes ? (
+                        <div className="notes-preview-table" title={appointment.notes}>
+                          {appointment.notes.length > 30 
+                            ? `${appointment.notes.substring(0, 30)}...` 
+                            : appointment.notes}
+                        </div>
+                      ) : (
+                        <span className="no-notes">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,4 @@
-/* ===============================
-   BASE STYLES (Your Original CSS)
-   =============================== */
 
-/* Appointments Header Layout */
 .appointments-header {
   display: flex;
   justify-content: space-between;
@@ -10,7 +6,6 @@
   margin-bottom: 30px;
 }
 
-/* Filter Container */
 .filter-container {
   position: relative;
   margin-top: 0;
