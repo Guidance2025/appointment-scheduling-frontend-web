@@ -37,7 +37,6 @@
   box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
 }
 
-/* Custom dropdown arrow */
 .filter-container::after {
   content: '▼';
   position: absolute;
@@ -49,7 +48,6 @@
   pointer-events: none;
 }
 
-/* Content area */
 .appointments-content {
   background-color: white;
   border-radius: 12px;
@@ -59,7 +57,6 @@
   border: 1px solid #f0f0f0;
 }
 
-/* Loading and empty states */
 .loading-message, 
 .empty-message {
   display: flex;
@@ -116,7 +113,6 @@
   padding: 20px;
 }
 
-/* Enhanced Header */
 .header-left {
   display: flex;
   flex-direction: column;
@@ -137,7 +133,6 @@
   font-weight: 400;
 }
 
-/* Search Container */
 .search-container {
   position: relative;
   margin-bottom: 20px;
@@ -223,7 +218,6 @@
   color: #333;
 }
 
-/* Enhanced Loading States */
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -239,7 +233,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Enhanced Empty States */
 .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -259,7 +252,6 @@
   margin: 0 0 16px 0;
 }
 
-/* Skeleton Loading */
 .skeleton-card {
   pointer-events: none;
 }
@@ -308,7 +300,6 @@
   100% { background-position: -200% 0; }
 }
 
-/* Enhanced Appointment Items */
 .student-info {
   display: flex;
   align-items: center;
@@ -357,7 +348,6 @@
   font-size: 14px;
 }
 
-/* Status Container */
 .status-container {
   display: flex;
   flex-direction: column;
@@ -374,7 +364,6 @@
   font-weight: 500;
 }
 
-/* Enhanced Status Badges */
 .status-badge {
   display: flex;
   align-items: center;
@@ -414,7 +403,6 @@
   font-size: 12px;
 }
 
-/* Enhanced Details Grid */
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -452,7 +440,6 @@
   color: #111827;
 }
 
-/* Notes Styling */
 .appointment-notes,
 .notes-preview {
   display: flex;
@@ -470,8 +457,6 @@
   gap: 4px;
   line-height: 1.5;
 }
-
-/* Enhanced Meta Section */
 .appointment-meta {
   display: flex;
   justify-content: space-between;
@@ -496,7 +481,6 @@
   color: #6b7280;
 }
 
-/* Enhanced Action Buttons */
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -506,7 +490,6 @@
   font-size: 14px;
 }
 
-/* Expand Indicator */
 .expand-indicator {
   position: absolute;
   bottom: 8px;
@@ -523,7 +506,6 @@
   transform: rotate(180deg);
 }
 
-/* Status-based Left Border */
 .appointment-item {
   border-left: 4px solid #f3f4f6;
 }
@@ -550,9 +532,6 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ===============================
-   NEW TABLE STYLES
-   =============================== */
 
 .appointments-table-container {
   overflow-x: auto;
@@ -600,7 +579,6 @@
   border-bottom: none;
 }
 
-/* Table Cell Styles */
 .student-cell {
   min-width: 200px;
 }
@@ -719,7 +697,6 @@
   font-style: italic;
 }
 
-/* Responsive Design */
 @media (max-width: 1200px) {
   .appointments-table-container {
     overflow-x: scroll;

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import '../../../css/Calendar.css';
-import '../../../css/GoogleCalendar.css'; 
+import '../../css/Calendar.css';
+import '../../css/GoogleCalendar.css'; 
 import CreateAppointmentModal from './modal/CreateAppointmentModal';
-import AppointmentsModal from './modal/AppointmentsModal';
-
+import ViewStudentInfoModal from './modal/ViewStudentInfoModal';
+import { formatAppointmentDateTime } from "../utils/dateHelper";
 
 function Calendar() {
     const [appointments, setAppointments] = useState([]);7
@@ -18,8 +18,8 @@ function Calendar() {
     const [selectedDate, setSelectedDate] = useState(null);
 
 
-    const URL_APPOINTMENTS = `http://localhost:8080/counselor/appointment/${status}`;
-    const jwtToken = localStorage.getItem("jwtToken");
+    const GET_APPOINTMENTS_URL = `http://localhost:8080/counselor/appointment/${status}`;
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
 
     const months = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -28,37 +28,6 @@ function Calendar() {
 
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    const formatAppointmentDateTime = (scheduledDate, endDate) => {
-        if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
-
-        const startDate = new Date(scheduledDate);
-        const actualEndDate = endDate ? new Date(endDate) : null;
-
-        const formattedDate = startDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
-
-        const startTime = startDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-        });
-
-        if (!actualEndDate) {
-            return { date: formattedDate, timeRange: startTime };
-        }
-
-        const endTime = actualEndDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-        });
-
-        return { date: formattedDate, timeRange: `${startTime} - ${endTime}` };
-    };
 
     const getDaysInMonth = (date) => {
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -195,10 +164,10 @@ function Calendar() {
             );
         });
     };
-        const handlesModalClick = (appointmentId) => {
-                    setIsSelectedAppointmentId(appointmentId);
-                    setIsDetailsVisible(true);
-        }
+            const handlesModalClick = (appointmentId) => {
+                        setIsSelectedAppointmentId(appointmentId);
+                        setIsDetailsVisible(true);
+             }
 
         
 
@@ -206,15 +175,15 @@ function Calendar() {
         const fetchAppointmentByStatusScheduled = async () => {
             setIsLoading(true);
             try {
-                if (!jwtToken) {
+                if (!JWT_TOKEN) {
                     window.location.href = "/GuidanceLogin";
                     return;
                 }
 
-                const response = await fetch(URL_APPOINTMENTS, {
+                const response = await fetch(GET_APPOINTMENTS_URL, {
                     method: 'GET',
                     headers: {
-                        Authorization: 'Bearer ' + jwtToken,
+                        Authorization: 'Bearer ' + JWT_TOKEN,
                         'Content-Type': 'application/json',
                     }
                 });
@@ -233,7 +202,7 @@ function Calendar() {
             }
         };
         fetchAppointmentByStatusScheduled(status);
-    }, [jwtToken, status, URL_APPOINTMENTS]);
+    }, [JWT_TOKEN, status, GET_APPOINTMENTS_URL]);
 
     return (
         <>
@@ -294,7 +263,7 @@ function Calendar() {
                 </div>
                 <div className="bottom-container"> 
                     
-                    <AppointmentsModal isOpen={isDetailsVisible} isClose={() => setIsDetailsVisible(false)} appointmentId={selectedAppointmentId}  />
+                    <ViewStudentInfoModal isOpen={isDetailsVisible} isClose={() => setIsDetailsVisible(false)} appointmentId={selectedAppointmentId}  />
                     <div className="appointment-filter-info">
                         {selectedDate ? (
                             <p>Showing appointments for {selectedDate.toLocaleDateString()}</p>
@@ -328,7 +297,7 @@ function Calendar() {
                                         <div className="calendar-appointment-appointment-info">
                                             <h2 className="calendar-appointment-appointment-details">
                                                 {appointment.student ? 
-                                                    `${appointment.student.firstName} ${appointment.student.lastName}` : 
+                                                    `${appointment.student.person.firstName} ${appointment.student.person.lastName}` : 
                                                     'Student info unavailable'
                                                 }
                                             </h2>

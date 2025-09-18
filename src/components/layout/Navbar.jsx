@@ -1,9 +1,6 @@
 import '../../../css/Navbar.css';
 
 const Navbar = () => {
-   
-
-
   return (
     <nav className="navbar">
       
@@ -12,7 +9,6 @@ const Navbar = () => {
         <div className="navbar-item" >
           <button 
             className="navbar-btn notification-btn" 
-            aria-label="Notifications"
           >
               <span className="notification-badge"></span>
           </button>

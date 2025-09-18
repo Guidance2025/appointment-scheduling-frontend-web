@@ -275,7 +275,6 @@
   font-style: italic;
 }
 
-/* Loading Spinner */
 .loading-spinner {
   width: 40px;
   height: 40px;
@@ -291,7 +290,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Empty States */
 .empty-icon {
   font-size: 48px;
   margin-bottom: 16px;
@@ -311,7 +309,6 @@
   margin: 0 0 16px 0;
 }
 
-/* Responsive Design */
 @media (max-width: 1200px) {
   .appointments-table-container {
     overflow-x: scroll;

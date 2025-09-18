@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import '../../../css/Sidebar.css';
-import schoolLogo from '../../../assets/school-logo.png';
+import '../../css/Sidebar.css';
+import schoolLogo from '../../assets/school-logo.png';
 
 const Sidebar = ({ onNavigate, currentPage }) => {
   const [activeItem, setActiveItem] = useState(currentPage);

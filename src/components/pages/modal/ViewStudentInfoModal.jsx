@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import "../../../../css/AppointmentModal.css";
+import "../../../css/ViewStudentInformationModal.css";
+import { formatAppointmentDateTime } from "../../utils/dateHelper";
 
-const AppointmentsModal = ({ appointmentId, isOpen, isClose  }) => {
+const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose  }) => {
   
   const JWT_TOKEN = localStorage.getItem("jwtToken");
   const [appointment, setAppointment] = useState(null);
@@ -34,41 +35,7 @@ const AppointmentsModal = ({ appointmentId, isOpen, isClose  }) => {
       fetchStudentInformation();
     }
   }, [isOpen, appointmentId, JWT_TOKEN]);
-
-  const formatAppointmentDateTime = (scheduledDate, endDate) => {
-        if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
-
-        const startDate = new Date(scheduledDate);
-        const actualEndDate = endDate ? new Date(endDate) : null;
-
-        const formattedDate = startDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
-
-        const startTime = startDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-        });
-
-        if (!actualEndDate) {
-            return { date: formattedDate, timeRange: startTime };
-        }
-
-        const endTime = actualEndDate.toLocaleTimeString("en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-        });
-
-        return { date: formattedDate, timeRange: `${startTime} - ${endTime}` };
-    };
-
   
-
   if (!isOpen) return null;
 
   return (
@@ -85,12 +52,12 @@ const AppointmentsModal = ({ appointmentId, isOpen, isClose  }) => {
             <div className="student-info-section">
               <h2 className="student-number">Student Number: {appointment.student.studentNumber}</h2>
               <h2>
-                Name: {appointment.student.firstName} {appointment.student.middleName} {appointment.student.lastName}
+                Name: {appointment.student.person.firstName} {appointment.student.person.middleName} {appointment.student.person.lastName}
               </h2>
-              <h3>Gender: {appointment.student.gender}</h3>
-              <h3>Age: {appointment.student.age}</h3>
-              <h3>Email: {appointment.student.email}</h3>
-              <h3>Contact: {appointment.student.contactNumber}</h3>
+              <h3>Gender: {appointment.student.person.gender}</h3>
+              <h3>Age: {appointment.student.person.age}</h3>
+              <h3>Email: {appointment.student.person.email}</h3>
+              <h3>Contact: {appointment.student.person.contactNumber}</h3>
               <h3>Section: {appointment.student.section.sectionName}</h3>
             </div>
 
@@ -132,4 +99,4 @@ const AppointmentsModal = ({ appointmentId, isOpen, isClose  }) => {
   );
 };
 
-export default AppointmentsModal;
+export default ViewStudentInfoModal;

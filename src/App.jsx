@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';  
-import GuidanceLogin from './components/Login/GuidanceLogin';
-import MainPage from './components/Login/pages/Mainpage';
+import MainPage from './components/pages/MainPage';
+import GuidanceLogin from './components/pages/GuidanceLogin';
 
 function App() {
  

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import "../../../css/MainPage.css";
-import Sidebar from "./Sidebar";
+import "../../css/MainPage.css";
 import Appointment from "./Appointment";
 import Calendar from "./Calendar";
-import Navbar from "./Navbar";
+import Sidebar from "../layout/Sidebar";
 
 const Dashboard = () => (
   <div className="page-container">

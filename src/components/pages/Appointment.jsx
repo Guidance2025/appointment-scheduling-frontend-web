@@ -1,47 +1,18 @@
 import React, { useEffect, useState } from "react";
-import "../../../css/Appointment.css";
-import AppointmentCard from "./card/AppointmentCard";
+import "../../css/Appointment.css";
+import AppointmentCard from './../card/AppointmentCard';
+import { formatAppointmentDateTime } from "../utils/dateHelper";
+
 
 function Appointments() {
   const [status, setStatus] = useState("All");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
 
-  const formatAppointmentDateTime = (scheduledDate, endDate) => {
-    if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
-    
-    const startDate = new Date(scheduledDate);
-    const actualEndDate = endDate ? new Date(endDate) : null;
-    
-    const formattedDate = startDate.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    
-    const startTime = startDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-    
-    if (!actualEndDate) {
-      return { date: formattedDate, timeRange: startTime };
-    }
-    
-    const endTime = actualEndDate.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-    
-    return { date: formattedDate, timeRange: `${startTime} - ${endTime}` };
-  };
 
   const filteredAppointments = async (status) => {
-    const JWT_TOKEN = localStorage.getItem("jwtToken");
     if (!JWT_TOKEN) {
       window.location.href = "/GuidanceLogin";
       throw new Error("No JWT token found. Please log in again.");
@@ -90,8 +61,7 @@ function Appointments() {
     
     const studentNumber = appointment.student?.studentNumber || appointment.student?.studentId || "";
     
-    return studentName.includes(searchLower) || 
-           studentNumber.toString().toLowerCase().includes(searchLower);
+    return studentName.includes(searchLower) || studentNumber.toString().toLowerCase().includes(searchLower);
   });
 
   return (
@@ -134,7 +104,7 @@ function Appointments() {
 
       <div className="appointments-content">
         {status === "All" ? (
-          <AppointmentCard />
+          <AppointmentCard/>
         ) : loading ? (
           <div className="loading-message">
             <div className="loading-spinner"></div>
@@ -190,7 +160,7 @@ function Appointments() {
                           <div className="student-details-table">
                             <span className="student-name-table">
                               {appointment.student
-                                ? `${appointment.student.firstName} ${appointment.student.middleName || ""} ${appointment.student.lastName}`.trim()
+                                ? `${appointment.student.person.firstName} ${appointment.student.person.middleName || ""} ${appointment.student.person.lastName}`.trim()
                                 : "N/A"}
                             </span>
                             {appointment.student?.studentNumber && (

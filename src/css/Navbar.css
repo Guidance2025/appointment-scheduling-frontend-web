@@ -173,7 +173,6 @@ position: relative;
   font-weight: 600;
 }
 
-/* Notification Dropdown */
 .notification-dropdown {
   max-height: 400px;
   overflow-y: auto;
@@ -326,7 +325,6 @@ position: relative;
   margin: 0.5rem 0;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .navbar {
     padding: 0 1rem;
