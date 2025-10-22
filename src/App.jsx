@@ -1,35 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';  
+import GuidanceLogin from './components/pages/GuidanceLogin';
+import MainPage from './components/pages/MainPage';
+import AdminDashboard from './components/admin/pages/AdminDashboard';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [page, setPage] = useState("");
+  
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken"); 
+    const role = localStorage.getItem("role"); 
+    
+    if (token && role) {  
+      setIsLoggedIn(true); 
+      
+      if (role === "ADMIN_ROLE") {
+        setPage("admin");
+      } else if (role === "GUIDANCE_ROLE") {
+        setPage("guidance");
+      }
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    console.log("🎉 Login successful - showing appointment page");
+    const role = localStorage.getItem("role");
+    
+    setIsLoggedIn(true);  
+    
+    if (role === "ADMIN_ROLE") {
+      setPage("admin");
+    } else if (role === "GUIDANCE_ROLE") {
+      setPage("guidance");
+    }
+  };
+
+  const handleLogout = () => {
+    console.log("👋 Logging out - showing login page");
+    localStorage.clear();
+    setIsLoggedIn(false);
+    setPage("");
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      {!isLoggedIn ? (
+        <GuidanceLogin onLoginSuccess={handleLoginSuccess} />
+      ) : page === "admin" ? (
+        <AdminDashboard onLogout={handleLogout} />
+      ) : page === "guidance" ? (
+        <MainPage onLogout={handleLogout} />
+      ) : (
+        <div>Loading...</div> 
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;

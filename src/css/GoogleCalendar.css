@@ -1,0 +1,455 @@
+.calendar-container::before {
+    display: none;
+}
+
+.google-calendar-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 1400px; 
+    width: 100%;
+    margin: 0 auto; 
+}
+
+.calendar-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-button {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.nav-button:hover {
+    background: #48bb78;
+    border-color: #48bb78;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.current-month {
+    font-size: 22px;
+    font-weight: 700;
+    color: #495057;
+    margin: 0 8px;
+    background: rgb(88, 94, 89);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calendar-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.today-button {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #48bb78;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.today-button:hover {
+    background: #48bb78;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.create-button {
+    background: #48bb78;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.create-button:hover {
+    background: linear-gradient(135deg, #38a169, #2f855a);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 24px;
+}
+
+.weekday-header {
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 11px;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: linear-gradient(135deg, #000000, #38a169);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    flex: 1;
+    background-color: #ffffff;
+    padding: 0 24px 24px 24px;
+}
+
+.calendar-day {
+    min-height: 120px;
+    border-right: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.calendar-day:hover {
+    background-color: #f0fdf4;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.1);
+}
+
+.calendar-day.empty {
+    cursor: default;
+    background-color: transparent;
+}
+
+.calendar-day.empty:hover {
+    background-color: transparent;
+    transform: none;
+    box-shadow: none;
+}
+
+.calendar-day.today .day-number {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+}
+
+.calendar-day.selected {
+    background-color: #dcfce7;
+    border: 1px solid #48bb78;
+}
+
+.calendar-day.has-appointments {
+    border-left: 3px solid #48bb78;
+}
+
+.day-header {
+    margin-bottom: 4px;
+}
+
+.day-number {
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.day-appointments {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.appointment-indicator {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+    color: white;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+}
+
+.appointment-indicator:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.appointment-indicator.academic {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.appointment-indicator.career {
+    background: linear-gradient(135deg, #059669, #047857);
+}
+
+.appointment-indicator.personal {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.appointment-indicator.counseling {
+    background: linear-gradient(135deg, #34d399, #10b981);
+}
+
+.appointment-indicator.office {
+    background: linear-gradient(135deg, #6ee7b7, #34d399);
+}
+
+.appointment-indicator.default {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.appointment-time {
+    font-weight: 600;
+    font-size: 8px;
+}
+
+.appointment-title {
+    font-size: 8px;
+    opacity: 0.9;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: none; 
+}
+
+.more-appointments {
+    font-size: 8px;
+    color: #334155;
+    padding: 1px 2px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 3px;
+    background-color: #f0fdf4;
+    margin-top: 1px;
+    border: 1px solid #bbf7d0;
+}
+
+.more-appointments:hover {
+    background-color: #dcfce7;
+    border-color: #48bb78;
+}
+
+.appointment-filter-info {
+    text-align: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border-radius: 12px;
+    border: 1px solid #bbf7d0;
+}
+
+.appointment-filter-info p {
+    font-size: 14px;
+    color: #166534;
+    margin: 0;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .calendar-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .calendar-nav {
+        gap: 12px;
+    }
+
+    .current-month {
+        font-size: 18px;
+    }
+
+    .nav-button {
+        width: 32px;
+        height: 32px;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+        padding: 0 16px 16px 16px;
+    }
+
+    .calendar-day {
+        min-height: 80px;
+        padding: 4px;
+    }
+
+    .day-number {
+        font-size: 11px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .calendar-day.today .day-number {
+        width: 20px;
+        height: 20px;
+    }
+
+    .appointment-indicator {
+        padding: 1px 4px;
+        font-size: 10px;
+    }
+
+    .appointment-title {
+        display: none;
+    }
+
+    .calendar-actions {
+        gap: 8px;
+    }
+
+    .today-button,
+    .create-button {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendar-header {
+        padding: 8px 10px;
+    }
+
+    .current-month {
+        font-size: 14px;
+    }
+
+    .nav-button {
+        width: 26px;
+        height: 26px;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+        padding: 0 10px 10px 10px;
+    }
+
+    .calendar-day {
+        min-height: 50px;
+        padding: 2px;
+    }
+
+    .weekday-header {
+        padding: 6px 2px;
+        font-size: 10px;
+    }
+
+    .day-number {
+        font-size: 10px;
+        width: 16px;
+        height: 16px;
+    }
+
+    .calendar-day.today .day-number {
+        width: 16px;
+        height: 16px;
+    }
+
+    .today-button,
+    .create-button {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    .appointment-indicator {
+        padding: 1px 2px;
+        font-size: 8px;
+    }
+
+    .more-appointments {
+        font-size: 8px;
+    }
+
+    .appointment-filter-info {
+        margin-bottom: 10px;
+        padding: 6px;
+    }
+
+    .appointment-filter-info p {
+        font-size: 11px;
+    }
+}
+
+.nav-button:focus,
+.today-button:focus,
+.create-button:focus,
+.calendar-day:focus {
+    outline: 2px solid #48bb78;
+    outline-offset: 2px;
+}
+
+.google-calendar-wrapper {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
