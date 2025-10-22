@@ -3,7 +3,6 @@ import { requestForToken } from "../components/utils/firebase";
 
 export async function registerFcmToken(userId) {
   try {
-    console.log("🔄 Registering FCM token for userId:", userId);
 
     const fcmToken = await requestForToken();
     if (!fcmToken) {
