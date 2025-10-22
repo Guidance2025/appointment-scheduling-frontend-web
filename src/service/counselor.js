@@ -3,7 +3,7 @@ import { GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF, GET_ALL_APPOINTMENT_BY_GUIDANCEST
 export async function getAllAppointmentByGuidanceStaff(guidanceStaffId) {
   try {
     const JWT_TOKEN = localStorage.getItem("jwtToken");
-    
+    //
     if (!JWT_TOKEN) {
       throw new Error("JWT Token Not Found");
     }
