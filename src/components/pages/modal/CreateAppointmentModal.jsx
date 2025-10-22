@@ -11,7 +11,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     const [notes, setNotes] = useState("");
     const [error, setError] = useState("");
 
-    // ✅ Improved date validation
     const validateDates = (scheduled, end) => {
         if (scheduled && end) {
             const scheduledDateTime = new Date(scheduled);
@@ -46,7 +45,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         return "";
     };
 
-    // ✅ Handle start date change
     const handleScheduledDateChange = (e) => {
         const newScheduledDate = e.target.value;
         setScheduledDate(newScheduledDate);
@@ -63,7 +61,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         }
     };
 
-    // ✅ Handle end time change
     const handleEndDateChange = (e) => {
         const time = e.target.value;
 
@@ -94,7 +91,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         setError(validationError);
     };
 
-    // ✅ Min date/time helpers
     const getMinScheduledDate = () => {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -114,7 +110,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         return scheduled.toISOString().slice(0, 16);
     };
 
-    // ✅ Send appointment request
     const sendNotification = async () => {
         setError("");
 
@@ -189,7 +184,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         }
     };
 
-    // ✅ Fetch student info by number
     const handleStudentNumberChange = async (e) => {
         const token = localStorage.getItem("jwtToken");
         const studentNumber = e.target.value;

@@ -26,7 +26,7 @@ function App() {
     console.log("🎉 Login successful - showing appointment page");
     const role = localStorage.getItem("role");
     
-    setIsLoggedIn(true);  // ✅ Set logged in
+    setIsLoggedIn(true);  
     
     if (role === "ADMIN_ROLE") {
       setPage("admin");

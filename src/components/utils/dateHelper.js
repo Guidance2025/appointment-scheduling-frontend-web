@@ -1,4 +1,3 @@
-
 export const formatAppointmentDateTime = (scheduledDate, endDate) => {
     if (!scheduledDate) return { date: "N/A", timeRange: "N/A" };
     

@@ -1,8 +1,6 @@
-// firebase.js
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage } from "firebase/messaging"; 
 
-// ✅ Correct Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyBNDQ1AFffA1gBH6tqNSzWMS9Gk5v4V-8M",
   authDomain: "appointment-notification-cc54d.firebaseapp.com",
