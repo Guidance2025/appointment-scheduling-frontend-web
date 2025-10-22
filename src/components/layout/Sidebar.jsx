@@ -12,7 +12,6 @@ const Sidebar = ({ onNavigate, currentPage }) => {
     { name: 'Appointments', icon: '🗓️', component: 'Appointments' },
     { name: 'Student Records', icon: '📚', component: 'StudentRecords' },
     { name: 'Content Hub', icon: '📁', component: 'ContentHub' },
-    { name: 'Exit Interview', icon: '🚪', component: 'ExitInterview' }
   ];
 
   const handleItemClick = (item) => {
@@ -54,7 +53,7 @@ const Sidebar = ({ onNavigate, currentPage }) => {
           </div>
         ))}
       </nav>
-      <button onClick={handleLogOutClick}> Logout</button>
+      <button className = "logout-button"onClick={handleLogOutClick}> Logout</button>
       
     </div>
   );

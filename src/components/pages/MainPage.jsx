@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import "../../css/MainPage.css";
 import Appointment from "./Appointment";
-import Calendar from "./Calendar";
 import Sidebar from "../layout/Sidebar";
+import Calendar from "../calendar/Calendar";
+import Navbar from './../layout/Navbar';
+
 
 const Dashboard = () => (
   <div className="page-container">
@@ -42,7 +44,7 @@ function MainPage() {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case "Calendar":
-        return <Calendar />;
+        return <Calendar/>
       case "Dashboard":
         return <Dashboard />;
       case "Appointments":
@@ -60,10 +62,10 @@ function MainPage() {
 
   return (
     <div className="main-page">
+      {/* <Navbar/> */}
       <Sidebar onNavigate={handleNavigation} currentPage={currentPage} />
       <div className="main-content">
         {renderCurrentPage()}
-        {/* <Navbar /> */}
       </div>
     </div>
   );

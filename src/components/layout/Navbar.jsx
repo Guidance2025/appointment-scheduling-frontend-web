@@ -1,10 +1,8 @@
-import '../../../css/Navbar.css';
+import '../../css/Navbar.css';
 
-const Navbar = () => {
+const Navbar = () => { 
   return (
     <nav className="navbar">
-      
-      
       <div className="navbar-actions">
         <div className="navbar-item" >
           <button 

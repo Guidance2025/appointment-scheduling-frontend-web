@@ -11,7 +11,7 @@ function Appointments() {
   const [searchTerm, setSearchTerm] = useState("");
   const JWT_TOKEN = localStorage.getItem("jwtToken");
 
-
+  
   const filteredAppointments = async (status) => {
     if (!JWT_TOKEN) {
       window.location.href = "/GuidanceLogin";
@@ -20,8 +20,9 @@ function Appointments() {
 
     try {
       setLoading(true);
+      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
       const response = await fetch(
-        `http://localhost:8080/counselor/appointment/${status}`,
+        `http://localhost:8080/counselor/appointment/${status}/${guidanceStaffId}`,
         {
           method: "GET",
           headers: {
@@ -30,7 +31,7 @@ function Appointments() {
           },
         }
       );
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -89,7 +90,7 @@ function Appointments() {
             type="text"
             className="search-input"
             placeholder="Search by student name or student number"
-            value={searchTerm}
+            value={searchTerm.trim()}
             onChange={(e) => setSearchTerm(e.target.value)}/>
         {searchTerm && (
             <button 
@@ -152,7 +153,7 @@ function Appointments() {
                     appointment.scheduledDate,
                     appointment.endDate
                   );
-                  
+                                                                                      
                   return (
                     <tr key={appointment.appointmentId} className="appointment-row">
                       <td className="student-cell">

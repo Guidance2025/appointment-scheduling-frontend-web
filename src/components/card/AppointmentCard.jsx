@@ -1,47 +1,41 @@
 import React, { useEffect, useState } from "react";
 import "../../css/AppointmentCard.css";
 import { formatAppointmentDateTime } from "../utils/dateHelper";
-
+import { getAllAppointmentByGuidanceStaff } from "../../service/counselor";
 function AppointmentCard() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+ const fetchAppointments = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+
+    const guidanceStaffId = localStorage.getItem("guidanceStaffId");
+
+    console.log("Guidance Id from LocalStorage ", guidanceStaffId)
+    console.log("All LocalStorage" , localStorage);
+    if(!guidanceStaffId) {
+      console.error("No GUidance ID Recieved")
+       setError("No GuidanceId Recieved ");
+       setLoading(false);
+       return;
+    }
+
+    
+    const appointments = await getAllAppointmentByGuidanceStaff(guidanceStaffId);
+    setAppointments(appointments);
+  } catch (err) {
+    setError("Failed to fetch appointments");
+    console.log(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
-    const fetchAppointments = async () => {
-      const token = localStorage.getItem("jwtToken");
-
-      if (!token) {
-        console.error("No JWT token found in local storage.");
-        setError("No JWT token found. Please log in again.");
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch("http://localhost:8080/counselor/retrieve-appointment", {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + token,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setAppointments(data);
-        setError(null);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setError("Failed to load appointments: " + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAppointments();
   }, []);
 
