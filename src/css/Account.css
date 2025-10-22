@@ -1,0 +1,70 @@
+.create-account-button {
+  background: linear-gradient(135deg, #5cc5a7 0%, #4aa88f 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(92, 197, 167, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.create-account-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(92, 197, 167, 0.4);
+  background: linear-gradient(135deg, #4ab394 0%, #3d9179 100%);
+}
+
+.create-account-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.create-account-button::before {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.appointments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-container {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  min-width: 250px;
+  order: 1;
+}
+
+.create-account-button {
+  order: 2;
+}
+
+@media (max-width: 768px) {
+  .appointments-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-container {
+    max-width: 100%;
+  }
+  
+  .create-account-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

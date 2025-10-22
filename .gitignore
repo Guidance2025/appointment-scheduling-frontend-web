@@ -34,16 +34,24 @@ dist-ssr/
 # OS junk
 Thumbs.db
 
+# Expo / React Native specific
+.expo/
+web-build/
+dist/
+ios/
+android/
+*.jsbundle
 
-public/
-
-# ESLint configs (keep in repo)
+# Don’t ignore config files you NEED in repo
 !.eslintrc.js
 !.eslintrc.cjs
 !.eslintrc.json
 !.eslintrc.yml
 !.eslintignore
-.eslintrc.json
-index.html
-vite.config.js
+!package.json
+!package-lock.json
+!yarn.lock
+!app.json
+
+# Public assets
 public/
