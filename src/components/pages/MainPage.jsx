@@ -62,9 +62,9 @@ function MainPage() {
 
   return (
     <div className="main-page">
-      {/* <Navbar/> */}
+      <Navbar/>
       <Sidebar onNavigate={handleNavigation} currentPage={currentPage} />
-      <div className="main-content">
+      <div className="main-content"> 
         {renderCurrentPage()}
       </div>
     </div>

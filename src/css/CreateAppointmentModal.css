@@ -1,5 +1,4 @@
-/* Modal Overlay */
-.modal-overlay {
+.create-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -22,19 +21,20 @@
   }
 }
 
-/* Modal Content */
-.modal-content {
+.create-modal-content {
   background: white;
   border-radius: 12px;
   padding: 32px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
+  width: 700px;          /* same as registration modal */
+  max-width: 95%;        /* responsive shrink */
+  min-width: 320px;      /* prevent collapsing */
+  max-height: 90vh;      /* same behavior */
   overflow-y: auto;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.3s ease;
+  box-sizing: border-box;
 }
 
 @keyframes slideUp {
@@ -48,7 +48,7 @@
   }
 }
 
-.modal-content h2 {
+.create-modal-content h2 {
   font-size: 24px;
   font-weight: 700;
   color: #222222;
@@ -56,33 +56,38 @@
   text-align: center;
 }
 
-/* Close Button (X button in top-right) */
-.set-appointment-button:first-of-type {
-  position: absolute;
+.create-set-appointment-button {
+ position: absolute;
   top: 16px;
   right: 16px;
   background: none;
   border: none;
-  font-size: 24px;
-  color: #666666;
+  font-size: 28px;
+  color: #6c757d;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  width: auto;
-  height: auto;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+  padding: 0;
+  line-height: 1;
 }
 
-.set-appointment-button:first-of-type:hover {
-  background: #f5f5f5;
-  color: #222222;
+
+.create-set-appointment-button:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: #212529;
+  transform: rotate(90deg);
 }
 
-/* Error Messages */
-.error-messages {
+.create-set-appointment-button:active {
+  transform: rotate(90deg) scale(0.95);
+}
+
+.create-error-messages {
   background-color: #fee;
   border: 1px solid #fcc;
   color: #c00;
@@ -92,7 +97,6 @@
   font-size: 14px;
 }
 
-/* Form Grid Layout */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -109,8 +113,7 @@
   grid-column: span 2;
 }
 
-/* Labels */
-.modal-content label,
+.create-modal-content label,
 .form-group label,
 .datetime-label {
   font-size: 14px;
@@ -120,12 +123,11 @@
   display: block;
 }
 
-/* Text Inputs */
-.modal-content input[type="text"],
-.modal-content input[type="email"],
-.modal-content input[type="password"],
-.modal-content input[type="tel"],
-.modal-content input[type="number"],
+.create-modal-content input[type="text"],
+.create-modal-content input[type="email"],
+.create-modal-content input[type="password"],
+.create-modal-content input[type="tel"],
+.create-modal-content input[type="number"],
 .form-group input {
   width: 100%;
   padding: 12px;
@@ -138,30 +140,29 @@
   font-family: inherit;
 }
 
-.modal-content input[type="text"]:focus,
-.modal-content input[type="email"]:focus,
-.modal-content input[type="password"]:focus,
-.modal-content input[type="tel"]:focus,
-.modal-content input[type="number"]:focus,
+.create-modal-content input[type="text"]:focus,
+.create-modal-content input[type="email"]:focus,
+.create-modal-content input[type="password"]:focus,
+.create-modal-content input[type="tel"]:focus,
+.create-modal-content input[type="number"]:focus,
 .form-group input:focus {
   outline: none;
   border-color: #5cc5a7;
   box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
 }
 
-.modal-content input::placeholder,
+.create-modal-content input::placeholder,
 .form-group input::placeholder {
   color: #999999;
 }
 
-.modal-content input[type="text"]:read-only {
+.create-modal-content input[type="text"]:read-only {
   background-color: #f5f5f5;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-/* Select Dropdown */
-.modal-content select,
+.create-modal-content select,
 .form-group select {
   width: 100%;
   padding: 12px;
@@ -176,14 +177,13 @@
   cursor: pointer;
 }
 
-.modal-content select:focus,
+.create-modal-content select:focus,
 .form-group select:focus {
   outline: none;
   border-color: #5cc5a7;
   box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
 }
 
-/* Date and Time Inputs */
 input[type="datetime-local"],
 input[type="time"],
 input[type="date"] {
@@ -237,7 +237,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
-/* Textarea */
 textarea {
   width: 100%;
   padding: 12px;
@@ -267,7 +266,6 @@ textarea::placeholder {
   opacity: 1;
 }
 
-/* Submit Button */
 .set-appointment-button:last-of-type {
   width: 100%;
   padding: 13px 23px;
@@ -282,23 +280,7 @@ textarea::placeholder {
   transition: all 0.2s ease;
 }
 
-.set-appointment-button:last-of-type:hover:not(:disabled) {
-  background-color: #4ab394;
-  box-shadow: rgba(92, 197, 167, 0.3) 0 8px 15px;
-  transform: translateY(-2px);
-}
 
-.set-appointment-button:last-of-type:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.set-appointment-button:last-of-type:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background-color: #cccccc;
-}
-
-/* DateTime Picker Specific */
 .datetime-picker-group {
   margin-bottom: 16px;
 }
@@ -354,27 +336,25 @@ textarea::placeholder {
   opacity: 0.6;
 }
 
-/* Scrollbar Styling */
-.modal-content::-webkit-scrollbar {
+.create-modal-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.modal-content::-webkit-scrollbar-track {
+.create-modal-content::-webkit-scrollbar-track {
   background: #f5f5f5;
 }
 
-.modal-content::-webkit-scrollbar-thumb {
+.create-modal-content::-webkit-scrollbar-thumb {
   background: #cccccc;
   border-radius: 4px;
 }
 
-.modal-content::-webkit-scrollbar-thumb:hover {
+.create-modal-content::-webkit-scrollbar-thumb:hover {
   background: #5cc5a7;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
-  .modal-content {
+  .create-modal-content {
     padding: 24px;
     width: 95%;
   }
@@ -396,13 +376,11 @@ textarea::placeholder {
     width: 100%;
   }
 
-  .set-appointment-button:last-of-type {
-    width: 100%;
-  }
+ 
 }
 
 @media (max-width: 640px) {
-  .modal-content h2 {
+  .create-modal-content h2 {
     font-size: 20px;
   }
 
@@ -411,4 +389,62 @@ textarea::placeholder {
     right: 12px;
     font-size: 20px;
   }
+}
+
+/* Date Time Row Layout */
+.date-time-row {
+    display: flex;
+    gap: 10px;
+}
+
+.half-width {
+    flex: 1;
+}
+
+/* Time Picker */
+.time-picker-wrapper {
+    position: relative;
+}
+
+.time-picker-wrapper input {
+    cursor: pointer;
+}
+
+.time-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
+.time-slot {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.time-slot:hover {
+    background: #f0f0f0;
+}
+
+/* Scrollbar */
+.time-picker-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+
+.time-picker-dropdown::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+.time-picker-dropdown::-webkit-scrollbar-thumb:hover {
+    background: #999;
 }
