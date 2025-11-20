@@ -1,0 +1,312 @@
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.appointments-table-container {
+  overflow-x: auto;
+  max-width: 100%;
+  background-color: white;
+}
+
+.appointments-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  font-size: 13px;
+}
+
+.appointments-table thead {
+  background-color: #fafafa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.appointments-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #666;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.appointments-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  vertical-align: middle;
+  color: #333;
+}
+
+.appointment-row:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+.appointment-row:nth-child(even) {
+  background-color: #ffffff;
+}
+
+.appointment-row {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.appointment-row:hover {
+  background-color: #f0f7ff !important;
+  box-shadow: inset 0 0 0 1px #2196f3;
+}
+
+.appointment-row:hover td {
+  font-weight: 500;
+}
+
+.appointment-row:last-child td {
+  border-bottom: none;
+}
+
+
+.col-fullname {
+  font-weight: 500;
+  min-width: 160px;
+}
+
+.col-username {
+  min-width: 120px;
+  color: #555;
+}
+
+.col-password {
+  min-width: 180px;
+  font-family: monospace;
+  color: #999;
+  letter-spacing: 1px;
+}
+
+.col-position {
+  min-width: 160px;
+}
+
+.col-date {
+  min-width: 100px;
+  color: #666;
+}
+
+.col-status {
+  min-width: 80px;
+}
+
+.col-role {
+  min-width: 140px;
+  font-size: 12px;
+  color: #666;
+  font-family: 'Courier New', monospace;
+}
+
+.col-student-number {
+  min-width: 120px;
+  font-weight: 500;
+}
+
+.col-actions {
+  width: 60px;
+  text-align: center;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.status-badge.active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-color: #4caf50;
+}
+
+.status-badge.locked {
+  background-color: #ffebee;
+  color: #c62828;
+  border-color: #ef5350;
+}
+
+.status-badge.inactive {
+  background-color: #f5f5f5;
+  color: #757575;
+  border-color: #bdbdbd;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #e65100;
+  border-color: #ff9800;
+}
+
+.status-badge.completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-color: #4caf50;
+}
+
+.status-badge.cancelled,
+.status-badge.canceled {
+  background-color: #ffebee;
+  color: #c62828;
+  border-color: #ef5350;
+}
+
+.status-badge.scheduled {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border-color: #2196f3;
+}
+
+.action-menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #999;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-menu-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.action-menu-button::before {
+  content: "⋮";
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.student-cell {
+  min-width: 200px;
+}
+
+.student-info-table {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.student-details-table {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-name-table {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.student-number-table {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.type-cell {
+  min-width: 120px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.date-cell {
+  min-width: 180px;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.time-cell {
+  min-width: 120px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.counselor-cell {
+  min-width: 140px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.created-cell {
+  min-width: 100px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.notes-cell {
+  max-width: 200px;
+  min-width: 150px;
+}
+
+.notes-preview-table {
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: help;
+}
+
+.no-notes {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* ===== RESPONSIVE TABLE ===== */
+@media (max-width: 1200px) {
+  .appointments-table-container {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .appointments-table {
+    min-width: 1000px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  .appointments-table th,
+  .appointments-table td {
+    padding: 12px 10px;
+    font-size: 12px;
+  }
+
+  .appointments-table {
+    min-width: 900px;
+  }
+}
+
+@media (max-width: 480px) {
+  .appointments-table th,
+  .appointments-table td {
+    padding: 10px 8px;
+  }
+
+  .appointments-table {
+    font-size: 11px;
+    min-width: 800px;
+  }
+}

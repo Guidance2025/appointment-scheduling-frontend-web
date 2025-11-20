@@ -52,7 +52,7 @@ export const requestForToken = async () => {
 export const onMessageListener = () =>
   new Promise((resolve) => {
     onMessage(messaging, (payload) => {
-      console.log("📩 Foreground message received:", payload);
+      console.log(" Foreground message received:", payload);
       resolve(payload);
     });
   });

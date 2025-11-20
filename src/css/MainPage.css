@@ -7,12 +7,11 @@
 
 .main-content {
   flex: 1;
-  margin-left: 256px; 
-  margin-right: 16px; 
+  margin-left: 230px; 
   padding: 2rem;
   height: calc(100vh - 70px);
   overflow-y: auto;
-  background: #f8f9fa;
+ background: linear-gradient(120deg, #fafafa, #bffec9c2)
 }
 
 .main-content-no-sidebar {
@@ -56,7 +55,7 @@
     padding-top: 60px;
   }
 
-  .main-content {
+  .main-content { 
     margin-left: 236px; 
     margin-right: 16px;
     padding: 1rem;

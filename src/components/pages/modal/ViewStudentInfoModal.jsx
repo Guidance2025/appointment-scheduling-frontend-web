@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "../../../css/ViewStudentInformationModal.css";
-import { formatAppointmentDateTime } from "../../utils/dateHelper";
+import { formatAppointmentDateTime } from "../../../helper/dateHelper";
 
 const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
   const JWT_TOKEN = localStorage.getItem("jwtToken");

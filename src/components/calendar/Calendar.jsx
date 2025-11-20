@@ -2,31 +2,34 @@ import { useEffect, useState } from 'react';
 import '../../css/Calendar.css';
 import '../../css/GoogleCalendar.css'; 
 import CalendarHeader from './CalendarHeader';
-import AppointmentList from './AppointmentList';
-
 import CalendarGrid from './CalendarGrid';
 import CreateAppointmentModal from '../pages/modal/CreateAppointmentModal';
 import ViewStudentInfoModal from '../pages/modal/ViewStudentInfoModal';
-import { GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF } from './../../../constants/api';
-import { getAllAppointmentByGuidanceStaff, getAllCounselorAppointmentByStatus } from '../../service/counselor';
+import { getAllCounselorAppointmentByStatus } from '../../service/counselor';
+import AppointmentSidePanel from './AppointmentSidePanel';
+import AppointmentSummary from './AppointmentSummary';
+
 
 function Calendar() {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState('SCHEDULED');
+  const [status] = useState('SCHEDULED');
   const [showModal, setShowModal] = useState(false);
-  const [selectedAppointmentId, setIsSelectedAppointmentId] = useState(null);
-  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showSidePanel, setShowSidePanel] = useState(false);
+  const [isDetailsVisible, setIsDetailsVisible] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
   const JWT_TOKEN = localStorage.getItem('jwtToken');
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const navigateMonth = (direction) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + direction);
-    setCurrentDate(newDate);
+    setCurrentDate((prevDate) => {
+      const newDate = new Date(prevDate);
+      newDate.setMonth(newDate.getMonth() + direction);
+      return newDate;
+    });
   };
 
   const handleDateClick = (day) => {
@@ -37,10 +40,12 @@ function Calendar() {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
-        const appointmentList = await getAllCounselorAppointmentByStatus(guidanceStaffId,status);
+        setIsLoading(true);
+        const guidanceStaffId = localStorage.getItem("guidanceStaffId");
+        const appointmentList = await getAllCounselorAppointmentByStatus(guidanceStaffId, status);
         setAppointments(Array.isArray(appointmentList) ? appointmentList : []);
       } catch (error) {
+        console.error("Error fetching appointments:", error);
         setAppointments([]);
       } finally {
         setIsLoading(false);
@@ -49,9 +54,28 @@ function Calendar() {
     fetchAppointments();
   }, [JWT_TOKEN, status]);
 
-  const handleModalClick = (appointmentId) => {
-    setIsSelectedAppointmentId(appointmentId);
+  const appointmentsThisMonth = appointments.filter((appointment) => {
+    const appointmentDate = new Date(appointment.scheduledDate);
+    return (
+      appointmentDate.getMonth() === currentDate.getMonth() &&
+      appointmentDate.getFullYear() === currentDate.getFullYear()
+    );
+  });
+
+  const today = new Date();
+  const appointmentsToday = appointments.filter((appointment) => {
+    const appointmentDate = new Date(appointment.scheduledDate);
+    return (
+      appointmentDate.getDate() === today.getDate() &&
+      appointmentDate.getMonth() === today.getMonth() &&
+      appointmentDate.getFullYear() === today.getFullYear()
+    );
+  });
+
+  const handleAppointmentClick = (appointmentId) => {
+    setSelectedAppointmentId(appointmentId);
     setIsDetailsVisible(true);
+    setShowSidePanel(false);
   };
 
   return (
@@ -66,6 +90,21 @@ function Calendar() {
             setShowModal={setShowModal}
           />
 
+          <AppointmentSummary
+            totalCount={appointmentsThisMonth.length}
+            todayCount={appointmentsToday.length}
+            onViewAll={() => setShowSidePanel(true)}
+          />
+
+          <AppointmentSidePanel
+            isOpen={showSidePanel}
+            onClose={() => setShowSidePanel(false)}
+            appointments={appointmentsThisMonth}
+            isLoading={isLoading}
+            currentDate={currentDate}
+            onAppointmentClick={handleAppointmentClick}
+          />
+
           <CalendarGrid
             currentDate={currentDate}
             appointments={appointments}
@@ -76,25 +115,15 @@ function Calendar() {
         </div>
       </div>
 
-      <div className="bottom-container">
-        <ViewStudentInfoModal
-          isOpen={isDetailsVisible}
-          isClose={() => setIsDetailsVisible(false)}
-          appointmentId={selectedAppointmentId}
-        />
-
-        <AppointmentList
-          appointments={appointments}
-          isLoading={isLoading}
-          selectedDate={selectedDate}
-          status={status}
-          handleModalClick={handleModalClick}
-        />
-      </div>
-
       <CreateAppointmentModal
         isOpen={showModal}
         isClose={() => setShowModal(false)}
+      />
+
+      <ViewStudentInfoModal
+        isOpen={isDetailsVisible}
+        isClose={() => setIsDetailsVisible(false)}
+        appointmentId={selectedAppointmentId}
       />
     </div>
   );

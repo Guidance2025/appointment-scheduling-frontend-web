@@ -1,0 +1,343 @@
+.appointment-summary-card {
+    padding: 16px 24px;
+    border-bottom: 1px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.appointment-summary-stats {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.2);
+}   
+
+.stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:rgba(197, 254, 171, 0.891);
+    color: rgb(2, 255, 99);
+}
+
+.stat-icon-clock {
+    width: 32px;
+    height: 32px;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:  rgba(247, 85, 56, 0.383);
+    color: rgba(255, 38, 0, 0.981);
+}
+
+
+.stat-content h4 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #166534;
+    margin: 0;
+}
+
+.stat-content p {
+    font-size: 12px;
+    color: #15803d;
+    margin: 0;
+    font-weight: 500;
+}
+
+.view-all-button {
+    background: white;
+    border: 1px solid #48bb78;
+    color: #48bb78;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.view-all-button:hover {
+    background: #48bb78;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.appointment-side-panel {
+    position: fixed;
+    top: 70px;
+    right: -400px;
+    width: 400px;
+    height: calc(100vh - 70px);
+    background: white;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.appointment-side-panel.open {
+    right: 0;
+}
+
+.side-panel-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.side-panel-header h3 {
+    font-size: 18px;
+    font-weight: 500;
+    border-left: 2px solid #9ab098f3;
+    padding-left: 8px;
+    color: rgb(1, 1, 1);
+    margin: 0; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-panel-button {
+    background: rgba(23, 23, 23, 0.2);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.close-panel-button:hover {
+    background: rgba(36, 226, 77, 0.333);
+    transform: rotate(90deg);
+}
+
+.side-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.side-panel-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.side-panel-body::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.side-panel-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.side-panel-body::-webkit-scrollbar-thumb:hover {
+    background: #48bb78;
+}
+
+.side-panel-appointment-card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.side-panel-appointment-card:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+    transform: translateX(-4px);
+}
+
+.appointment-card-date {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.appointment-card-time {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.appointment-card-student {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.appointment-card-type {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.appointment-card-type.academic {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.appointment-card-type.career {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.appointment-card-type.personal {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.appointment-card-type.counseling {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.appointment-card-type.office {
+    background: #fce7f3;
+    color: #9f1239;
+}
+
+.side-panel-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.side-panel-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.side-panel-empty h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #64748b;
+    margin: 0 0 8px 0;
+}
+
+.side-panel-empty p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+.side-panel-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+/* Overlay for side panel */
+.side-panel-overlay {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.side-panel-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .appointment-summary-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 16px;
+    }
+
+    .appointment-summary-stats {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .stat-item {
+        width: 100%;
+    }
+
+    .view-all-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .appointment-side-panel {
+        width: 100%;
+        right: -100%;
+    }
+
+    .side-panel-header {
+        padding: 16px;
+    }
+
+    .side-panel-body {
+        padding: 12px;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

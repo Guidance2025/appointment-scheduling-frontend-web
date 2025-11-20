@@ -1,5 +1,5 @@
 import "../../../css/CreateAppointmentModal.css";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const CreateAppointmentModal = ({ isOpen, isClose }) => {
     const [studentNumber, setStudentNumber] = useState("");
@@ -10,107 +10,150 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     const [endDate, setEndDate] = useState("");
     const [notes, setNotes] = useState("");
     const [error, setError] = useState("");
+    const [isProssesing, setIsProcessing] = useState(false);
+    
+    const [showStartPicker, setShowStartPicker] = useState(false);
+    const [showEndPicker, setShowEndPicker] = useState(false);
+    
+    const startPickerRef = useRef(null);
+    const endPickerRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (startPickerRef.current && !startPickerRef.current.contains(event.target)) {
+                setShowStartPicker(false);
+            }
+            if (endPickerRef.current && !endPickerRef.current.contains(event.target)) {
+                setShowEndPicker(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+
+        
+    }, []);
 
     const validateDates = (scheduled, end) => {
-        if (scheduled && end) {
-            const scheduledDateTime = new Date(scheduled);
-            const endDateTime = new Date(end);
-            const now = new Date();
+        if (!scheduled || !end) return "";
+        
+        const scheduledDateTime = new Date(scheduled);
+        const endDateTime = new Date(end);
+        const now = new Date();
+        now.setSeconds(0, 0);
 
-            if (scheduledDateTime < now) {
-                return "Scheduled date cannot be in the past";
-            }
-
-            if (endDateTime < now) {
-                return "End date cannot be in the past";
-            }
-
-            if (scheduledDateTime >= endDateTime) {
-                return "Scheduled date must be before end date";
-            }
-
-            const sameDay =
-                scheduledDateTime.toDateString() === endDateTime.toDateString();
-            if (sameDay) {
-                const scheduledTime =
-                    scheduledDateTime.getHours() * 60 + scheduledDateTime.getMinutes();
-                const endTime =
-                    endDateTime.getHours() * 60 + endDateTime.getMinutes();
-
-                if (scheduledTime >= endTime) {
-                    return "End time must be after start time on the same day";
-                }
-            }
+        if (scheduledDateTime < now) {
+            return "Start time cannot be in the past";
         }
+
+        if (endDateTime <= scheduledDateTime) {
+            return "End time must be after start time";
+        }
+
         return "";
     };
 
-    const handleScheduledDateChange = (e) => {
-        const newScheduledDate = e.target.value;
-        setScheduledDate(newScheduledDate);
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        let hours = date.getHours();
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12 || 12;
+        return `${hours}:${minutes} ${ampm}`;
+    };
 
-        if (!endDate) {
-            setEndDate(newScheduledDate);
+    const generateTimeSlots = () => {
+        const slots = [];
+        for (let h = 0; h < 24; h++) {
+            for (let m = 0; m < 60; m += 30) {
+                const displayHour = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                const period = h >= 12 ? 'PM' : 'AM';
+                slots.push({
+                    value: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+                    label: `${displayHour}:${String(m).padStart(2, '0')} ${period}`,
+                    hours: h,
+                    minutes: m
+                });
+            }
         }
+        return slots;
+    };
 
+    const handleStartDateChange = (e) => {
+        const dateValue = e.target.value;
+        if (!dateValue) return;
+        
+        const [year, month, day] = dateValue.split('-');
+        const currentTime = scheduledDate ? new Date(scheduledDate) : new Date();
+        const newDate = new Date(year, month - 1, day, currentTime.getHours(), currentTime.getMinutes());
+        const localDate = new Date(newDate.getTime() - newDate.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+        
+        setScheduledDate(localDate);
+        
         if (endDate) {
-            const validationError = validateDates(newScheduledDate, endDate);
+            const validationError = validateDates(localDate, endDate);
             setError(validationError);
         } else {
             setError("");
         }
     };
 
-    const handleEndDateChange = (e) => {
-        const time = e.target.value;
-
+    const handleStartTimeChange = (hours, minutes) => {
+        let newDate;
+        
         if (!scheduledDate) {
-            setError("Please set a start date first");
-            return;
+            const today = new Date();
+            newDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+        } else {
+            const date = new Date(scheduledDate);
+            newDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes);
         }
-
-        const scheduled = new Date(scheduledDate);
-        const [hours, minutes] = time.split(":").map(Number);
-        const newEndDate = new Date(
-            scheduled.getFullYear(),
-            scheduled.getMonth(),
-            scheduled.getDate(),
-            hours,
-            minutes
-        );
-
-        const localEndDate = new Date(
-            newEndDate.getTime() - newEndDate.getTimezoneOffset() * 60000
-        )
+        
+        const localDate = new Date(newDate.getTime() - newDate.getTimezoneOffset() * 60000)
             .toISOString()
             .slice(0, 16);
+        
+        setScheduledDate(localDate);
+        setShowStartPicker(false);
+        
+        if (endDate) {
+            const validationError = validateDates(localDate, endDate);
+            setError(validationError);
+        } else {
+            setError("");
+        }
+    };
 
-        setEndDate(localEndDate);
-
-        const validationError = validateDates(scheduledDate, newEndDate);
+    const handleEndTimeChange = (hours, minutes) => {
+        if (!scheduledDate) {
+            setError("Please select start date and time first");
+            return;
+        }
+        
+        const startDate = new Date(scheduledDate);
+        const endDateTime = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), hours, minutes);
+        const localDate = new Date(endDateTime.getTime() - endDateTime.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16);
+        
+        setEndDate(localDate);
+        setShowEndPicker(false);
+        
+        const validationError = validateDates(scheduledDate, localDate);
         setError(validationError);
     };
 
-    const getMinScheduledDate = () => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        return now.toISOString().slice(0, 16);
-    };
-
-    const getMinEndDate = () => {
-        if (!scheduledDate) {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            return now.toISOString().slice(0, 16);
-        }
-
-        const scheduled = new Date(scheduledDate);
-        scheduled.setMinutes(scheduled.getMinutes() + 1);
-        scheduled.setMinutes(scheduled.getMinutes() - scheduled.getTimezoneOffset());
-        return scheduled.toISOString().slice(0, 16);
+    const getMinDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
     };
 
     const sendNotification = async () => {
+        if (isProssesing) return;
+        
         setError("");
 
         if (!studentNumber || !scheduledDate || !endDate || !appointmentType) {
@@ -139,6 +182,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         };
 
         try {
+            setIsProcessing(true);
             const response = await fetch(
                 "http://localhost:8080/counselor/create-appointment",
                 {
@@ -152,6 +196,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             );
 
             const responseText = await response.text();
+            
             if (!response.ok) {
                 throw new Error(
                     `Failed to create appointment: ${response.status} ${response.statusText}`
@@ -181,6 +226,8 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             } else {
                 setError("Error creating appointment: " + err.message);
             }
+        } finally {
+            setIsProcessing(false);
         }
     };
 
@@ -192,6 +239,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         if (!studentNumber) {
             setFirstname("");
             setLastname("");
+            setError("");
             return;
         }
 
@@ -213,6 +261,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             );
 
             const responseText = await response.text();
+            
             if (!response.ok) {
                 setFirstname("");
                 setLastname("");
@@ -234,15 +283,17 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
     if (!isOpen) return null;
 
+    const timeSlots = generateTimeSlots();
+
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
+        <div className="create-modal-overlay">
+            <div className="create-modal-content">
                 <h2>Create Appointment</h2>
-                <button onClick={isClose} className="set-appointment-button">
-                    ×
+                <button onClick={isClose} className="create-set-appointment-button" aria-label="Close">
+                    x
                 </button>
 
-                {error && <div className="error-messages">{error}</div>}
+                {error && <div className="create-error-messages">{error}</div>}
 
                 <label>
                     Student Number:
@@ -279,25 +330,73 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
                     </select>
                 </label>
 
-                <label>
-                    Start Date:
-                    <input
-                        type="datetime-local"
-                        value={scheduledDate}
-                        onChange={handleScheduledDateChange}
-                        min={getMinScheduledDate()}
-                    />
-                </label>
+                <div className="date-time-row">
+                    <label className="half-width">
+                        Start Date:
+                        <input
+                            type="date"
+                            value={scheduledDate ? scheduledDate.split('T')[0] : ''}
+                            onChange={handleStartDateChange}
+                            min={getMinDate()}
+                        />
+                    </label>
 
-                <label>
-                    End Time:
-                    <input
-                        type="time"
-                        value={endDate ? endDate.slice(11, 16) : ""}
-                        onChange={handleEndDateChange}
-                        min={getMinEndDate()}
-                    />
-                </label>
+                    <label className="half-width">
+                        Start Time:
+                        <div className="time-picker-wrapper" ref={startPickerRef}>
+                            <input
+                                type="text"
+                                value={formatTime(scheduledDate)}
+                                onClick={() => setShowStartPicker(!showStartPicker)}
+                                readOnly
+                                placeholder="--:-- --"
+                                className="time-input"
+                            />
+                            {showStartPicker && (
+                                <div className="time-picker-dropdown">
+                                    {timeSlots.map((slot) => (
+                                        <div
+                                            key={slot.value}
+                                            className="time-slot"
+                                            onClick={() => handleStartTimeChange(slot.hours, slot.minutes)}
+                                        >
+                                            {slot.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </label>
+                </div>
+
+                {scheduledDate && (
+                    <label>
+                        End Time:
+                        <div className="time-picker-wrapper" ref={endPickerRef}>
+                            <input
+                                type="text"
+                                value={formatTime(endDate)}
+                                onClick={() => setShowEndPicker(!showEndPicker)}
+                                readOnly
+                                placeholder="--:-- --"
+                                className="time-input"
+                            />
+                            {showEndPicker && (
+                                <div className="time-picker-dropdown">
+                                    {timeSlots.map((slot) => (
+                                        <div
+                                            key={slot.value}
+                                            className="time-slot"
+                                            onClick={() => handleEndTimeChange(slot.hours, slot.minutes)}
+                                        >
+                                            {slot.label}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </label>
+                )}
 
                 <label>
                     Notes:
@@ -312,13 +411,13 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
                 <button
                     className="set-appointment-button"
                     onClick={sendNotification}
-                    disabled={!!error}
+                    disabled={!!error || isProssesing}
                     style={{
-                        opacity: error ? 0.6 : 1,
-                        cursor: error ? "not-allowed" : "pointer",
+                        opacity: error || isProssesing ? 0.6 : 1,
+                        cursor: error || isProssesing ? "not-allowed" : "pointer",
                     }}
                 >
-                    Set Appointment
+                    {isProssesing ? "Sending..." : "Set Appointment"}
                 </button>
             </div>
         </div>

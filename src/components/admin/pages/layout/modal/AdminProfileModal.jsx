@@ -1,0 +1,95 @@
+import React, { useEffect , useState } from 'react'
+import "../../../../../css/ProfileModal.css";
+import "../../../../../css/Navbar.css";
+import { getAdminProfile } from '../../../../../service/admin';
+
+const AdminProfileModal = ({isOpen , onClose}) => {
+     const [profile, setProfile] = useState(null);
+      const [loading, setIsLoading] = useState(false);
+    
+      const displayProfile = async (userId) => {
+        try {
+          setIsLoading(true);
+          const data = await getAdminProfile(userId);
+          setProfile(data);
+        } catch (err) {
+          console.error("Error fetching profile:", err);
+        } finally {
+          setIsLoading(false); 
+        }
+      };
+    const handleLogout = () => {
+    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("guidanceStaffId");
+    window.location.href = "/GuidanceLogin";
+  };
+
+  const getFullName = () => {
+        if(!profile) {
+            return "Loading ..";
+        }
+        return `${profile?.firstname || ""} ${profile?.lastname}`.trim() || "User";
+  }
+
+  useEffect(() => {
+    if(isOpen) {
+        const userId = localStorage.getItem("userId");
+        if(userId) {
+         displayProfile(userId);
+        }
+    }
+  },[isOpen])
+
+  if(!isOpen) {return;}  
+  return (
+    <>
+      <div className="profile-modal-backdrop" onClick={onClose}></div>
+      <div className="profile-modal">
+        <button className="close-button" onClick={onClose}>
+          ×
+        </button>
+
+        <div className="profile-modal-content">
+          {loading ? (
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading profile...</p>
+            </div>
+          ) : (
+            <>
+              <div className="profile-header">
+                <h3 className="profile-name">{getFullName()}</h3>
+                <span className="profile-role">Admin</span>
+              </div>
+
+              <div className="profile-divider"></div>
+
+              <div className="profile-details">
+                  <div className="profile-field">
+                    <span className="field-label">Email Address</span>
+                    <span className="field-value">{profile?.email || "Not provided"}</span>
+                  </div>
+                {/* <div className="profile-field">
+                  <span className="field-label">Contact Number</span>
+                  <span className="field-value"></span>
+                </div> */}
+              </div>
+
+              <div className="profile-actions">
+                {/* <button className="edit-profile">
+                {/* EDIT PROFILE ICON */}
+                  {/* Edit Profile
+                </button> */} 
+                <button className="logout" onClick={handleLogout}>
+                  Log Out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default AdminProfileModal

@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import "../../css/Appointment.css";
-import AppointmentCard from './../card/AppointmentCard';
-import { formatAppointmentDateTime } from "../utils/dateHelper";
-
+import { getAllCounselorAppointmentByStatus, getAllAppointmentByGuidanceStaff } from "../../service/counselor";
+import { Search, X } from 'lucide-react';
+import { formatAppointmentDateTime } from "../../helper/dateHelper";
 
 function Appointments() {
   const [status, setStatus] = useState("All");
+  const [appointmentType, setAppointmentType] = useState("All");
+  const [dateRange, setDateRange] = useState("All");
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const JWT_TOKEN = localStorage.getItem("jwtToken");
 
-  
-  const filteredAppointments = async (status) => {
+  const fetchAppointments = async (selectedStatus) => {
     if (!JWT_TOKEN) {
       window.location.href = "/GuidanceLogin";
       throw new Error("No JWT token found. Please log in again.");
@@ -21,24 +22,17 @@ function Appointments() {
     try {
       setLoading(true);
       const guidanceStaffId = localStorage.getItem("guidanceStaffId");
-      const response = await fetch(
-        `http://localhost:8080/counselor/appointment/${status}/${guidanceStaffId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: "Bearer " + JWT_TOKEN,
-            "Content-Type": "application/json",
-          },
-        }
-      );
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      let fetchedData;
+      if (selectedStatus === "All") {
+        fetchedData = await getAllAppointmentByGuidanceStaff(guidanceStaffId);
+      } else {
+        fetchedData = await getAllCounselorAppointmentByStatus(guidanceStaffId, selectedStatus);
       }
-      const filteredData = await response.json();
-      setAppointments(filteredData);
+      
+      setAppointments(Array.isArray(fetchedData) ? fetchedData : []);
     } catch (error) {
-      console.error("Error fetching filtered appointments:", error);
+      console.error("Error fetching appointments:", error);
       setAppointments([]);
     } finally {
       setLoading(false);
@@ -46,83 +40,150 @@ function Appointments() {
   };
 
   useEffect(() => {
-    if (status !== "All") {
-      filteredAppointments(status); 
-    }
+    fetchAppointments(status);
   }, [status]);
 
-  const searchFilteredAppointments = appointments.filter(appointment => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    
-    const studentName = appointment.student 
-      ? `${appointment.student.firstName} ${appointment.student.middleName || ""} ${appointment.student.lastName}`.toLowerCase()
-      : "";
-    
-    const studentNumber = appointment.student?.studentNumber || appointment.student?.studentId || "";
-    
-    return studentName.includes(searchLower) || studentNumber.toString().toLowerCase().includes(searchLower);
-  });
+  const applyAllFilters = () => {
+    let filtered = [...appointments];
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(appointment => {
+        const studentName = appointment.student 
+          ? `${appointment.student.person.firstName} ${appointment.student.person.middleName || ""} ${appointment.student.person.lastName}`.toLowerCase()
+          : "";
+        const studentNumber = appointment.student?.studentNumber || "";
+        return studentName.includes(searchLower) || studentNumber.toString().toLowerCase().includes(searchLower);
+      });
+    }
+
+    if (dateRange !== "All") {
+      const now = new Date();
+      filtered = filtered.filter(appointment => {
+        const appointmentDate = new Date(appointment.scheduledDate);
+        
+        switch(dateRange) {
+          case "Today":
+            return appointmentDate.toDateString() === now.toDateString();
+          case "This Week":
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weekEnd = new Date(now);
+            weekEnd.setDate(now.getDate() + (6 - now.getDay()));
+            weekEnd.setHours(23, 59, 59, 999);
+            
+            return appointmentDate >= weekStart && appointmentDate <= weekEnd;
+          case "This Month":
+            return appointmentDate.getMonth() === now.getMonth() && 
+                   appointmentDate.getFullYear() === now.getFullYear();
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  };
+
+  const filteredResults = applyAllFilters();
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setAppointmentType("All");
+    setDateRange("All");
+  };
+
+  const hasActiveFilters = searchTerm || appointmentType !== "All" || dateRange !== "All";
 
   return (
     <div className="page-container">
-      <div className="appointments-header">
-        {/* <h2 className="page-title">Appointments</h2> */}
-        <div className="filter-container">
-          <select 
-            className="filter-select" 
-            value={status} 
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="All">All</option>
-            <option value="PENDING">Pending</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-            <option value="SCHEDULED">Scheduled</option>
-          </select>
+      <div className="advanced-filter-bar">
+        <div className="filter-row">
+          <div className="filter-group search-group">
+            <label className="filter-label">
+              <Search size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              Search
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                className="filter-input"
+                placeholder="Search by student name or number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button 
+                  className="clear-filter-icon"
+                  onClick={() => setSearchTerm("")}
+                  title="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="filter-group status-group">
+            <label className="filter-label">All Status</label>
+            <select 
+              className="filter-select" 
+              value={status} 
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="All">All Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELED">Canceled</option>
+              <option value="SCHEDULED">Scheduled</option>
+            </select>
+          </div>
+
+          <div className="filter-group date-group">
+            <label className="filter-label">Date Range</label>
+            <select 
+              className="filter-select"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+            >
+              <option value="All">All Time</option>
+              <option value="Today">Today</option>
+              <option value="This Week">This Week</option>
+              <option value="This Month">This Month</option>
+            </select>
+          </div>
+
+          <div className="filter-actions">
+            {hasActiveFilters && (
+              <button 
+                className="filter-button secondary"
+                onClick={handleClearFilters}
+              >
+                <X size={16} />
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {status !== "All" && (
-        <div className="search-container">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by student name or student number"
-            value={searchTerm.trim()}
-            onChange={(e) => setSearchTerm(e.target.value)}/>
-        {searchTerm && (
-            <button 
-              className="clear-search-btn"
-              onClick={() => setSearchTerm("")}
-              title="Clear search">
-              ✕
-            </button>
-          )}
-        </div>
-      )}
-
       <div className="appointments-content">
-        {status === "All" ? (
-          <AppointmentCard/>
-        ) : loading ? (
+        {loading ? (
           <div className="loading-message">
             <div className="loading-spinner"></div>
             <p>Loading appointments...</p>
           </div>
-        ) : searchFilteredAppointments.length === 0 ? (
+        ) : filteredResults.length === 0 ? (
           <div className="empty-message">
-            {searchTerm ? (
+            {hasActiveFilters ? (
               <div>
                 <div className="empty-icon">🔍</div>
                 <h3 className="empty-title">No appointments found</h3>
-                <p className="empty-description">No appointments found matching "{searchTerm}"</p>
-                <button 
-                  className="clear-search-btn"
-                  onClick={() => setSearchTerm("")}>
-                  Clear search
-                </button>
+                <p className="empty-description">
+                  No appointments match your current filters
+                </p>
               </div>
             ) : (
               <div>
@@ -142,18 +203,17 @@ function Appointments() {
                   <th>Date</th>
                   <th>Time</th>
                   <th>Status</th>
-                  <th>Counselor</th>
                   <th>Created</th>
                   <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
-                {searchFilteredAppointments.map((appointment) => {
+                {filteredResults.map((appointment) => {
                   const { date, timeRange } = formatAppointmentDateTime(
                     appointment.scheduledDate,
                     appointment.endDate
                   );
-                                                                                      
+                                                                                    
                   return (
                     <tr key={appointment.appointmentId} className="appointment-row">
                       <td className="student-cell">
@@ -189,10 +249,6 @@ function Appointments() {
                         <span className={`status-badge-table ${appointment.status?.toLowerCase() || 'pending'}`}>
                           {appointment.status || "PENDING"}
                         </span>
-                      </td>
-                      
-                      <td className="counselor-cell">
-                        {appointment.guidanceStaff?.person?.firstName || "TBA"} {appointment.guidanceStaff?.person?.lastName || ""}
                       </td>
                       
                       <td className="created-cell">
