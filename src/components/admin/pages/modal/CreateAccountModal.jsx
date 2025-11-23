@@ -123,7 +123,7 @@ const CreateAccountModal = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateFields()) return; // stop submission if errors
+    if (!validateFields()) return; 
 
     try {
       setIsProcessing(true);

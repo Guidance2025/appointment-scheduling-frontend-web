@@ -23,7 +23,6 @@ function ProtectedRoute({ children, allowedRole }) {
 function App() {
   const handleLoginSuccess = () => {
     console.log("Login successful");
-
   };
 
     useEffect(() => {
