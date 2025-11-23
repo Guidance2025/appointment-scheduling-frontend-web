@@ -271,7 +271,6 @@
   font-style: italic;
 }
 
-/* ===== RESPONSIVE TABLE ===== */
 @media (max-width: 1200px) {
   .appointments-table-container {
     overflow-x: scroll;

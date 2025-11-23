@@ -50,7 +50,7 @@ const CreateAccountModal = ({ isOpen, onClose }) => {
     } else {
       setStudentFormData(prev => ({ ...prev, [name]: value }));
     }
-    setErrors(prev => ({ ...prev, [name]: "" })); // clear error when user types
+    setErrors(prev => ({ ...prev, [name]: "" })); 
   };
 
   const validateFields = () => {
@@ -58,10 +58,9 @@ const CreateAccountModal = ({ isOpen, onClose }) => {
     const newErrors = {};
 
     for (const [key, value] of Object.entries(formData)) {
-      if (!value && key !== "middlename") { // middlename is optional
+      if (!value && key !== "middlename") { 
         newErrors[key] = "This field is required";
       } else if (key === "email" && value) {
-        // simple email regex
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value)) newErrors[key] = "Invalid email address";
       } else if ((key === "contactNumber" || key === "age") && value && isNaN(value)) {

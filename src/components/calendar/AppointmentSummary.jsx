@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, CalendarCheck } from 'lucide-react';
 import '../../css/AppointmentSummary.css';
 
 const AppointmentSummary = ({ totalCount, todayCount, onViewAll }) => {
@@ -28,7 +28,7 @@ const AppointmentSummary = ({ totalCount, todayCount, onViewAll }) => {
       </div>
 
       <button className="view-all-button" onClick={onViewAll}>
-        View All <ArrowRight size={16} />
+           <CalendarCheck size={16} />
       </button>
     </div>
   );
