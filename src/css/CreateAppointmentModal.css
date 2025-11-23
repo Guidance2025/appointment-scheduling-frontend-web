@@ -25,10 +25,17 @@
   background: white;
   border-radius: 12px;
   padding: 32px;
+<<<<<<< HEAD
+  width: 700px;        
+  max-width: 95%;       
+  min-width: 320px;     
+  max-height: 90vh;     
+=======
   width: 700px;          /* same as registration modal */
   max-width: 95%;        /* responsive shrink */
   min-width: 320px;      /* prevent collapsing */
   max-height: 90vh;      /* same behavior */
+>>>>>>> 0026cc40b3ec6ea0980296c35dcb35236216683c
   overflow-y: auto;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -60,11 +67,17 @@
  position: absolute;
   top: 16px;
   right: 16px;
-  background: none;
+  background: #f1f5f9;
   border: none;
+<<<<<<< HEAD
+  cursor: pointer;
+  font-size: 24px;
+  color: #64748b;
+=======
   font-size: 28px;
   color: #6c757d;
   cursor: pointer;
+>>>>>>> 0026cc40b3ec6ea0980296c35dcb35236216683c
   width: 32px;
   height: 32px;
   display: flex;
@@ -72,12 +85,24 @@
   justify-content: center;
   border-radius: 50%;
   transition: all 0.15s ease;
+<<<<<<< HEAD
+
+=======
   padding: 0;
   line-height: 1;
+>>>>>>> 0026cc40b3ec6ea0980296c35dcb35236216683c
 }
 
 
 .create-set-appointment-button:hover {
+<<<<<<< HEAD
+   background: #ef4444;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+
+=======
   background-color: rgba(0, 0, 0, 0.08);
   color: #212529;
   transform: rotate(90deg);
@@ -86,6 +111,7 @@
 .create-set-appointment-button:active {
   transform: rotate(90deg) scale(0.95);
 }
+>>>>>>> 0026cc40b3ec6ea0980296c35dcb35236216683c
 
 .create-error-messages {
   background-color: #fee;
@@ -391,7 +417,6 @@ textarea::placeholder {
   }
 }
 
-/* Date Time Row Layout */
 .date-time-row {
     display: flex;
     gap: 10px;
@@ -401,7 +426,6 @@ textarea::placeholder {
     flex: 1;
 }
 
-/* Time Picker */
 .time-picker-wrapper {
     position: relative;
 }
@@ -435,7 +459,6 @@ textarea::placeholder {
     background: #f0f0f0;
 }
 
-/* Scrollbar */
 .time-picker-dropdown::-webkit-scrollbar {
     width: 6px;
 }

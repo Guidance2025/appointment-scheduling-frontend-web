@@ -36,8 +36,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background:rgba(197, 254, 171, 0.891);
-    color: rgb(2, 255, 99);
+    background:#e8f5f0;
+    color: #4A9782;
 }
 
 .stat-icon-clock {
@@ -47,7 +47,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background:  rgba(247, 85, 56, 0.383);
+    background:  rgba(237, 140, 123, 0.263);
     color: rgba(255, 38, 0, 0.981);
 }
 
@@ -70,7 +70,7 @@
     background: white;
     border: 1px solid #48bb78;
     color: #48bb78;
-    padding: 10px 20px;
+    padding: 7px 10px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
@@ -127,7 +127,6 @@
 }
 
 .close-panel-button {
-    background: rgba(23, 23, 23, 0.2);
     border: none;
     width: 32px;
     height: 32px;
@@ -137,12 +136,14 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: white;
 }
 
 .close-panel-button:hover {
-    background: rgba(36, 226, 77, 0.333);
-    transform: rotate(90deg);
+    background: #ef4444;
+    color: #ffffff;
+    transform: scale(1.1);
+
+
 }
 
 .side-panel-body {
@@ -172,15 +173,17 @@
     background: #f9fafb;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(100, 191, 138, 0.446);
     padding: 12px;
     margin-bottom: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
+    
 }
 
 .side-panel-appointment-card:hover {
     background: white;
-    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.15);
+         box-shadow: 0 4px 12px rgba(86, 200, 133, 0.83);
     transform: translateX(-4px);
 }
 
@@ -276,7 +279,6 @@
     color: #64748b;
 }
 
-/* Overlay for side panel */
 .side-panel-overlay {
     position: fixed;
     top: 70px;
@@ -295,7 +297,6 @@
     visibility: visible;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .appointment-summary-card {
         flex-direction: column;

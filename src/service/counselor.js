@@ -112,7 +112,7 @@ export async function getUnreadNotification(userId) {
   }
 }
 
-export async function markNotificationAsRead(notificationId) {
+export async function markNotificationAsRead(userId) {
   const JWT_TOKEN = localStorage.getItem("jwtToken")  
   if(!JWT_TOKEN) {
     console.error("JwtToken Not Found")
@@ -120,7 +120,7 @@ export async function markNotificationAsRead(notificationId) {
   }
   
   try { 
-    const response = await fetch(MARK_AS_READ(notificationId), {
+    const response = await fetch(MARK_AS_READ(userId), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -132,7 +132,7 @@ export async function markNotificationAsRead(notificationId) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    return await response.json();
+    return await response.text( );
     
 
   } catch(error) {

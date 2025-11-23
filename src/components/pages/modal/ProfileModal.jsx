@@ -47,9 +47,7 @@ const ProfileModal = ({ isOpen, onClose,}) => {
     <>
       <div className="profile-modal-backdrop" onClick={onClose}></div>
       <div className="profile-modal">
-        <button className="close-button" onClick={onClose}>
-          ×
-        </button>
+      
 
         <div className="profile-modal-content">
           {loading ? (

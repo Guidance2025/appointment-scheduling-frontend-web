@@ -101,7 +101,6 @@
     overflow-y: auto;
 }
 
-/* Custom Scrollbar */
 .appointment-modal-body::-webkit-scrollbar {
     width: 8px;
 }
@@ -120,7 +119,6 @@
     background: #94a3b8;
 }
 
-/* Appointment Modal Footer */
 .appointment-modal-footer {
     padding: 20px 28px;
     border-top: 1px solid #e5e7eb;
@@ -130,7 +128,6 @@
     background: #f9fafb;
 }
 
-/* Appointment List Styles */
 .appointment-list {
     display: flex;
     flex-direction: column;

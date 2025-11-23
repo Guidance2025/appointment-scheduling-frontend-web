@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import "../../../css/CreateAppointmentModal.css";
 import { useState, useRef, useEffect } from "react";
 
@@ -289,8 +290,8 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         <div className="create-modal-overlay">
             <div className="create-modal-content">
                 <h2>Create Appointment</h2>
-                <button onClick={isClose} className="create-set-appointment-button" aria-label="Close">
-                    x
+                <button onClick={isClose} className="create-set-appointment-button">
+                <X size={20} />
                 </button>
 
                 {error && <div className="create-error-messages">{error}</div>}

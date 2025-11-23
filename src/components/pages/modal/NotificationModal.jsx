@@ -1,120 +1,124 @@
-import React, { useState, useEffect } from 'react';
-import '../../../css/Navbar.css';
-import { getNotificationByUser, markNotificationAsRead } from '../../../service/counselor';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import "../../../css/Navbar.css";
+import { getNotificationByUser, markNotificationAsRead } from "../../../service/counselor";
+import { getClass, getLabel } from "../../../helper/NotificationHelper";
+import { formatDate } from "../../../helper/dateHelper";
+import { listenForForegroundMessages } from "../../../utils/firebase";
 
-
-const NotificationModal = ({ isOpen, onClose }) => {
+const NotificationModal = ({ isOpen,fetchUnread }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const [error, setError] = useState(null);
+  const audioRef = useRef(new Audio("/bell/notification-bell.mp3"));
+  const userId = localStorage.getItem("userId");
 
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
-      const userId = localStorage.getItem("userId");
       setIsLoading(true);
-      
+      setError(null);
       const response = await getNotificationByUser(userId);
       const data = Array.isArray(response) ? response : response?.notification || [];
-      console.log(JSON.stringify(data));
       setNotifications(data);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+      setError("Failed to load notifications. Please try again.");
       setNotifications([]);
     } finally {
       setIsLoading(false);
     }
+  }, [userId]);
+
+  const markAsRead = async () => {
+    if (isMarkingRead) return;
+    
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+    if (unreadCount === 0) return;
+
+    try {
+      setIsMarkingRead(true);
+      await markNotificationAsRead(userId);
+      loadNotifications();
+      fetchUnread();
+    } catch (err) {
+      console.error("Error marking as read:", err);
+      setError("Failed to mark notifications as read");
+    } finally {
+      setIsMarkingRead(false);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      console.log("Clicked notification:", notification);
+    }
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    loadNotifications();
+
+    const unsubscribe = listenForForegroundMessages(() => {
+      audioRef.current.play().catch((err) => console.warn("Audio play failed:", err));
       loadNotifications();
-    }
-  }, [isOpen]);
+    });
 
-  const markAsRead = async (notificationId) => {
-    try {
-      await markNotificationAsRead(notificationId);
-    } catch (error) {
-      console.error("Error marking as read:", error);
-      loadNotifications();
-    }
-  };
-  // TODO : Lilipat sa helper class
-  const formatDate = (dateString) => {
-    if (!dateString) return "Unknown date";
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMinutes = Math.floor((now - date) / (1000 * 60));
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMinutes < 1) return "Just now";
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
-  };
-
-  const getLabel = (type) => {
-    const labels = {
-      'APPOINTMENT_ACCEPTED': 'Appointment Accepted',
-      'APPOINTMENT_DECLINED': 'Appointment Declined',
-      'APPOINTMENT_REQUEST': 'New Appointment Request',
-      'APPOINTMENT_CANCELLED': 'Appointment Cancelled',
-      'ACCEPT': 'Accepted',
-      'DECLINE': 'Declined'
+    return () => {
+      unsubscribe();
     };
-    return labels[type] || type;
-  };
-
-  const getClass = (notif) => {
-    let className = 'notification-item';
-    
-    if (notif.isRead === 0 || notif.isRead === false) {
-      className += ' unread';
-    }
-    
-    if (notif.actionType?.includes('ACCEPT')) {
-      className += ' notification-accepted';
-    } else if (notif.actionType?.includes('DECLINE')) {
-      className += ' notification-declined';
-    } else if (notif.actionType === 'APPOINTMENT_REQUEST') {
-      className += ' notification-request';
-    }
-    
-    return className;
-  };
+  }, [isOpen, loadNotifications]);
 
   if (!isOpen) return null;
 
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
   return (
-    <div className='notification-modal'>
-      <div className='notification-modal-header'>
+    <div className="notification-modal">
+      <div className="notification-modal-header">
         <h3>Notifications</h3>
-        <button className='close-button' onClick={onClose}>×</button>
+        <div className="notification-modal-actions">
+          {unreadCount > 0 && (
+            <button 
+              className="mark-as-read-button" 
+              onClick={markAsRead}
+              disabled={isMarkingRead}
+            >
+              {isMarkingRead ? "Marking..." : "Mark all as read"}
+            </button>
+          )}
+        </div>
       </div>
-      <div className='notification-modal-content'>
+
+      {error && (
+        <div className="notification-error">
+          {error}
+        </div>
+      )}
+
+      <div className="notification-modal-content">
         {isLoading ? (
-          <div className='notification-loading'>
-            <p>Loading...</p>
-          </div>
+          <div className="notification-loading">Loading notifications...</div>
         ) : notifications.length === 0 ? (
-          <p className='no-notifications'>No notifications yet</p>
+          <p className="no-notifications">
+            You're all caught up!<br />
+            No new notifications
+          </p>
         ) : (
           notifications.map((notif) => (
             <div 
-              key={notif.notificationId}
+              key={notif.notificationId} 
               className={getClass(notif)}
-              onClick={() => markAsRead(notif.notificationId)} 
+              onClick={() => handleNotificationClick(notif)}
             >
-              <div className='notification-item-content'>
-                <p className='notification-type'>{getLabel(notif.actionType)}</p>
-                <p className='notification-message'>{notif.message || "New notification"}</p>
-                <p className='notification-date'>{formatDate(notif.createdAt)}</p>
+              {!notif.isRead && <div className="notification-unread-dot"></div>}
+              <div className="notification-item-content">
+                <p className="notification-type">{getLabel(notif.actionType)}</p>
+                <p className="notification-message">
+                  {notif.message || "New notification"}
+                </p>
+                <p className="notification-date">{formatDate(notif.createdAt)}</p>
               </div>
-              {(notif.isRead === 0 || notif.isRead === false) && (
-                <div className='notification-unread-dot'></div>
-              )}
             </div>
           ))
         )}

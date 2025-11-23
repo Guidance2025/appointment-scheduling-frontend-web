@@ -3,7 +3,7 @@ import "../../../../../css/ProfileModal.css";
 import "../../../../../css/Navbar.css";
 import { getAdminProfile } from '../../../../../service/admin';
 
-const AdminProfileModal = ({isOpen , onClose}) => {
+const AdminProfileModal = ({isOpen}) => {
      const [profile, setProfile] = useState(null);
       const [loading, setIsLoading] = useState(false);
     
@@ -43,12 +43,8 @@ const AdminProfileModal = ({isOpen , onClose}) => {
   if(!isOpen) {return;}  
   return (
     <>
-      <div className="profile-modal-backdrop" onClick={onClose}></div>
+      <div className="profile-modal-backdrop"></div>
       <div className="profile-modal">
-        <button className="close-button" onClick={onClose}>
-          ×
-        </button>
-
         <div className="profile-modal-content">
           {loading ? (
             <div className="loading-container">

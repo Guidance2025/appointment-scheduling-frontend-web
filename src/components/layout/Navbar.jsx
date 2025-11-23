@@ -3,7 +3,7 @@ import { Bell, ChevronDown } from 'lucide-react';
 import '../../css/Navbar.css';
 import NotificationModal from '../pages/modal/NotificationModal';
 import ProfileModal from './../pages/modal/ProfileModal';
-import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
+import { getUnreadNotification, getProfileByEmployeeNumber, markNotificationAsRead } from '../../service/counselor';
 
 const Navbar = () => { 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,6 +22,8 @@ const Navbar = () => {
       console.error("Error fetching unread count:", error);
     }
   };
+
+
 
   const fetchProfile = async () => {
     try {
@@ -47,15 +49,16 @@ const Navbar = () => {
 
   const getFullName = () => {
     if (!profile) return "Loading";
-    return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || "User";
+    return `${profile.firstName || ''}`.trim() || "User";
   };
 
   return (
     <nav className="navbar">
       <div className="navbar-actions">
         <button 
-          className={`notification-button ${isModalOpen ? 'active' : ''}`}
-          onClick={() => setIsModalOpen(!isModalOpen)}
+          className={`notification-button`}
+          style={isModalOpen ? {backgroundColor : " rgba(255, 9, 9, 0.089)" } : {}}
+          onClick={() => setIsModalOpen(!isModalOpen) }
           aria-label="Notifications"
         > 
           <Bell strokeWidth={1.5} size={20} />
@@ -66,10 +69,11 @@ const Navbar = () => {
               </span>
             </span>
           )}
-        </button>
+        </button> 
 
         <div 
-          className={`profile-section ${isProfileModalOpen ? 'active' : ''}`}
+          className={`profile-section`}
+          style={isProfileModalOpen ? {backgroundColor : "rgba(9, 255, 58, 0.089)" } :  {}}
           onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
         >
           
@@ -87,7 +91,7 @@ const Navbar = () => {
         <NotificationModal 
           isOpen={isModalOpen} 
           onClose={handleModalClose}
-          onNotificationRead={fetchUnreadCount}
+          fetchUnread={fetchUnreadCount}
         />
       </div>
     </nav>

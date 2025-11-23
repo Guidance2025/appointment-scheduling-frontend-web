@@ -31,26 +31,27 @@ const [loading,setIsLoading] = useState(false);
     fetchAdminProfile();
   },[])
 
-  const getFullName  = () => {
+  const getFirstname  = () => {
        if(!profile) {
       return "Loading..";
     }
-    return `${profile.firstname || ''} ${profile.lastname || ''}`.trim() || "User";
+    return `${profile.firstname || ''}` .trim() || "User";
   } 
 
   return (
        <nav className="navbar">
       <div className="navbar-actions">
         <div 
-          className={`profile-section ${isProfileModalOpen ? 'active' : ''}`}
+          className={`profile-section`}
+          style={isProfileModalOpen ?{backgroundColor : "rgba(9, 255, 58, 0.089)"} :  {}}
           onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
         >
           <div className="profile-info">
-            <span className="profile-name">{getFullName()}</span>
+            <span className="profile-name">{getFirstname()}</span>
           </div>
           <ChevronDown size={18} className="profile-chevron" />
         </div>
-        <AdminProfileModal isOpen={isProfileModalOpen} onClose={() => setIsProfileModalOpen(false)}/>
+        <AdminProfileModal isOpen={isProfileModalOpen}/>
       </div>
     </nav>
   )
