@@ -19,20 +19,12 @@ export const UPDATE_GUIDANCE_STAFF_ACCOUNT = (`${API_BASE_URL}/admin/guidance-st
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF = (guidanceStaffId) => (`${API_BASE_URL}/counselor/find/appointment/${guidanceStaffId}`);
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF_STATUS = (guidanceStaffId,status) => (`${API_BASE_URL}/counselor/appointment/${status}/${guidanceStaffId}`);
 export const GET_NOTIFICATION_BY_USER = (userId) => (`${API_BASE_URL}/notification/${userId}`);
-<<<<<<< HEAD
 export const GET_PROFILE_BY_EMPLOYEENUMBER = (employeeNumber) => (`${API_BASE_URL}/counselor/profile/${employeeNumber}`);
 
 //NOTIFICATION
 export const GET_UNREAD_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification/unreadCount/${userId}`);
 export const MARK_AS_READ = (userId) => (`${API_BASE_URL}/notification/markAsRead/${userId}`);
 export const CLEAR_ALL_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification/${userId}/clear-all`) 
-=======
-
-export const GET_UNREAD_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification/unreadCount/${userId}`);
-export const MARK_AS_READ = (notificationId) => (`${API_BASE_URL}/notification/markAsRead/${notificationId}`);
-export const GET_PROFILE_BY_EMPLOYEENUMBER = (employeeNumber) => (`${API_BASE_URL}/counselor/profile/${employeeNumber}`);
-
->>>>>>> 0026cc40b3ec6ea0980296c35dcb35236216683c
 
 // FORGET PASSWORD
 export const FORGET_PASSWORD = `${API_BASE_URL}/user/reset-password`;
