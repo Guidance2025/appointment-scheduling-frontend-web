@@ -1,67 +1,94 @@
+import React, { useEffect, useState } from 'react';
+import { Bell, ChevronDown } from 'lucide-react';
 import '../../css/Navbar.css';
+import NotificationModal from '../pages/modal/NotificationModal';
+import ProfileModal from './../pages/modal/ProfileModal';
+import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
 
 const Navbar = () => { 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [profile, setProfile] = useState(null);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      const count = await getUnreadNotification(userId);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const employeeNumber = localStorage.getItem("guidanceStaffId");
+      if (!employeeNumber) return;
+
+      const data = await getProfileByEmployeeNumber(employeeNumber);
+      setProfile(data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    fetchProfile();
+  }, []);
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    fetchUnreadCount();
+  };
+
+  const getFullName = () => {
+    if (!profile) return "Loading";
+    return `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || "User";
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-actions">
-        <div className="navbar-item" >
-          <button 
-            className="navbar-btn notification-btn" 
-          >
-              <span className="notification-badge"></span>
-          </button>
+        <button 
+          className={`notification-button ${isModalOpen ? 'active' : ''}`}
+          onClick={() => setIsModalOpen(!isModalOpen)}
+          aria-label="Notifications"
+        > 
+          <Bell strokeWidth={1.5} size={20} />
+          {unreadCount > 0 && (
+            <span className='badge'>
+              <span className='badgeText'>
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            </span>
+          )}
+        </button>
+
+        <div 
+          className={`profile-section ${isProfileModalOpen ? 'active' : ''}`}
+          onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
+        >
           
-            <div className="dropdown notification-dropdown">
-              <div className="dropdown-header">
-                <h4>Notifications</h4>
-                <span className="count"> new</span>
-              </div>
-              <div className="notification-list">
-                  <div 
-                  >
-                    <div className="notification-content">
-                      <p></p>
-                      <span className="time"></span>
-                    </div>
-                  </div>
-              </div>
-              <div className="dropdown-footer">
-                <button className="view-all-btn">View All</button>
-              </div>
-            </div>
+          <div className="profile-info">
+            <span className="profile-name">{getFullName()}</span>
+          </div>
+          <ChevronDown size={18} className="profile-chevron" />
         </div>
 
-        <div className="navbar-item" >
-          <button 
-            className="navbar-btn profile-btn" 
-            aria-label="Profile Menu"
-          >
-            <div className="profile-avatar">
-            </div>
-          </button>
-            <div className="dropdown profile-dropdown">
-              <div className="profile-header">
-                <div className="profile-info">
-                  <div className="profile-avatar-large">
-                  </div>
-                  <div className="profile-details">
-                  </div>
-                </div>
-              </div>
-              <div className="profile-menu">
-                <button className="menu-item">
-                  Profile Settings
-                </button>
-                <button className="menu-item">
-                  Account Settings
-                </button>
-                <div className="menu-divider"></div>
-                <button className="menu-item logout">
-                  Logout
-                </button>
-              </div>
-            </div>
-        </div>
+        <ProfileModal 
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+        />
+        
+        <NotificationModal 
+          isOpen={isModalOpen} 
+          onClose={handleModalClose}
+          onNotificationRead={fetchUnreadCount}
+        />
       </div>
     </nav>
   );

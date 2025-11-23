@@ -1,11 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
+import "../../../../css/admin/CreateAccountModal.css"
 import { register } from '../../../../service/admin';
-import "./../../../../css/CreateAccountModal.css"
-const CreateAccountModal = ({isOpen, onClose}) => {
-  const [isSelected, setIsSelected] = useState("CHOICE");
-  const [currentRole, setCurrentRole] = useState("");
 
-  const [guidanceFormData, setGuidanceFormData] = useState({
+const CreateAccountModal = ({ isOpen, onClose }) => {
+  const [currentRole, setCurrentRole] = useState("GUIDANCE");
+  const [showForm, setShowForm] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errors, setErrors] = useState({}); 
+
+  const initialGuidanceData = {
     username: "",
     password: "",
     firstname: "",
@@ -17,9 +20,9 @@ const CreateAccountModal = ({isOpen, onClose}) => {
     email: "",
     address: "",
     positionInRc: ""
-  });
+  };
 
-  const [studentFormData, setStudentFormData] = useState({
+  const initialStudentData = {
     username: "",
     password: "",
     studentNumber: "",
@@ -35,497 +38,224 @@ const CreateAccountModal = ({isOpen, onClose}) => {
     clustName: "",
     clusterHead: "",
     course: ""
-  });
+  };
 
-  const handleGuidanceInputChange = (e) => {
+  const [guidanceFormData, setGuidanceFormData] = useState(initialGuidanceData);
+  const [studentFormData, setStudentFormData] = useState(initialStudentData);
+
+  const handleInputChange = (e, formType) => {
     const { name, value } = e.target;
-    setGuidanceFormData(prev => ({...prev, [name]: value}));
+    if (formType === "GUIDANCE") {
+      setGuidanceFormData(prev => ({ ...prev, [name]: value }));
+    } else {
+      setStudentFormData(prev => ({ ...prev, [name]: value }));
+    }
+    setErrors(prev => ({ ...prev, [name]: "" })); // clear error when user types
   };
 
-  const handleStudentInputChange = (e) => {
-    const { name, value } = e.target;
-    setStudentFormData(prev => ({...prev, [name]: value}));
-  };
+  const validateFields = () => {
+    const formData = currentRole === "GUIDANCE" ? guidanceFormData : studentFormData;
+    const newErrors = {};
 
-  const handleGuidanceRole = () => {
-    setIsSelected("FORM");
-    setCurrentRole("GUIDANCE");
-  };
-
-  const handleRegisterStudentRole = () => {
-    setIsSelected("FORM");
-    setCurrentRole("STUDENT");
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      let dataToSubmit;
-      
-      if (currentRole === "GUIDANCE") {
-        dataToSubmit = {
-          guidanceStaff: {
-            person: {
-              firstName: guidanceFormData.firstname,
-              lastName: guidanceFormData.lastname,
-              middleName: guidanceFormData.middlename,
-              birthDate: guidanceFormData.birthDate,
-              gender: guidanceFormData.gender,
-              contactNumber: guidanceFormData.contactNumber,
-              email: guidanceFormData.email,
-              address: guidanceFormData.address,
-            },
-            user: {
-              username: guidanceFormData.username,
-              password: guidanceFormData.password,
-            },
-            positionInRc: guidanceFormData.positionInRc
-          }
-        };
-      } else {
-        dataToSubmit = {
-          student: {
-            studentNumber: studentFormData.studentNumber,
-            person: {
-              firstName: studentFormData.firstname,
-              lastName: studentFormData.lastname,
-              middleName: studentFormData.middlename,
-              age: studentFormData.age,
-              gender: studentFormData.gender,
-              email: studentFormData.email,
-              address: studentFormData.address,
-            },
-            section: {
-              sectionName: studentFormData.sectionName,
-              organization: studentFormData.organization,
-              clustName: studentFormData.clustName,
-              clusterHead: studentFormData.clusterHead,
-              course: studentFormData.course
-            },
-            user: {
-              username: studentFormData.username,
-              password: studentFormData.password,
-            }
-          }
-        };
+    for (const [key, value] of Object.entries(formData)) {
+      if (!value && key !== "middlename") { // middlename is optional
+        newErrors[key] = "This field is required";
+      } else if (key === "email" && value) {
+        // simple email regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) newErrors[key] = "Invalid email address";
+      } else if ((key === "contactNumber" || key === "age") && value && isNaN(value)) {
+        newErrors[key] = "Must be a number";
       }
-      
-      const result = await register(dataToSubmit); 
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const buildSubmissionData = () => {
+    if (currentRole === "GUIDANCE") {
+      return {
+        guidanceStaff: {
+          person: {
+            firstName: guidanceFormData.firstname,
+            lastName: guidanceFormData.lastname,
+            middleName: guidanceFormData.middlename,
+            birthDate: guidanceFormData.birthDate,
+            gender: guidanceFormData.gender,
+            contactNumber: guidanceFormData.contactNumber,
+            email: guidanceFormData.email,
+            address: guidanceFormData.address,
+          },
+          user: {
+            username: guidanceFormData.username,
+            password: guidanceFormData.password,
+          },
+          positionInRc: guidanceFormData.positionInRc
+        }
+      };
+    } else {
+      return {
+        student: {
+          studentNumber: studentFormData.studentNumber,
+          person: {
+            firstName: studentFormData.firstname,
+            lastName: studentFormData.lastname,
+            middleName: studentFormData.middlename,
+            age: studentFormData.age,
+            gender: studentFormData.gender,
+            email: studentFormData.email,
+            address: studentFormData.address,
+          },
+          section: {
+            sectionName: studentFormData.sectionName,
+            organization: studentFormData.organization,
+            clustName: studentFormData.clustName,
+            clusterHead: studentFormData.clusterHead,
+            course: studentFormData.course
+          },
+          user: {
+            username: studentFormData.username,
+            password: studentFormData.password,
+          }
+        }
+      };
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!validateFields()) return; // stop submission if errors
+
+    try {
+      setIsProcessing(true);
+      const dataToSubmit = buildSubmissionData();
+      const result = await register(dataToSubmit);
+      setIsProcessing(false);
 
       if (result) {
-        console.log("Registered Successfully");
+        alert("Registered Successfully");
         handleClose();
       }
     } catch (error) {
       console.error("Error creating account:", error);
+      setIsProcessing(false);
     }
   };
 
-  const handleBack = () => {
-    setIsSelected("CHOICE");
-    setCurrentRole("");
-  };
-
   const handleClose = () => {
-    setIsSelected("CHOICE");
-    setCurrentRole("");
-    
-    setGuidanceFormData({
-      username: "",
-      password: "",
-      firstname: "",
-      lastname: "",
-      middlename: "",
-      birthDate: "",
-      gender: "",
-      contactNumber: "",
-      email: "",
-      address: "",
-      positionInRc: ""
-    });
-    
-    setStudentFormData({
-      username: "",
-      password: "",
-      studentNumber: "",
-      firstname: "",
-      lastname: "",
-      middlename: "",
-      age: "",
-      gender: "",
-      email: "",
-      address: "",
-      sectionName: "",
-      organization: "",
-      clustName: "",
-      clusterHead: "",
-      course: ""
-    });
-    
+    setCurrentRole("GUIDANCE");
+    setShowForm(true);
+    setGuidanceFormData(initialGuidanceData);
+    setStudentFormData(initialStudentData);
+    setErrors({});
     onClose();
   };
 
   if (!isOpen) return null;
 
+  const renderFormField = (label, name, type = "text", options = {}) => {
+    const formData = currentRole === "GUIDANCE" ? guidanceFormData : studentFormData;
+    const isSmall = options.small || false;
+    const isFullWidth = options.fullWidth || false;
+    
+    return (
+      <div className={`registration-form-group ${isSmall ? 'registration-form-group-small' : ''} ${isFullWidth ? 'registration-form-group-full' : ''}`}>
+        <label>{label}</label>
+        {type === "select" ? (
+          <select
+            name={name}
+            value={formData[name]}
+            onChange={(e) => handleInputChange(e, currentRole)}
+          >
+            <option value="">Select</option>
+            {options.selectOptions?.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        ) : (
+          <input
+            type={type}
+            name={name}
+            value={formData[name]}
+            onChange={(e) => handleInputChange(e, currentRole)}
+            maxLength={options.maxLength}
+          />
+        )}
+        {errors[name] && <span className="field-error">{errors[name]}</span>}
+      </div>
+    );
+  };
+
+  const renderForm = () => {
+    return currentRole === "GUIDANCE" ? (
+      <div>
+        <div className="registration-form-grid">
+          {renderFormField("Username", "username")}
+          {renderFormField("Password", "password", "password")}
+          {renderFormField("Firstname", "firstname")}
+          {renderFormField("Lastname", "lastname")}
+          {renderFormField("MI", "middlename", "text", { small: true, maxLength: 1 })}
+          {renderFormField("BirthDate", "birthDate", "date")}
+          {renderFormField("Gender", "gender", "select", { small: true, selectOptions: ["Male", "Female"] })}
+          {renderFormField("Contact Number", "contactNumber", "tel")}
+          {renderFormField("Email", "email", "email", { fullWidth: true })}
+          {renderFormField("Address", "address", "text", { fullWidth: true })}
+          {renderFormField("Position in Rogationist", "positionInRc", "text", { fullWidth: true })}
+        </div>
+      </div>
+    ) : (
+      <div>
+        <div className="registration-form-grid">
+          {renderFormField("Username", "username")}
+          {renderFormField("Password", "password", "password")}
+          {renderFormField("Student Number", "studentNumber")}
+          {renderFormField("Firstname", "firstname")}
+          {renderFormField("Lastname", "lastname")}
+          {renderFormField("MI", "middlename", "text", { small: true, maxLength: 1 })}
+          {renderFormField("Age", "age", "number")}
+          {renderFormField("Gender", "gender", "select", { small: true, selectOptions: ["Male", "Female", "Other"] })}
+          {renderFormField("Email", "email", "email", { fullWidth: true })}
+          {renderFormField("Address", "address", "text", { fullWidth: true })}
+          {renderFormField("Section Name", "sectionName")}
+          {renderFormField("Organization", "organization")}
+          {renderFormField("Cluster Name", "clustName")}
+          {renderFormField("Cluster Head", "clusterHead")}
+          {renderFormField("Course", "course")}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {isSelected === "CHOICE" ? (
-          <div className="role-selection">
-            <h2 className="modal-title">Create Account</h2>
-            <p className="modal-subtitle">Select account type to register</p>
-            
-            <div className="role-cards">
-              <button
-                className="role-card"
-                onClick={handleGuidanceRole}
-              >
-                <h3>Guidance</h3>
-              </button>
+    <div className="registration-modal-overlay" onClick={handleClose}>
+      <div className="registration-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="registration-tabs">
+          <button
+            className={`registration-tab ${currentRole === "GUIDANCE" ? "active" : ""}`}
+            onClick={() => setCurrentRole("GUIDANCE")}
+          >Guidance</button>
+          <button
+            className={`registration-tab ${currentRole === "STUDENT" ? "active" : ""}`}
+            onClick={() => setCurrentRole("STUDENT")}
+          >Student</button>
+        </div>
 
-              <button
-                className="role-card"
-                onClick={handleRegisterStudentRole}
-              >
-                <h3>Student</h3>
-              </button>
-            </div>
+        <h2 className="registration-modal-title">
+          Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
+        </h2>
 
-            <button className="back-button2" onClick={handleClose}>
-              X
+        <div className="registration-form">
+          {renderForm()}
+          <div className="registration-form-actions">
+            <button
+              onClick={handleSubmit}
+              className="registration-submit-btn"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Processing .." : "Register"}
             </button>
           </div>
-        ) : (
-          <div className="registration-form">
-            <div className="form-header">
-              <button className="back-button" onClick={handleBack}>
-                X
-              </button>
-              <h2 className="modal-title">
-                Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
-              </h2>
-            </div>
-
-            {currentRole === "GUIDANCE" ? (
-              <form onSubmit={handleSubmit}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Username</label>
-                    <input
-                      type="text"
-                      name="username"
-                      value={guidanceFormData.username}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={guidanceFormData.password}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Firstname</label>
-                    <input
-                      type="text"
-                      name="firstname"
-                      value={guidanceFormData.firstname}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Lastname</label>
-                    <input
-                      type="text"
-                      name="lastname"
-                      value={guidanceFormData.lastname}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-small">
-                    <label>MI</label>
-                    <input
-                      type="text"
-                      name="middlename"
-                      value={guidanceFormData.middlename}
-                      onChange={handleGuidanceInputChange}
-                      maxLength="1"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>BirthDate</label>
-                    <input
-                      type="date"
-                      name="birthDate"
-                      value={guidanceFormData.birthDate}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-small">
-                    <label>Gender</label>
-                    <select
-                      name="gender"
-                      value={guidanceFormData.gender}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    >
-                      <option value="">Select</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>ContactNumber</label>
-                    <input
-                      type="tel"
-                      name="contactNumber"
-                      value={guidanceFormData.contactNumber}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-full">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={guidanceFormData.email}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-full">
-                    <label>Address</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={guidanceFormData.address}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-full">
-                    <label>Position In Rogationist </label>
-                    <input
-                      type="text"
-                      name="positionInRc"
-                      value={guidanceFormData.positionInRc}
-                      onChange={handleGuidanceInputChange}
-                      required
-                    />
-                  </div>
-                  
-                </div>
-
-                <div className="form-actions">
-                  <button type="submit" className="submit-btn">
-                    Register
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Username</label>
-                    <input
-                      type="text"
-                      name="username"
-                      value={studentFormData.username}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={studentFormData.password}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Student Number</label>
-                    <input
-                      type="text"
-                      name="studentNumber"
-                      value={studentFormData.studentNumber}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Firstname</label>
-                    <input
-                      type="text"
-                      name="firstname"
-                      value={studentFormData.firstname}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Lastname</label>
-                    <input
-                      type="text"
-                      name="lastname"
-                      value={studentFormData.lastname}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-small">
-                    <label>MI</label>
-                    <input
-                      type="text"
-                      name="middlename"
-                      value={studentFormData.middlename}
-                      onChange={handleStudentInputChange}
-                      maxLength="1"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Age</label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={studentFormData.age}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-small">
-                    <label>Gender</label>
-                    <select
-                      name="gender"
-                      value={studentFormData.gender}
-                      onChange={handleStudentInputChange}
-                      required
-                    >
-                      <option value="">Select</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group form-group-full">
-                    <label>Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={studentFormData.email}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group form-group-full">
-                    <label>Address</label>
-                    <input
-                      type="text"
-                      name="address"
-                      value={studentFormData.address}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Section Name</label>
-                    <input
-                      type="text"
-                      name="sectionName"
-                      value={studentFormData.sectionName}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Organization</label>
-                    <input
-                      type="text"
-                      name="organization"
-                      value={studentFormData.organization}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Cluster Name</label>
-                    <input
-                      type="text"
-                      name="clustName"
-                      value={studentFormData.clustName}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Cluster Head</label>
-                    <input
-                      type="text"
-                      name="clusterHead"
-                      value={studentFormData.clusterHead}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Course</label>
-                    <input
-                      type="text"
-                      name="course"
-                      value={studentFormData.course}
-                      onChange={handleStudentInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-actions">
-                 
-                  <button type="submit" className="submit-btn">
-                    Register
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 .sidebar {
-  width: 240px; /* Always expanded */
+  width: 240px; 
   height: 100vh;
   background-color: #ffffff;
   border-right: 1px solid #e8e8e8;
@@ -160,7 +160,7 @@
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  opacity: 1; /* Always visible */
+  opacity: 1; 
 }
 
 

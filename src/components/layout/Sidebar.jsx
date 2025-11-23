@@ -1,36 +1,38 @@
 import React, { useState } from 'react';
 import '../../css/Sidebar.css';
 import schoolLogo from '../../assets/school-logo.png';
+import { 
+  CalendarDays, 
+  LayoutGrid, 
+  CalendarClock, 
+  UserSquare2, 
+  FolderOpen 
+} from 'lucide-react';
 
 const Sidebar = ({ onNavigate, currentPage }) => {
   const [activeItem, setActiveItem] = useState(currentPage);
   const [clickedItem, setClickedItem] = useState('');
-  
+
   const navItems = [
-    { name: 'Calendar', icon: '📅', component: 'Calendar' },
-    { name: 'Dashboard', icon: '📊', component: 'Dashboard' }, 
-    { name: 'Appointments', icon: '🗓️', component: 'Appointments' },
-    { name: 'Student Records', icon: '📚', component: 'StudentRecords' },
-    { name: 'Content Hub', icon: '📁', component: 'ContentHub' },
+    { name: 'Dashboard', icon: LayoutGrid, component: 'Dashboard' },
+    { name: 'Calendar', icon: CalendarDays, component: 'Calendar' },
+    { name: 'Appointments', icon: CalendarClock, component: 'Appointments' },
+    { name: 'Student Records', icon: UserSquare2, component: 'StudentRecords' },
+    { name: 'Content Hub', icon: FolderOpen, component: 'ContentHub' },
   ];
 
   const handleItemClick = (item) => {
     setActiveItem(item.name);
     setClickedItem(item.name);
-    
+
     if (onNavigate) {
       onNavigate(item.component);
     }
-    
+
     setTimeout(() => {
       setClickedItem('');
-    }, 600);
+    }, 300);
   };
-
-  const handleLogOutClick = () => {
-    localStorage.removeItem("jwtToken");
-    window.location.href = '/GuidanceLogin';
-  } 
 
   return (
     <div className="sidebar">
@@ -40,21 +42,19 @@ const Sidebar = ({ onNavigate, currentPage }) => {
           <h1 className="logo-text">GABAY</h1>
         </div>
       </div>
-      
+
       <nav className="sidebar-nav">
         {navItems.map((item) => (
-          <div 
+          <div
             key={item.name}
             className={`nav-item ${activeItem === item.name ? 'nav-item-active' : ''} ${clickedItem === item.name ? 'clicked' : ''}`}
             onClick={() => handleItemClick(item)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon"><item.icon size={20} strokeWidth={2} /></span>
             <span className="nav-text">{item.name}</span>
           </div>
         ))}
       </nav>
-      <button className = "logout-button"onClick={handleLogOutClick}> Logout</button>
-      
     </div>
   );
 };
