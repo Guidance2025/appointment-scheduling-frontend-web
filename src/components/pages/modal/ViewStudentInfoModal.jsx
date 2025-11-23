@@ -6,6 +6,7 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
   const JWT_TOKEN = localStorage.getItem("jwtToken");
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("student"); 
 
   useEffect(() => {
     if (isOpen && appointmentId) {
@@ -41,79 +42,184 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="appointment-modal-overlay">
+    <div className="student-modal-overlay" onClick={isClose}>
       <div
-        className="appointment-modal-content"
+        className="student-modal-container"
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="appointment-close-btn" onClick={isClose}>
+        <button className="student-modal-close" onClick={isClose}>
           ×
         </button>
 
-        {loading && <p className="appointment-loading">Loading student info...</p>}
-
-        {!loading && appointment && (
+        {loading ? (
+          <div className="student-modal-loading">
+            <div className="loading-spinner"></div>
+            <p>Loading student information...</p>
+          </div>
+        ) : appointment ? (
           <>
-            <h1>Student Information</h1>
-
-            <div className="student-info-section">
-              <h2 className="student-number">
-                Student Number: {appointment.student?.studentNumber || "N/A"}
-              </h2>
-              <h2>
-                Name: {appointment.student?.person?.firstName || ""}{" "}
-                {appointment.student?.person?.middleName || ""}{" "}
-                {appointment.student?.person?.lastName || ""}
-              </h2>
-              <h3>Gender: {appointment.student?.person?.gender || "N/A"}</h3>
-              <h3>Age: {appointment.student?.person?.age || "N/A"}</h3>
-              <h3>Email: {appointment.student?.person?.email || "N/A"}</h3>
-              <h3>
-                Contact: {appointment.student?.person?.contactNumber || "N/A"}
-              </h3>
-              <h3>
-                Section: {appointment.student?.section?.sectionName || "N/A"}
-              </h3>
+            <div className="student-modal-header">
+              <div className="student-header-info">
+                <h1 className="student-name">
+                  {appointment.student?.person?.firstName || ""}{" "}
+                  {appointment.student?.person?.middleName || ""}{" "}
+                  {appointment.student?.person?.lastName || ""}
+                </h1>
+                <p className="student-number-badge">
+                  {appointment.student?.studentNumber || "N/A"}
+                </p>
+              </div>
             </div>
 
-            <hr />
+            <div className="student-modal-tabs">
+              <button
+                className={`tab-button ${activeTab === "student" ? "active" : ""}`}
+                onClick={() => setActiveTab("student")}
+              >
+                Student Info
+              </button>
+              <button
+                className={`tab-button ${activeTab === "appointment" ? "active" : ""}`}
+                onClick={() => setActiveTab("appointment")}
+              >
+                Appointment
+              </button>
+              <button
+                className={`tab-button ${activeTab === "section" ? "active" : ""}`}
+                onClick={() => setActiveTab("section")}
+              >
+                Section
+              </button>
+            </div>
 
-            <div className="appointment-details-section">
-              <h2>Appointment Details</h2>
-              <h3>Type: {appointment.appointmentType || "N/A"}</h3>
-              <h3>Status: {appointment.status || "N/A"}</h3>
-              {(() => {
-                if (appointment.scheduledDate && appointment.endDate) {
-                  const { date, timeRange } = formatAppointmentDateTime(
-                    appointment.scheduledDate,
-                    appointment.endDate
-                  );
-                  return (
-                    <>
-                      <h3>Scheduled Date: {date}</h3>
-                      <h3>Time: {timeRange}</h3>
-                    </>
-                  );
-                }
-                return <h3>Schedule: N/A</h3>;
-              })()}
-              <h3>Notes: {appointment.notes || "None"}</h3>
-             </div>
+            <div className="student-modal-content">
+              {activeTab === "student" && (
+                <div className="tab-content">
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Gender</span>
+                      <span className="info-value">
+                        {appointment.student?.person?.gender || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Age</span>
+                      <span className="info-value">
+                        {appointment.student?.person?.age || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item full-width">
+                      <span className="info-label">Email</span>
+                      <span className="info-value">
+                        {appointment.student?.person?.email || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item full-width">
+                      <span className="info-label">Contact Number</span>
+                      <span className="info-value">
+                        {appointment.student?.person?.contactNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item full-width">
+                      <span className="info-label">Section</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.sectionName || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-             <div className="guidance-staff-section">
-              <h2>Section</h2>
-              <h3> Organization : 
-                {appointment.student?.section?.organization || "N/A"}{" "}
-               
-              </h3>
-               <h3>Cluster Name : {appointment.student?.section?.clusterName || "N/A"} </h3>
-               <h3> Section Name :  {appointment.student?.section?.sectionName || "N/A"}</h3>
-               <h3> Cluster Head : {appointment.student?.section?.clusterHead || "N/A"}</h3>
-               <h3>Course : {appointment.student?.section?.course || "N/A"} </h3>
-                 
-            </div> 
+              {activeTab === "appointment" && (
+                <div className="tab-content">
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">Type</span>
+                      <span className="info-value">
+                        {appointment.appointmentType || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Status</span>
+                      <span className="info-value">
+                        {appointment.status || "N/A"}
+                      </span>
+                    </div>
+                    {(() => {
+                      if (appointment.scheduledDate && appointment.endDate) {
+                        const { date, timeRange } = formatAppointmentDateTime(
+                          appointment.scheduledDate,
+                          appointment.endDate
+                        );
+                        return (
+                          <>
+                            <div className="info-item full-width">
+                              <span className="info-label">Scheduled Date</span>
+                              <span className="info-value">{date}</span>
+                            </div>
+                            <div className="info-item full-width">
+                              <span className="info-label">Time</span>
+                              <span className="info-value">{timeRange}</span>
+                            </div>
+                          </>
+                        );
+                      }
+                      return (
+                        <div className="info-item full-width">
+                          <span className="info-label">Schedule</span>
+                          <span className="info-value">N/A</span>
+                        </div>
+                      );
+                    })()}
+                    <div className="info-item full-width">
+                      <span className="info-label">Notes</span>
+                      <span className="info-value notes-text">
+                        {appointment.notes || "No notes provided"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "section" && (
+                <div className="tab-content">
+                  <div className="info-grid">
+                    <div className="info-item full-width">
+                      <span className="info-label">Organization</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.organization || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Cluster Name</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.clusterName || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Section Name</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.sectionName || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item full-width">
+                      <span className="info-label">Cluster Head</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.clusterHead || "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item full-width">
+                      <span className="info-label">Course</span>
+                      <span className="info-value">
+                        {appointment.student?.section?.course || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./../../../../css/ActionModal.css"
 import { deleteGuidanceStaffAccount, deleteStudentAccount, UpdateStudentCredentials } from "../../../../service/admin";
 import UpdateModal from "./UpdateModal";
+import { X } from "lucide-react";
 
 const ActionModal = ({ isOpen,  onClose,  selectedUserType,studentNumber,
                         employeeNumber, onDeleteSuccess, selectedUserData }) => {
@@ -46,7 +47,7 @@ const ActionModal = ({ isOpen,  onClose,  selectedUserType,studentNumber,
                     {selectedUserType === "studentNumber" ? studentNumber : employeeNumber}
                 </h2>
                 <button className="close-btn" onClick={onClose} aria-label="Close">
-                    ×
+                     <X size={20} />
                 </button>
             </div>
             
