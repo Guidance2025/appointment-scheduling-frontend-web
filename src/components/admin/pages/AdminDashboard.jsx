@@ -6,7 +6,6 @@ import StudentInformation from './StudentInformation';
 import AdminNavbar from './layout/AdminNavbar';
 const AdminDashboard = ({onLogout}) => {
    const [currentPage, setCurrentPage] = useState("Calendar");
-    
 
   const handleNavigation = (page) => {
     setCurrentPage(page); 

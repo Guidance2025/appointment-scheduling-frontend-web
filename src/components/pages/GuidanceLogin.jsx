@@ -5,10 +5,12 @@ import "../../css/GabayLogin.css";
 import { registerFcmToken } from "../../service/fcm";
 import { login } from "../../service/auth";
 import ForgetPasswordModal from "./modal/login/forget/password/ForgetPasswordModal";
+import { usePopUp } from "../../helper/message/pop/up/provider/PopUpModalProvider";
 
 function GuidanceLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
-  
+
+
   const [formData, setFormData] = useState({
     username: "",
     password: ""
@@ -104,7 +106,6 @@ function GuidanceLogin({ onLoginSuccess }) {
       throw new Error(`Unauthorized role: ${role}`);
     }
 
-    console.log("✅ Redirecting to:", route);
     onLoginSuccess();
     navigate(route);
   };
@@ -120,7 +121,6 @@ function GuidanceLogin({ onLoginSuccess }) {
     setError("");
 
     try {
-      console.log("🔐 Attempting login...");
       
       
       localStorage.clear();
@@ -158,7 +158,6 @@ function GuidanceLogin({ onLoginSuccess }) {
       } catch (fcmError) {
         console.warn(" Failed to register FCM token:", fcmError);
       }
-
       handleRoleBasedRedirect(userRole);
 
     } catch (err) {

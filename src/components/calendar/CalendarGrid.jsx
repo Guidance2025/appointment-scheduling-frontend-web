@@ -1,4 +1,4 @@
-import { getDaysInMonth, getFirstDayOfMonth } from '../../helper/calendarHelper';
+import { getDaysInMonth, getFirstDayOfMonth } from '../../helper/validation/hooks/calendarHelper';
 import { formatAppointmentDateTime } from '../../helper/dateHelper';
 import "./../../css/Calendar.css";
 export default function CalendarGrid({

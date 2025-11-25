@@ -1,6 +1,5 @@
 import React from 'react';
-import { X, Calendar, CalendarDays, Clock } from 'lucide-react';
-
+import { X, Calendar, Clock } from 'lucide-react';
 import '../../css/AppointmentSummary.css';
 import { formatAppointmentDateTime } from '../../helper/dateHelper';
 
@@ -10,12 +9,21 @@ const AppointmentSidePanel = ({
   appointments, 
   isLoading, 
   currentDate,
+  selectedDate, // NEW PROP
   onAppointmentClick 
 }) => {
-  const monthName = currentDate.toLocaleDateString('en-US', { 
-    month: 'long', 
-    year: 'numeric' 
-  });
+  // Display selected date or full month
+  const displayTitle = selectedDate 
+    ? selectedDate.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        month: 'long', 
+        day: 'numeric',
+        year: 'numeric' 
+      })
+    : currentDate.toLocaleDateString('en-US', { 
+        month: 'long', 
+        year: 'numeric' 
+      });
 
   return (
     <>
@@ -26,10 +34,7 @@ const AppointmentSidePanel = ({
 
       <div className={`appointment-side-panel ${isOpen ? 'open' : ''}`}>
         <div className="side-panel-header">
-          <h3>
-            
-            {monthName}
-          </h3>
+          <h3>{displayTitle}</h3>
           <button className="close-panel-button" onClick={onClose}>
             <X size={20} />
           </button>
@@ -44,7 +49,11 @@ const AppointmentSidePanel = ({
             <div className="side-panel-empty">
               <Calendar size={48} />
               <h4>No Appointments</h4>
-              <p>No appointments scheduled for this month.</p>
+              <p>
+                {selectedDate 
+                  ? 'No appointments scheduled for this day.' 
+                  : 'No appointments scheduled for this month.'}
+              </p>
             </div>
           ) : (
             appointments.map((appointment) => {

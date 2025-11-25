@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import "../../../../css/admin/CreateAccountModal.css"
 import { register } from '../../../../service/admin';
+import { ArrowLeft } from 'lucide-react';
+import { FormField } from '../../../../helper/validation/FormField';
+import { useFormValidation } from '../../../../helper/validation/hooks/useFormValidation';
+import { useNotification } from '../../../../helper/message/pop/up/modal/PopUpModal';
+import { usePopUp } from '../../../../helper/message/pop/up/provider/PopUpModalProvider';
 
-const CreateAccountModal = ({ isOpen, onClose }) => {
+const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) => {
   const [currentRole, setCurrentRole] = useState("GUIDANCE");
-  const [showForm, setShowForm] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [errors, setErrors] = useState({}); 
+  const { showSuccess, showError } = usePopUp();
 
   const initialGuidanceData = {
     username: "",
@@ -40,82 +44,91 @@ const CreateAccountModal = ({ isOpen, onClose }) => {
     course: ""
   };
 
-  const [guidanceFormData, setGuidanceFormData] = useState(initialGuidanceData);
-  const [studentFormData, setStudentFormData] = useState(initialStudentData);
+  const guidanceForm = useFormValidation(initialGuidanceData);
+  const studentForm = useFormValidation(initialStudentData);
 
-  const handleInputChange = (e, formType) => {
-    const { name, value } = e.target;
-    if (formType === "GUIDANCE") {
-      setGuidanceFormData(prev => ({ ...prev, [name]: value }));
-    } else {
-      setStudentFormData(prev => ({ ...prev, [name]: value }));
-    }
-    setErrors(prev => ({ ...prev, [name]: "" })); 
+  const currentForm = currentRole === "GUIDANCE" ? guidanceForm : studentForm;
+
+  const guidanceValidationRules = {
+    username: { required: true },
+    password: { required: true },
+    firstname: { required: true },
+    lastname: { required: true },
+    birthDate: { required: true },
+    gender: { required: true },
+    contactNumber: { required: true, number: true },
+    email: { required: true, email: true },
+    address: { required: true },
+    positionInRc: { required: true }
   };
 
-  const validateFields = () => {
-    const formData = currentRole === "GUIDANCE" ? guidanceFormData : studentFormData;
-    const newErrors = {};
-
-    for (const [key, value] of Object.entries(formData)) {
-      if (!value && key !== "middlename") { 
-        newErrors[key] = "This field is required";
-      } else if (key === "email" && value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) newErrors[key] = "Invalid email address";
-      } else if ((key === "contactNumber" || key === "age") && value && isNaN(value)) {
-        newErrors[key] = "Must be a number";
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const studentValidationRules = {
+    username: { required: true },
+    password: { required: true },
+    studentNumber: { required: true },
+    firstname: { required: true },
+    lastname: { required: true },
+    age: { required: true, number: true },
+    gender: { required: true },
+    email: { required: true, email: true },
+    address: { required: true },
+    sectionName: { required: true },
+    organization: { required: true },
+    clustName: { required: true },
+    clusterHead: { required: true },
+    course: { required: true }
   };
+
+  useEffect(() => {
+    if (isOpen && activeTab) {
+      setCurrentRole(activeTab === "guidance" ? "GUIDANCE" : "STUDENT");
+    }
+  }, [isOpen, activeTab]);
 
   const buildSubmissionData = () => {
     if (currentRole === "GUIDANCE") {
       return {
         guidanceStaff: {
           person: {
-            firstName: guidanceFormData.firstname,
-            lastName: guidanceFormData.lastname,
-            middleName: guidanceFormData.middlename,
-            birthDate: guidanceFormData.birthDate,
-            gender: guidanceFormData.gender,
-            contactNumber: guidanceFormData.contactNumber,
-            email: guidanceFormData.email,
-            address: guidanceFormData.address,
+            firstName: guidanceForm.formData.firstname,
+            lastName: guidanceForm.formData.lastname,
+            middleName: guidanceForm.formData.middlename,
+            birthDate: guidanceForm.formData.birthDate,
+            gender: guidanceForm.formData.gender,
+            contactNumber: guidanceForm.formData.contactNumber,
+            email: guidanceForm.formData.email,
+            address: guidanceForm.formData.address,
           },
           user: {
-            username: guidanceFormData.username,
-            password: guidanceFormData.password,
+            username: guidanceForm.formData.username,
+            password: guidanceForm.formData.password,
           },
-          positionInRc: guidanceFormData.positionInRc
+          positionInRc: guidanceForm.formData.positionInRc
         }
       };
     } else {
       return {
         student: {
-          studentNumber: studentFormData.studentNumber,
+          studentNumber: studentForm.formData.studentNumber,
           person: {
-            firstName: studentFormData.firstname,
-            lastName: studentFormData.lastname,
-            middleName: studentFormData.middlename,
-            age: studentFormData.age,
-            gender: studentFormData.gender,
-            email: studentFormData.email,
-            address: studentFormData.address,
+            firstName: studentForm.formData.firstname,
+            lastName: studentForm.formData.lastname,
+            middleName: studentForm.formData.middlename,
+            age: studentForm.formData.age,
+            gender: studentForm.formData.gender,
+            email: studentForm.formData.email,
+            address: studentForm.formData.address,
           },
           section: {
-            sectionName: studentFormData.sectionName,
-            organization: studentFormData.organization,
-            clustName: studentFormData.clustName,
-            clusterHead: studentFormData.clusterHead,
-            course: studentFormData.course
+            sectionName: studentForm.formData.sectionName,
+            organization: studentForm.formData.organization,
+            clustName: studentForm.formData.clustName,
+            clusterHead: studentForm.formData.clusterHead,
+            course: studentForm.formData.course
           },
           user: {
-            username: studentFormData.username,
-            password: studentFormData.password,
+            username: studentForm.formData.username,
+            password: studentForm.formData.password,
           }
         }
       };
@@ -123,128 +136,275 @@ const CreateAccountModal = ({ isOpen, onClose }) => {
   };
 
   const handleSubmit = async () => {
-    if (!validateFields()) return; 
+    const rules = currentRole === "GUIDANCE" ? guidanceValidationRules : studentValidationRules;
+    
+    if (!currentForm.validate(rules)) {
+      return;
+    }
 
     try {
       setIsProcessing(true);
       const dataToSubmit = buildSubmissionData();
       const result = await register(dataToSubmit);
-      setIsProcessing(false);
-
-      if (result) {
-        alert("Registered Successfully");
+        if (result) {
+        showSuccess(
+          'Registration Successful!',
+          `${currentRole === "GUIDANCE" ? "Guidance staff" : "Student"} account has been created successfully.`,
+          3000
+        );
+        
+        if (onAccountCreated) {
+          onAccountCreated();
+        }
         handleClose();
       }
+      setIsProcessing(false);
     } catch (error) {
+       showError(
+          'Registration Failed!',
+          `${currentRole === "GUIDANCE" ? "Guidance staff" : "Student"} Unable to create account . Please Try again.`,
+          3000
+        );
       console.error("Error creating account:", error);
       setIsProcessing(false);
     }
   };
 
   const handleClose = () => {
-    setCurrentRole("GUIDANCE");
-    setShowForm(true);
-    setGuidanceFormData(initialGuidanceData);
-    setStudentFormData(initialStudentData);
-    setErrors({});
+    guidanceForm.resetForm();
+    studentForm.resetForm();
+    setCurrentRole(activeTab === "guidance" ? "GUIDANCE" : "STUDENT");
     onClose();
   };
 
   if (!isOpen) return null;
 
-  const renderFormField = (label, name, type = "text", options = {}) => {
-    const formData = currentRole === "GUIDANCE" ? guidanceFormData : studentFormData;
-    const isSmall = options.small || false;
-    const isFullWidth = options.fullWidth || false;
-    
-    return (
-      <div className={`registration-form-group ${isSmall ? 'registration-form-group-small' : ''} ${isFullWidth ? 'registration-form-group-full' : ''}`}>
-        <label>{label}</label>
-        {type === "select" ? (
-          <select
-            name={name}
-            value={formData[name]}
-            onChange={(e) => handleInputChange(e, currentRole)}
-          >
-            <option value="">Select</option>
-            {options.selectOptions?.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type={type}
-            name={name}
-            value={formData[name]}
-            onChange={(e) => handleInputChange(e, currentRole)}
-            maxLength={options.maxLength}
-          />
-        )}
-        {errors[name] && <span className="field-error">{errors[name]}</span>}
-      </div>
-    );
-  };
+  const renderGuidanceForm = () => (
+    <div className="registration-form-grid">
+      <FormField
+        label="Username"
+        name="username"
+        value={guidanceForm.formData.username}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.username}
+      />
+      <FormField
+        label="Password"
+        name="password"
+        type="password"
+        value={guidanceForm.formData.password}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.password}
+      />
+      <FormField
+        label="Firstname"
+        name="firstname"
+        value={guidanceForm.formData.firstname}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.firstname}
+      />
+      <FormField
+        label="Lastname"
+        name="lastname"
+        value={guidanceForm.formData.lastname}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.lastname}
+      />
+      <FormField
+        label="MI"
+        name="middlename"
+        value={guidanceForm.formData.middlename}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.middlename}
+        options={{ small: true }}
+        maxLength={1}
+      />
+      <FormField
+        label="BirthDate"
+        name="birthDate"
+        type="date"
+        value={guidanceForm.formData.birthDate}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.birthDate}
+      />
+      <FormField
+        label="Gender"
+        name="gender"
+        type="select"
+        value={guidanceForm.formData.gender}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.gender}
+        options={{ small: true }}
+        selectOptions={["Male", "Female"]}
+      />
+      <FormField
+        label="Contact Number"
+        name="contactNumber"
+        type="tel"
+        value={guidanceForm.formData.contactNumber}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.contactNumber}
+      />
+      <FormField
+        label="Email"
+        name="email"
+        type="email"
+        value={guidanceForm.formData.email}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.email}
+        options={{ fullWidth: true }}
+      />
+      <FormField
+        label="Address"
+        name="address"
+        value={guidanceForm.formData.address}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.address}
+        options={{ fullWidth: true }}
+      />
+      <FormField
+        label="Position in Rogationist"
+        name="positionInRc"
+        value={guidanceForm.formData.positionInRc}
+        onChange={guidanceForm.handleChange}
+        error={guidanceForm.errors.positionInRc}
+        options={{ fullWidth: true }}
+      />
+    </div>
+  );
 
-  const renderForm = () => {
-    return currentRole === "GUIDANCE" ? (
-      <div>
-        <div className="registration-form-grid">
-          {renderFormField("Username", "username")}
-          {renderFormField("Password", "password", "password")}
-          {renderFormField("Firstname", "firstname")}
-          {renderFormField("Lastname", "lastname")}
-          {renderFormField("MI", "middlename", "text", { small: true, maxLength: 1 })}
-          {renderFormField("BirthDate", "birthDate", "date")}
-          {renderFormField("Gender", "gender", "select", { small: true, selectOptions: ["Male", "Female"] })}
-          {renderFormField("Contact Number", "contactNumber", "tel")}
-          {renderFormField("Email", "email", "email", { fullWidth: true })}
-          {renderFormField("Address", "address", "text", { fullWidth: true })}
-          {renderFormField("Position in Rogationist", "positionInRc", "text", { fullWidth: true })}
-        </div>
-      </div>
-    ) : (
-      <div>
-        <div className="registration-form-grid">
-          {renderFormField("Username", "username")}
-          {renderFormField("Password", "password", "password")}
-          {renderFormField("Student Number", "studentNumber")}
-          {renderFormField("Firstname", "firstname")}
-          {renderFormField("Lastname", "lastname")}
-          {renderFormField("MI", "middlename", "text", { small: true, maxLength: 1 })}
-          {renderFormField("Age", "age", "number")}
-          {renderFormField("Gender", "gender", "select", { small: true, selectOptions: ["Male", "Female", "Other"] })}
-          {renderFormField("Email", "email", "email", { fullWidth: true })}
-          {renderFormField("Address", "address", "text", { fullWidth: true })}
-          {renderFormField("Section Name", "sectionName")}
-          {renderFormField("Organization", "organization")}
-          {renderFormField("Cluster Name", "clustName")}
-          {renderFormField("Cluster Head", "clusterHead")}
-          {renderFormField("Course", "course")}
-        </div>
-      </div>
-    );
-  };
+  const renderStudentForm = () => (
+    <div className="registration-form-grid">
+      <FormField
+        label="Username"
+        name="username"
+        value={studentForm.formData.username}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.username}
+      />
+      <FormField
+        label="Password"
+        name="password"
+        type="password"
+        value={studentForm.formData.password}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.password}
+      />
+      <FormField
+        label="Student Number"
+        name="studentNumber"
+        value={studentForm.formData.studentNumber}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.studentNumber}
+      />
+      <FormField
+        label="Firstname"
+        name="firstname"
+        value={studentForm.formData.firstname}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.firstname}
+      />
+      <FormField
+        label="Lastname"
+        name="lastname"
+        value={studentForm.formData.lastname}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.lastname}
+      />
+      <FormField
+        label="MI"
+        name="middlename"
+        value={studentForm.formData.middlename}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.middlename}
+        options={{ small: true }}
+        maxLength={1}
+      />
+      <FormField
+        label="Age"
+        name="age"
+        type="number"
+        value={studentForm.formData.age}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.age}
+      />
+      <FormField
+        label="Gender"
+        name="gender"
+        type="select"
+        value={studentForm.formData.gender}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.gender}
+        options={{ small: true }}
+        selectOptions={["Male", "Female"]}
+      />
+      <FormField
+        label="Email"
+        name="email"
+        type="email"
+        value={studentForm.formData.email}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.email}
+        options={{ fullWidth: true }}
+      />
+      <FormField
+        label="Address"
+        name="address"
+        value={studentForm.formData.address}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.address}
+        options={{ fullWidth: true }}
+      />
+      <FormField
+        label="Section Name"
+        name="sectionName"
+        value={studentForm.formData.sectionName}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.sectionName}
+      />
+      <FormField
+        label="Organization"
+        name="organization"
+        value={studentForm.formData.organization}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.organization}
+      />
+      <FormField
+        label="Cluster Name"
+        name="clustName"
+        value={studentForm.formData.clustName}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.clustName}
+      />
+      <FormField
+        label="Cluster Head"
+        name="clusterHead"
+        value={studentForm.formData.clusterHead}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.clusterHead}
+      />
+      <FormField
+        label="Course"
+        name="course"
+        value={studentForm.formData.course}
+        onChange={studentForm.handleChange}
+        error={studentForm.errors.course}
+      />
+    </div>
+  );
 
   return (
-    <div className="registration-modal-overlay" onClick={handleClose}>
-      <div className="registration-modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="registration-tabs">
-          <button
-            className={`registration-tab ${currentRole === "GUIDANCE" ? "active" : ""}`}
-            onClick={() => setCurrentRole("GUIDANCE")}
-          >Guidance</button>
-          <button
-            className={`registration-tab ${currentRole === "STUDENT" ? "active" : ""}`}
-            onClick={() => setCurrentRole("STUDENT")}
-          >Student</button>
-        </div>
+    <div className="registration-modal-overlay">
+      <div className="registration-modal-content">
+        <button className='back-button' onClick={handleClose}><ArrowLeft/></button>
 
         <h2 className="registration-modal-title">
           Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
         </h2>
 
+
         <div className="registration-form">
-          {renderForm()}
+          {currentRole === "GUIDANCE" ? renderGuidanceForm() : renderStudentForm()}
           <div className="registration-form-actions">
             <button
               onClick={handleSubmit}
