@@ -17,14 +17,14 @@ export const FormField = ({
   const isFullWidth = options.fullWidth || false;
 
   const inputStyle = {
-    borderColor: hasError ? '#f07a7aff' : '', // Softer red (Tailwind red-500)
+    borderColor: hasError ? '#f07a7aff' : '', 
     borderWidth: hasError ? '2px' : '',
     outline: hasError ? 'none' : '',
-    boxShadow: hasError ? '0 0 0 3px rgba(239, 68, 68, 0.1)' : '' // Subtle red glow
+    boxShadow: hasError ? '0 0 0 3px rgba(239, 68, 68, 0.1)' : '' 
   };
 
   const errorStyle = {
-    color: '#dc2626', // Slightly darker red for text (Tailwind red-600)
+    color: '#dc2626', 
     fontSize: '0.875rem',
     marginTop: '0.25rem',
     display: 'block'
