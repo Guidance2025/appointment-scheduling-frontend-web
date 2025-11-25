@@ -172,7 +172,6 @@
   display: none;
 }
 
-/* Notification Modal */
 .notification-modal {
   position: fixed;
   top: 80px;
@@ -381,14 +380,12 @@
   color: #6b7280;
   font-size: 14px;
 }
-/* Notification Actions Container */
 .notification-actions {
   display: flex;
   gap: 8px;
   margin-top: 12px;
 }
 
-/* Base Button Styles */
 .notification-accept-btn,
 .notification-decline-btn {
   flex: 1;

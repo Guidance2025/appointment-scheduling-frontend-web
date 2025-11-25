@@ -27,18 +27,15 @@ const Navbar = () => {
     setProfile(data);
   };
 
-  // Request FCM token and listen for foreground notifications
   useEffect(() => {
     fetchUnreadCount();
     fetchProfile();
 
-    requestForToken(); // registers service worker and gets token
+    requestForToken(); 
 
     const unsubscribe = listenForForegroundMessages((payload) => {
       console.log("Foreground notification:", payload);
-      // Play sound
       audioRef.current.play().catch(err => console.warn("Audio play failed:", err));
-      // Increment unread count
       setUnreadCount(prev => prev + 1);
     });
 
