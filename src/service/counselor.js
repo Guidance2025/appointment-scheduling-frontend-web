@@ -113,7 +113,7 @@ export async function getUnreadNotification(userId) {
 }
 
 export async function markNotificationAsRead(userId) {
-  const JWT_TOKEN = localStorage.getItem("jwtToken")  
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
   if(!JWT_TOKEN) {
     console.error("JwtToken Not Found")
     return;

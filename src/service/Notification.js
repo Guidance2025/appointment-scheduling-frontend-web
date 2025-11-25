@@ -27,4 +27,7 @@ export async function clearAllNotification(userId) {
         console.error("Error Clearing Notification", error);
         throw error;
     }
+
+
 }
+        

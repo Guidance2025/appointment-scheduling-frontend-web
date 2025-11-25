@@ -172,7 +172,6 @@
   display: none;
 }
 
-/* Notification Modal */
 .notification-modal {
   position: fixed;
   top: 80px;
@@ -316,10 +315,6 @@
   background-color: #e8f5e9;
 }
 
-.notification-item.notification-accepted:hover {
-  background-color: #e8f5e9;
-}
-
 .notification-item.notification-declined {
   background-color: #fef1f0;
 }
@@ -328,17 +323,11 @@
   background-color: #ffebee;
 }
 
-.notification-item.notification-declined:hover {
-  background-color: #fee2e2;
-}
-
 .notification-item.notification-request {
   background-color: #e3f2fd;
 }
 
-.notification-item.notification-request:hover {
-  background-color: #dbeafe;
-}
+
 
 .notification-unread-dot {
   position: absolute;
@@ -382,6 +371,8 @@
   line-height: 1.4;
 }
 
+
+
 .notification-loading,
 .notification-error {
   text-align: center;
@@ -389,7 +380,48 @@
   color: #6b7280;
   font-size: 14px;
 }
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
 
+.notification-accept-btn,
+.notification-decline-btn {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-accept-btn {
+  background: #5dd174;
+  color: white;
+}
+
+.notification-accept-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.notification-decline-btn {
+  background: #e3726a;
+  color: white;
+}
+
+.notification-decline-btn:hover:not(:disabled) {
+  background: #bb7b76;
+}
+
+.notification-accept-btn:disabled,
+.notification-decline-btn:disabled {
+  background: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 .notification-error {
   color: #ef4444;
   background-color: #fef2f2;

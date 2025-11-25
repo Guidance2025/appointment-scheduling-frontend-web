@@ -1,45 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Bell, ChevronDown } from 'lucide-react';
 import '../../css/Navbar.css';
 import NotificationModal from '../pages/modal/NotificationModal';
 import ProfileModal from './../pages/modal/ProfileModal';
-import { getUnreadNotification, getProfileByEmployeeNumber, markNotificationAsRead } from '../../service/counselor';
+import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
+import { listenForForegroundMessages, requestForToken } from '../../utils/firebase';
 
 const Navbar = () => { 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profile, setProfile] = useState(null);
+  const audioRef = useRef(new Audio("/bell/notification-bell.mp3"));
+  const userId = localStorage.getItem("userId");
 
   const fetchUnreadCount = async () => {
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) return;
-
-      const count = await getUnreadNotification(userId);
-      setUnreadCount(count);
-    } catch (error) {
-      console.error("Error fetching unread count:", error);
-    }
+    if (!userId) return;
+    const count = await getUnreadNotification(userId);
+    setUnreadCount(count);
   };
 
-
-
   const fetchProfile = async () => {
-    try {
-      const employeeNumber = localStorage.getItem("guidanceStaffId");
-      if (!employeeNumber) return;
-
-      const data = await getProfileByEmployeeNumber(employeeNumber);
-      setProfile(data);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
+    const employeeNumber = localStorage.getItem("guidanceStaffId");
+    if (!employeeNumber) return;
+    const data = await getProfileByEmployeeNumber(employeeNumber);
+    setProfile(data);
   };
 
   useEffect(() => {
     fetchUnreadCount();
     fetchProfile();
+
+    requestForToken(); 
+
+    const unsubscribe = listenForForegroundMessages((payload) => {
+      console.log("Foreground notification:", payload);
+      audioRef.current.play().catch(err => console.warn("Audio play failed:", err));
+      setUnreadCount(prev => prev + 1);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleModalClose = () => {
@@ -76,7 +78,6 @@ const Navbar = () => {
           style={isProfileModalOpen ? {backgroundColor : "rgba(9, 255, 58, 0.089)" } :  {}}
           onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
         >
-          
           <div className="profile-info">
             <span className="profile-name">{getFullName()}</span>
           </div>
@@ -91,7 +92,7 @@ const Navbar = () => {
         <NotificationModal 
           isOpen={isModalOpen} 
           onClose={handleModalClose}
-          fetchUnread={fetchUnreadCount}
+          fetchUnread={fetchUnreadCount} 
         />
       </div>
     </nav>

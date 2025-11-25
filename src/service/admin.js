@@ -1,10 +1,11 @@
 import { API_BASE_URL, DELETE_GUIDANCESTAFF_ACCCOUNT, DELETE_STUDENT_ACCCOUNT, GET_ADMIN_PROFILE_BY_USERID, GET_ALL_ACCOUNTS_URL, GET_ALL_STUDENT_URL, GET_GUIDANCESTAFF_ACCOUNTS, GET_STUDENT_ACCOUNTS, REGISTER_ACCOUNT, UPDATE_GUIDANCE_STAFF_ACCOUNT, UPDATE_STUDENT_ACCCOUNT } from "../../constants/api";
 
 
-const JWT_TOKEN = localStorage.getItem("jwtToken");
 
 export async function getAllAccounts() {
   try {
+      const JWT_TOKEN = localStorage.getItem("jwtToken");
+
     if(!JWT_TOKEN){return error;}
     const response = await fetch(GET_ALL_ACCOUNTS_URL, {
       method: "GET",
@@ -28,6 +29,7 @@ export async function getAllAccounts() {
 
 export async function getAllStudents(){
     try {
+      const JWT_TOKEN = localStorage.getItem("jwtToken");
       if(!JWT_TOKEN){return error;}
 
       const response = await fetch(`${GET_ALL_STUDENT_URL}`, {
@@ -50,6 +52,7 @@ export async function getAllStudents(){
 
 export async function register(dataToSubmit){
   try {
+     const JWT_TOKEN = localStorage.getItem("jwtToken");
     if(!JWT_TOKEN){return error;}
 
     const response = await fetch(`${REGISTER_ACCOUNT}`,{
@@ -72,10 +75,11 @@ export async function register(dataToSubmit){
 }
 
 export async function getAdminProfile (userId) {
+      const JWT_TOKEN = localStorage.getItem("jwtToken");
 
-if(!JWT_TOKEN) {
-  console.error("Jwt Token Not Found");
-}
+  if(!JWT_TOKEN) {
+    console.error("Jwt Token Not Found");
+  }
 
   try {
     const response = await fetch (GET_ADMIN_PROFILE_BY_USERID(userId), {
@@ -95,6 +99,7 @@ if(!JWT_TOKEN) {
 
 export async function getGuidanceStaffAccounts() {
   try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
     if(!JWT_TOKEN){return error;}
     const response = await fetch(GET_GUIDANCESTAFF_ACCOUNTS, {
       method: "GET",
@@ -116,6 +121,7 @@ export async function getGuidanceStaffAccounts() {
 
 export async function getStudentAccounts() {
   try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
     if(!JWT_TOKEN){return error;}
     const response = await fetch(GET_STUDENT_ACCOUNTS, {
       method: "GET",
@@ -136,6 +142,7 @@ export async function getStudentAccounts() {
 
 export async function deleteStudentAccount(studentNumber){
   try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
     if(!JWT_TOKEN){return error;}
     const response = await fetch(DELETE_STUDENT_ACCCOUNT(studentNumber), {
       method: "PATCH",
@@ -157,6 +164,7 @@ export async function deleteStudentAccount(studentNumber){
 
 export async function deleteGuidanceStaffAccount(employeeNumber){
   try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
     if(!JWT_TOKEN){return error;}
     const response = await fetch(DELETE_GUIDANCESTAFF_ACCCOUNT(employeeNumber), {
       method: "PATCH",
@@ -178,6 +186,7 @@ export async function deleteGuidanceStaffAccount(employeeNumber){
 }
 export async function UpdateStudentCredentials(studentNumber, newPassword, isLocked) {
   try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
      if(!JWT_TOKEN){return error;}
     const response = await fetch(UPDATE_STUDENT_ACCCOUNT, {
       method: "PUT",
@@ -205,6 +214,9 @@ export async function UpdateStudentCredentials(studentNumber, newPassword, isLoc
 }
   export async function UpdateGuidanceStaffCredentials(employeeNumber,email,isLocked){
     try {
+
+       const JWT_TOKEN = localStorage.getItem("jwtToken");
+       if(!JWT_TOKEN){return error;}
       const response = await fetch(UPDATE_GUIDANCE_STAFF_ACCOUNT, {
         method : "PUT",
         headers : {
