@@ -15,8 +15,12 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
   const [isDisabled, setIsDisabled] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const audioRef = useRef(new Audio("/bell/notification-bell.mp3"));
-  const userId = localStorage.getItem("userId");
-  const {showSuccess,showError} = usePopUp();
+  
+  const userIdRef = useRef(localStorage.getItem("userId"));
+  const userId = userIdRef.current;
+  
+  const {showSuccess, showError} = usePopUp();
+  
   const guidanceStaffAppointmentResponse = async (appointmentId, action) => {
     const JWT_TOKEN = localStorage.getItem("jwtToken"); 
     
@@ -81,36 +85,36 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
   };
 
   const loadNotifications = useCallback(async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    const JWT_TOKEN = localStorage.getItem("jwtToken");
-    
-    const response = await fetch(`${API_BASE_URL}/notification/${userId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${JWT_TOKEN}`,
-      },
-    });
+      const JWT_TOKEN = localStorage.getItem("jwtToken");
+      
+      const response = await fetch(`${API_BASE_URL}/notification/${userIdRef.current}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${JWT_TOKEN}`,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setNotifications(data);
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+      setError("Failed to load notifications. Please try again.");
+      setNotifications([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    const data = await response.json();
-    
-    data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    setNotifications(data);
-  } catch (err) {
-    console.error("Error loading notifications:", err);
-    setError("Failed to load notifications. Please try again.");
-    setNotifications([]);
-  } finally {
-    setIsLoading(false);
-  }
-}, [userId]);
+  }, []); 
 
   const markAsRead = async () => {
     if (isMarkingRead) return;
@@ -138,19 +142,29 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
     setSelectedNotification(notification);
   };
 
+  const fetchUnreadRef = useRef(fetchUnread);
+  
   useEffect(() => {
-    if (!isOpen) return;
+    fetchUnreadRef.current = fetchUnread;
+  }, [fetchUnread]);
 
+  useEffect(() => {
+
+    console.log("Setting up notification listener..."); 
     loadNotifications();
-
+    
     const unsubscribe = listenForForegroundMessages(() => {
+      console.log(" Foreground message received!"); 
       audioRef.current.play().catch((err) => console.warn("Audio play failed:", err));
       loadNotifications();
-      fetchUnread();
+      fetchUnreadRef.current(); 
     });
+    
 
-    return () => unsubscribe();
-  }, [isOpen, loadNotifications]);
+    return () => {
+      unsubscribe();
+    };
+  }, [isOpen, loadNotifications]); 
 
   if (!isOpen) return null;
 
