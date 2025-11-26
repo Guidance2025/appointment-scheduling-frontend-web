@@ -17,8 +17,9 @@ const Sidebar = ({ onNavigate, currentPage }) => {
     { name: 'Dashboard', icon: LayoutGrid, component: 'Dashboard' },
     { name: 'Calendar', icon: CalendarDays, component: 'Calendar' },
     { name: 'Appointments', icon: CalendarClock, component: 'Appointments' },
-    { name: 'Student Records', icon: UserSquare2, component: 'StudentRecords' },
-    { name: 'Content Hub', icon: FolderOpen, component: 'ContentHub' },
+    { name: 'Exit Interview', icon: FolderOpen, component: 'ExitInterview' },
+    { name: 'Mood Management', icon: UserSquare2, component: 'MoodTrend' },
+    //{ name: 'Self-Assessment', icon: FolderOpen, component: 'SelfAssessment' },
   ];
 
   const handleItemClick = (item) => {
