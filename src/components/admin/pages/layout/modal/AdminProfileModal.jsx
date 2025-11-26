@@ -65,17 +65,9 @@ const AdminProfileModal = ({isOpen}) => {
                     <span className="field-label">Email Address</span>
                     <span className="field-value">{profile?.email || "Not provided"}</span>
                   </div>
-                {/* <div className="profile-field">
-                  <span className="field-label">Contact Number</span>
-                  <span className="field-value"></span>
-                </div> */}
               </div>
 
               <div className="profile-actions">
-                {/* <button className="edit-profile">
-                {/* EDIT PROFILE ICON */}
-                  {/* Edit Profile
-                </button> */} 
                 <button className="logout" onClick={handleLogout}>
                   Log Out
                 </button>

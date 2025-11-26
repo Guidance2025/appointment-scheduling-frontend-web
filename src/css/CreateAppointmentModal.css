@@ -21,6 +21,7 @@
   }
 }
 
+
 .create-modal-content {
   background: white;
   border-radius: 12px;
@@ -81,7 +82,22 @@
   transform: scale(1.1);
 }
 
+.time-slot-disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    background-color: #f0f0f0 !important;
+    text-decoration: line-through;
+    pointer-events: none;
+}
 
+.create-error-messages {
+    background-color: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
 
 .create-error-messages {
   background-color: #fee;

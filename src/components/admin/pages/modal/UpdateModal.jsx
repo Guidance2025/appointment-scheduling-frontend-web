@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../../../../css/admin/UpdateModal.css";
 import { UpdateGuidanceStaffCredentials, UpdateStudentCredentials } from "../../../../service/admin";
+import { usePopUp } from "../../../../helper/message/pop/up/provider/PopUpModalProvider";
 
 const UpdateModal = ({ 
     isOpen, 
@@ -18,7 +19,8 @@ const UpdateModal = ({
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [isLockedStaff, setIsLockedStaff] = useState(false);
-  
+    const {showSuccess,showError} = usePopUp();
+    
     useEffect(() => {
         if (isOpen) {
             if (selectedUserType === "studentNumber") {
@@ -36,10 +38,13 @@ const UpdateModal = ({
 
             if (selectedUserType === "studentNumber") {
                 await UpdateStudentCredentials(studentNumber, newPassword, isLocked);
-                alert("Student account updated successfully.");
+                     showSuccess("Student account updated successfully!", "Changes saved successfully.", 3000);
+                  onClose();
+
             } else {
                 await UpdateGuidanceStaffCredentials(employeeNumber, email, isLockedStaff);
-                alert("Guidance staff updated successfully.");
+               showSuccess("Guidance staff account updated successfully!", "Changes saved successfully.", 3000);
+                onClose();
             }
 
             setIsLoading(false);
@@ -51,9 +56,12 @@ const UpdateModal = ({
 
         } catch (error) {
             console.error("Update Account Error:", error);
-            alert("Failed to update account. Please try again.");
+            showError("Failed to update account."," Something went wrong",3000);
             setIsLoading(false);
         }
+
+         if (onUpdateSuccess) onUpdateSuccess();
+                onClose(); 
     };
 
     const handleClose = () => {
@@ -72,9 +80,6 @@ const UpdateModal = ({
                 </button>
 
                 <div className="update-modal-body">
-                    <div className="update-user-id">
-                        {selectedUserType === "studentNumber" ? studentNumber : employeeNumber}
-                    </div>
 
                     <p className="update-warning-text">This action cannot be undone</p>
 

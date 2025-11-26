@@ -20,6 +20,7 @@ function Calendar() {
   const [showSidePanel, setShowSidePanel] = useState(false);
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [filteredAppointments, setFilteredAppointments] = useState([]);
 
   const JWT_TOKEN = localStorage.getItem('jwtToken');
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -35,6 +36,18 @@ function Calendar() {
   const handleDateClick = (day) => {
     const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     setSelectedDate(clickedDate);
+    
+    const appointmentsForDay = appointments.filter((appointment) => {
+      const appointmentDate = new Date(appointment.scheduledDate);
+      return (
+        appointmentDate.getDate() === day &&
+        appointmentDate.getMonth() === currentDate.getMonth() &&
+        appointmentDate.getFullYear() === currentDate.getFullYear()
+      );
+    });
+    
+    setFilteredAppointments(appointmentsForDay);
+    setShowSidePanel(true); 
   };
 
   useEffect(() => {
@@ -78,6 +91,12 @@ function Calendar() {
     setShowSidePanel(false);
   };
 
+  const handleViewAllAppointments = () => {
+    setFilteredAppointments(appointmentsThisMonth);
+    setSelectedDate(null); 
+    setShowSidePanel(true);
+  };
+
   return (
     <div className="page-container">
       <div className="calendar-container">
@@ -93,15 +112,16 @@ function Calendar() {
           <AppointmentSummary
             totalCount={appointmentsThisMonth.length}
             todayCount={appointmentsToday.length}
-            onViewAll={() => setShowSidePanel(true)}
+            onViewAll={handleViewAllAppointments} 
           />
 
           <AppointmentSidePanel
             isOpen={showSidePanel}
             onClose={() => setShowSidePanel(false)}
-            appointments={appointmentsThisMonth}
+            appointments={filteredAppointments} 
             isLoading={isLoading}
             currentDate={currentDate}
+            selectedDate={selectedDate} 
             onAppointmentClick={handleAppointmentClick}
           />
 

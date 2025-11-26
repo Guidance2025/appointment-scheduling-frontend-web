@@ -24,7 +24,7 @@ function Accounts() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const fetchAccounts = async () => {
+  const fetchGuidanceAccounts = async () => {
     try {
       setLoading(true);
       const data = await getGuidanceStaffAccounts();
@@ -50,11 +50,14 @@ function Accounts() {
     }
   };
 
+  const refreshAccounts = () => {
+  fetchGuidanceAccounts();
+  fetchStudentAccounts();
+};
 
 
   useEffect(() => {
-    fetchAccounts();
-    fetchStudentAccounts();
+   refreshAccounts();
   }, []);
 
   const currentData = activeTab === "guidance" ? accounts : studentAccounts;
@@ -369,8 +372,9 @@ function Accounts() {
         <CreateAccountModal 
           isOpen={isModalOpen} 
           onClose={() => setIsModalOpen(false)}
+           activeTab={activeTab} 
           onAccountCreated={() => {
-            fetchAccounts();
+            fetchGuidanceAccounts();
             fetchStudentAccounts();
           }}
         />
@@ -382,7 +386,7 @@ function Accounts() {
             employeeNumber={isSelectedEmployee}
             onClose={() => setIsActionModalIsOpen(false)}
             onDeleteSuccess={() => {
-                fetchAccounts();
+                fetchGuidanceAccounts();
                 fetchStudentAccounts();
             }}
            selectedUserData={selectedUserData}

@@ -54,12 +54,11 @@
 }
 
 .appointment-row:hover {
-  background-color: #f0f7ff !important;
-  box-shadow: inset 0 0 0 1px #2196f3;
+  
+
 }
 
 .appointment-row:hover td {
-  font-weight: 500;
 }
 
 .appointment-row:last-child td {
