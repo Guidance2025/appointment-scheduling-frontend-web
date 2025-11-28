@@ -2,218 +2,146 @@ import React, { useEffect, useState } from "react";
 import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
-import { POSTS_URL, QUOTE_OF_THE_DAY_URL, CATEGORIES_URL, DELETE_POST_URL } from "../../api/api";
+import {POSTS_URL,QUOTE_OF_THE_DAY_URL,CATEGORIES_URL, DELETE_POST_URL,} from "../../api/api";
 
 const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [newPost, setNewPost] = useState({
     category_name: "",
     category_id: "",
     post_content: "",
-    section_id: ""
+    section_id: "",
+    section_code: "",
   });
-  const [categories, setCategories] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // case/space-insensitive category check
-  const isQuoteCategory = (name) =>
-    (name || "").toString().trim().toLowerCase() === "quote";
+  const authHeaders = () => {
+    const token = localStorage.getItem("jwtToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
 
-  // Reload helpers
-  const reloadPosts = async (headers) => {
+  const isQuoteCategory = (name) => (name || "").trim().toLowerCase() === "quote";
+
+  const uniqueById = (arr) => {
+    const seen = new Set();
+    return (arr || []).filter((item) => {
+      const id = item?.post_id ?? item?.postId;
+      if (id == null || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  };
+
+  const loadPosts = async (headers) => {
     const res = await fetch(`${POSTS_URL}?limit=20`, { headers });
-    if (!res.ok) throw new Error(`Reload posts failed ${res.status}`);
+    if (!res.ok) throw new Error(`Posts ${res.status}`);
     const data = await res.json();
     const normalized = (data || []).map(normalizePost);
     const postsOnly = normalized.filter((p) => !isQuoteCategory(p.category_name));
-    setPosts(postsOnly);
+    setPosts(uniqueById(postsOnly));
   };
 
-  const reloadQuote = async (headers) => {
+  const loadQuote = async (headers) => {
     const res = await fetch(QUOTE_OF_THE_DAY_URL, { headers });
-    if (!res.ok) return;
+    if (!res.ok) return setQuoteOfTheDay(null);
     const q = await res.json();
-    const quote = q && Object.keys(q).length
-      ? {
-          post_content: q.POST_CONTENT ?? q.post_content,
-          posted_date:  q.POSTED_DATE  ?? q.posted_date,
-          section_name: q.SECTION_NAME ?? q.section_name,
-          organization: q.ORGANIZATION ?? q.organization
-        }
-      : null;
-    setQuoteOfTheDay(quote);
+    setQuoteOfTheDay(
+      q && Object.keys(q).length
+        ? {
+            post_content: q.POST_CONTENT ?? q.post_content,
+            posted_date: q.POSTED_DATE ?? q.posted_date,
+            section_name: q.SECTION_NAME ?? q.section_name,
+            organization: q.ORGANIZATION ?? q.organization,
+          }
+        : null
+    );
+  };
+
+  const loadCategories = async (headers) => {
+    const res = await fetch(CATEGORIES_URL, { headers });
+    if (!res.ok) return setCategories([]);
+    const data = await res.json();
+    setCategories((data || []).map(normalizeCategory));
   };
 
   useEffect(() => {
-  const loadData = async () => {
-    try {
-      const [postsRes, quoteRes, catsRes] = await Promise.all([
-        fetch(`${POSTS_URL}?limit=20`),
-        fetch(QUOTE_OF_THE_DAY_URL),
-        fetch(CATEGORIES_URL),
-      ]);
-
-      const postsDataRaw = postsRes.ok ? await postsRes.json() : [];
-      const quoteDataRaw = quoteRes.ok ? await quoteRes.json() : {};
-      const catsDataRaw  = catsRes.ok  ? await catsRes.json()  : [];
-
-      // Normalize and split
-      const normalized = (postsDataRaw || []).map(normalizePost);
-      const postsOnly  = normalized.filter((p) => !isQuoteCategory(p.category_name));
-      setPosts(postsOnly);
-
-      // Build a single quote object then set it ONCE
-      let quote = null;
-
-      if (quoteDataRaw && Object.keys(quoteDataRaw).length) {
-        // from backend endpoint
-        quote = {
-          post_content: quoteDataRaw.POST_CONTENT ?? quoteDataRaw.post_content,
-          posted_date:  quoteDataRaw.POSTED_DATE  ?? quoteDataRaw.posted_date,
-          section_name: quoteDataRaw.SECTION_NAME ?? quoteDataRaw.section_name,
-          organization: quoteDataRaw.ORGANIZATION ?? quoteDataRaw.organization
-        };
-      } else {
-        // fallback: latest Quote from the merged list (if any)
-        const quotesOnly = normalized.filter((p) => isQuoteCategory(p.category_name));
-        if (quotesOnly.length) {
-          const latestQuote = [...quotesOnly].sort((a, b) => {
-            const da = new Date(a.posted_date || 0).getTime();
-            const db = new Date(b.posted_date || 0).getTime();
-            return db - da;
-          })[0];
-          if (latestQuote) {
-            quote = {
-              post_content: latestQuote.post_content,
-              posted_date:  latestQuote.posted_date,
-              section_name: latestQuote.section_name,
-              organization: latestQuote.organization
-            };
-          }
-        }
+    const init = async () => {
+      setLoading(true);
+      try {
+        const headers = { "Content-Type": "application/json", ...authHeaders() };
+        await Promise.all([loadPosts(headers), loadQuote(headers), loadCategories(headers)]);
+        setSelectedIds(new Set());
+      } catch (e) {
+        console.error("Init failed:", e);
+      } finally {
+        setLoading(false);
       }
-
-      setQuoteOfTheDay(quote);
-
-      setCategories((catsDataRaw || []).map(normalizeCategory));
-      setSelectedIds(new Set());
-    } catch (e) {
-      console.error("Failed to load dashboard:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadData();
-}, []);
+    };
+    init();
+  }, []);
 
   const handleCreate = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (creating) return; // guard against double-click/press
 
-  const catName = (newPost.category_name || "").trim();
-  const content = (newPost.post_content || "").trim();
-  if (!catName || !content) {
-    alert("Category and content are required.");
-    return;
-  }
-
-  setCreating(true);
-  try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...(localStorage.getItem("jwtToken")
-        ? { Authorization: `Bearer ${localStorage.getItem("jwtToken")}` }
-        : {})
-    };
-
-    const payload = {
-      categoryName: catName,
-      sectionId: newPost.section_id ? Number(newPost.section_id) : null,
-      postContent: content
-    };
-
-    const createRes = await fetch(POSTS_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload)
-    });
-
-    if (!createRes.ok) {
-      const msg = await createRes.text().catch(() => "");
-      console.error("Create POST failed:", createRes.status, createRes.statusText, msg);
-      alert(`Failed to create post: ${createRes.status} ${createRes.statusText}\n${msg}`);
+    const categoryName = (newPost.category_name || "").trim();
+    const postContent = (newPost.post_content || "").trim();
+    if (!categoryName || !postContent) {
+      alert("Category and content are required.");
       return;
     }
 
-    // Immediate UX
-    if (isQuoteCategory(catName)) {
-      setQuoteOfTheDay({
-        post_content: content,
-        posted_date: new Date().toISOString(),
-        section_name: null,
-        organization: null
+    setCreating(true);
+    try {
+      const headers = { "Content-Type": "application/json", ...authHeaders() };
+      const payload = {
+        categoryName,
+        sectionId: newPost.section_id ? Number(newPost.section_id) : null,
+        postContent,
+      };
+
+      const res = await fetch(POSTS_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
       });
-    } else {
-      setPosts((prev) => [
-        {
-          post_id: Date.now(),
-          post_content: content,
-          posted_date: new Date().toISOString(),
-          category_name: catName,
-          section_name: null,
-          organization: null,
-          posted_by: "You"
-        },
-        ...prev
-      ]);
-    }
 
-    // Refresh both containers from backend
-    const [postsRes, quoteRes] = await Promise.all([
-      fetch(`${POSTS_URL}?limit=20`, { headers }),
-      fetch(QUOTE_OF_THE_DAY_URL,   { headers })
-    ]);
-
-    if (postsRes.ok) {
-      const raw = await postsRes.json();
-      const normalized = (raw || []).map(normalizePost);
-      const postsOnly  = normalized.filter((p) => !isQuoteCategory(p.category_name));
-      setPosts(postsOnly);
-    }
-    if (quoteRes.ok) {
-      const q = await quoteRes.json();
-      if (q && Object.keys(q).length) {
-        setQuoteOfTheDay({
-          post_content: q.POST_CONTENT ?? q.post_content,
-          posted_date:  q.POSTED_DATE  ?? q.posted_date,
-          section_name: q.SECTION_NAME ?? q.section_name,
-          organization: q.ORGANIZATION ?? q.organization
-        });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        console.error("Create failed:", res.status, res.statusText, msg);
+        alert(`Failed to create post: ${res.status} ${res.statusText}\n${msg}`);
+        return;
       }
-    }
 
-    // Full reset
-    setNewPost({ category_name: "", category_id: "", post_content: "", section_id: "" });
-    setIsModalOpen(false);
-  } catch (err) {
-    console.error("Create post failed:", err);
-    alert(`Failed to create post:\n${err.message}`);
-  } finally {
-    setCreating(false);
-  }
-};
+      // Reload from backend (source of truth)
+      await Promise.all([loadPosts(headers), loadQuote(headers)]);
+
+      setNewPost({
+        category_name: "",
+        category_id: "",
+        post_content: "",
+        section_id: "",
+        section_code: "",
+      });
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error("Create error:", err);
+      alert(`Failed to create post:\n${err.message}`);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const toggleSelect = (post_id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(post_id)) next.delete(post_id);
-      else next.add(post_id);
+      next.has(post_id) ? next.delete(post_id) : next.add(post_id);
       return next;
     });
   };
@@ -221,84 +149,68 @@ const Dashboard = () => {
   const handleBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
-    const confirmed = window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`);
-    if (!confirmed) return;
+    if (!window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`)) return;
 
     setBulkDeleting(true);
+    const headers = { ...authHeaders() };
+    const failed = [];
+
     try {
-      const results = await Promise.all(
-        ids.map(async (id) => {
-          const res = await fetch(DELETE_POST_URL(id), { method: "DELETE" });
-          return { id, ok: res.ok };
-        })
-      );
-
-      const deletedIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
-      const failedCount = results.length - deletedIds.size;
-
-      setPosts((prev) => prev.filter((p) => !deletedIds.has(p.post_id)));
-
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        deletedIds.forEach((id) => next.delete(id));
-        return next;
-      });
-
-      if (failedCount > 0) {
-        alert(`Some posts could not be deleted (${failedCount}).`);
+      for (const id of ids) {
+        const url = DELETE_POST_URL(id);
+        try {
+          const res = await fetch(url, { method: "DELETE", headers });
+          if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            console.error(`DELETE ${url}: ${res.status} ${res.statusText} ${text}`);
+            failed.push(id);
+          } else {
+            setPosts((prev) => prev.filter((p) => p.post_id !== id));
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }
+        } catch (err) {
+          console.error(`DELETE ${url} error:`, err);
+          failed.push(id);
+        }
       }
-    } catch (e) {
-      console.error("Bulk delete failed:", e);
-      alert("Failed to delete selected posts");
-    } finally {
-      setBulkDeleting(false);
-    }
-  };
 
-  const handleDelete = async (post_id) => {
-    if (!window.confirm("Delete this post?")) return;
+      if (failed.length > 0) {
+        alert(`Some posts could not be deleted (${failed.length}).`);
+      }
+      } finally {
+    setBulkDeleting(false);
     try {
-      const res = await fetch(DELETE_POST_URL(post_id), { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed");
-      setPosts((prev) => prev.filter((p) => p.post_id !== post_id));
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(post_id);
-        return next;
-      });
+      const headers = { ...authHeaders() };
+      await loadPosts(headers); 
     } catch (e) {
-      console.error("Delete failed:", e);
-      alert("Failed to delete post");
+      console.error("Reload after delete failed:", e);
     }
+  }
   };
 
   return (
     <div className="page-container">
       <div className="dashboard-header">
         <h2 className="page-title"></h2>
-
         <div className="header-actions" style={{ display: "flex", gap: "8px" }}>
           <button
             className="filter-button secondary"
             onClick={handleBulkDelete}
             disabled={selectedIds.size === 0 || bulkDeleting}
-            aria-label="Delete selected posts"
-            title="Delete selected posts"
           >
-            {bulkDeleting
-              ? "Deleting..."
-              : selectedIds.size > 0
-              ? `Delete (${selectedIds.size})`
-              : "Delete"}
+            {bulkDeleting ? "Deleting..." : selectedIds.size > 0 ? `Delete (${selectedIds.size})` : "Delete"}
           </button>
-
           <button className="filter-button primary" onClick={() => setIsModalOpen(true)}>
             + Create
           </button>
         </div>
       </div>
 
-      {/* Quote Card */}
+      {/* Quote of the Day */}
       <div className="post-card highlight-card">
         <div className="post-header">
           <span className="post-author">Quote of the Day</span>
@@ -306,8 +218,6 @@ const Dashboard = () => {
             <span className="post-date">{new Date(quoteOfTheDay.posted_date).toLocaleString()}</span>
           )}
         </div>
-
-        {/* NEW: show section/organization meta for quote */}
         {(quoteOfTheDay?.section_name || quoteOfTheDay?.organization) && (
           <div className="quote-meta">
             {quoteOfTheDay?.organization && <span>{quoteOfTheDay.organization}</span>}
@@ -315,13 +225,12 @@ const Dashboard = () => {
             {quoteOfTheDay?.section_name && <span>{quoteOfTheDay.section_name}</span>}
           </div>
         )}
-
         <div className="post-content">
           <p className="quote-text">{quoteOfTheDay?.post_content || "No quote set today."}</p>
         </div>
       </div>
 
-      {/* Posts List (non-Quote only) */}
+      {/* Posts */}
       <div className="post-card">
         <div className="post-header">
           <span className="post-author">Posts</span>
@@ -346,7 +255,6 @@ const Dashboard = () => {
                     {p.posted_date ? new Date(p.posted_date).toLocaleString() : ""}
                   </span>
                 </div>
-
                 <div className="feed-content">
                   <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <input

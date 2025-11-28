@@ -54,10 +54,26 @@ const CreatePostModal = ({
                 value={newPost.section_id}
                 onChange={(e) => setNewPost((s) => ({ ...s, section_id: e.target.value }))}
               >
-                <option value="">All Sections</option>
-                <option value="1">ROCS - BSIT-701</option>
-                <option value="2">ELITES - BSIT-701</option>
-                <option value="3">MERX - BSIT-701</option>
+                <option value="">All Sections</option> 
+                <option value="1">ROCS - BSIT</option>
+                <option value="2">ELITES - BSECE</option>
+                <option value="3">MERX - BSBA</option>
+                <option value="3">JPIA - BSA</option>
+              </select>
+            </div> 
+
+            <div className="filter-group">
+              <label className="filter-label">Section Code (optional)</label>
+              <select
+                className="filter-select"
+                value={newPost.section_code || ""}
+                onChange={(e) => setNewPost((s) => ({ ...s, section_code: e.target.value }))}
+              >
+                <option value="">None</option>
+                <option value="101">101</option>
+                <option value="301">301</option>
+                <option value="501">501</option>
+                <option value="701">701</option>
               </select>
             </div>
 
