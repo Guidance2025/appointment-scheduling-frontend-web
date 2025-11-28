@@ -3,8 +3,8 @@ import GuidanceLogin from './components/pages/GuidanceLogin';
 import MainPage from './components/pages/MainPage';
 import AdminDashboard from './components/admin/pages/AdminDashboard';
 import VerificationSuccessPage from './components/pages/modal/login/forget/password/message/VerificationSuccessMessage';
-import { registerFirebaseSW } from './utils/registerSW';
 import { useEffect } from 'react';
+import { requestForToken } from './utils/firebase';
 function ProtectedRoute({ children, allowedRole }) {
   const token = localStorage.getItem("jwtToken");
   const role = localStorage.getItem("role");
@@ -22,15 +22,13 @@ function ProtectedRoute({ children, allowedRole }) {
 
 function App() {
   const handleLoginSuccess = () => {
-    console.log("Login successful");
   };
 
     useEffect(() => {
-    registerFirebaseSW();
+    requestForToken();
   }, []);
 
   const handleLogout = () => {
-    console.log("👋 Logging out");
     localStorage.clear();
     window.location.href = "/login";
   };
