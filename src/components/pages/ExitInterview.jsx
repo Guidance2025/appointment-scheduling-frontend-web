@@ -1,26 +1,52 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
+import OpenExitInterviewModal from "./modal/OpenExitInterviewModal";
+
+const DEFAULT_COURSES = ["ECE", "IT", "BA", "BSA", "HM", "TM", "BIT"];
+const DEFAULT_CLUSTERS = ["CETE", "CBAM"];
+
+const uniq = (arr) => Array.from(new Set(arr));
 
 const ExitInterview = () => {
   const [course, setCourse] = useState("All");
   const [cluster, setCluster] = useState("All");
-  const [courses, setCourses] = useState([]);
-  const [clusters, setClusters] = useState([]);
+
+  const [courses, setCourses] = useState(DEFAULT_COURSES);
+  const [clusters, setClusters] = useState(DEFAULT_CLUSTERS);
+
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+
   const loadFilters = async () => {
-    const [coursesRes, clustersRes] = await Promise.all([
-      fetch("/api/sections/courses"),
-      fetch("/api/sections/clusters"),
-    ]);
-    const [coursesData, clustersData] = await Promise.all([
-      coursesRes.json(),
-      clustersRes.json(),
-    ]);
-    setCourses(coursesData);
-    setClusters(clustersData);
+    try {
+      const [coursesRes, clustersRes] = await Promise.all([
+        fetch("/api/sections/courses"),
+        fetch("/api/sections/clusters"),
+      ]);
+      const [coursesData, clustersData] = await Promise.all([
+        coursesRes.ok ? coursesRes.json() : [],
+        clustersRes.ok ? clustersRes.json() : [],
+      ]);
+
+      // Normalize fetched data to arrays of strings and merge with defaults
+      const fetchedCourses = (Array.isArray(coursesData) ? coursesData : [])
+        .map((c) => (typeof c === "string" ? c : c?.course))
+        .filter(Boolean);
+      const fetchedClusters = (Array.isArray(clustersData) ? clustersData : [])
+        .map((cl) => (typeof cl === "string" ? cl : cl?.cluster_name))
+        .filter(Boolean);
+
+      setCourses(uniq([...DEFAULT_COURSES, ...fetchedCourses]).sort());
+      setClusters(uniq([...DEFAULT_CLUSTERS, ...fetchedClusters]).sort());
+    } catch (e) {
+      console.error("Failed loading filters:", e);
+      setCourses(DEFAULT_COURSES);
+      setClusters(DEFAULT_CLUSTERS);
+    }
   };
 
   const loadStudents = async () => {
@@ -30,9 +56,10 @@ const ExitInterview = () => {
         `/api/exit-interview/students?course=${encodeURIComponent(course)}&cluster=${encodeURIComponent(cluster)}`
       );
       const data = await res.json();
-      setStudents(data || []);
+      setStudents(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error("Failed loading students:", e);
+      setStudents([]);
     } finally {
       setLoading(false);
     }
@@ -46,30 +73,25 @@ const ExitInterview = () => {
     loadStudents();
   }, [course, cluster]);
 
-  const applyAllFilters = () => {
+  const filteredResults = useMemo(() => {
     let filtered = [...students];
 
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    const searchLower = searchTerm.trim().toLowerCase();
+    if (searchLower) {
       filtered = filtered.filter((s) => {
-        const name = s.name?.toLowerCase() || "";
-        const number = s.student_number?.toString().toLowerCase() || "";
+        const name = (s.name || "").toLowerCase();
+        const number = (s.student_number || "").toLowerCase();
         return name.includes(searchLower) || number.includes(searchLower);
       });
     }
 
-    if (course !== "All") {
-      filtered = filtered.filter((s) => s.course === course);
-    }
-    if (cluster !== "All") {
-      filtered = filtered.filter((s) => s.cluster_name === cluster);
-    }
+    if (course !== "All") filtered = filtered.filter((s) => s.course === course);
+    if (cluster !== "All") filtered = filtered.filter((s) => s.cluster_name === cluster);
 
     return filtered;
-  };
+  }, [students, searchTerm, course, cluster]);
 
-  const filteredResults = applyAllFilters();
-  const hasActiveFilters = searchTerm || course !== "All" || cluster !== "All";
+  const hasActiveFilters = Boolean(searchTerm || course !== "All" || cluster !== "All");
 
   const handleClearFilters = () => {
     setSearchTerm("");
@@ -77,11 +99,15 @@ const ExitInterview = () => {
     setCluster("All");
   };
 
+  const openDetail = (studentId) => {
+    setSelectedStudentId(studentId);
+    setDetailOpen(true);
+  };
+
   return (
     <div className="page-container">
       <div className="advanced-filter-bar">
         <div className="filter-row">
-          {/* Search */}
           <div className="filter-group search-group">
             <label className="filter-label">
               <Search size={12} style={{ display: "inline", marginRight: "4px" }} />
@@ -107,33 +133,30 @@ const ExitInterview = () => {
             </div>
           </div>
 
-          {/* Course */}
           <div className="filter-group type-group">
             <label className="filter-label">Course</label>
             <select className="filter-select" value={course} onChange={(e) => setCourse(e.target.value)}>
               <option value="All">All courses</option>
               {courses.map((c) => (
-                <option key={c.course} value={c.course}>
-                  {c.course}
+                <option key={c} value={c}>
+                  {c}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Cluster */}
           <div className="filter-group status-group">
             <label className="filter-label">Cluster</label>
             <select className="filter-select" value={cluster} onChange={(e) => setCluster(e.target.value)}>
               <option value="All">All clusters</option>
               {clusters.map((cl) => (
-                <option key={cl.cluster_name} value={cl.cluster_name}>
-                  {cl.cluster_name}
+                <option key={cl} value={cl}>
+                  {cl}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Actions */}
           <div className="filter-actions">
             {hasActiveFilters && (
               <button className="filter-button secondary" onClick={handleClearFilters}>
@@ -181,7 +204,12 @@ const ExitInterview = () => {
               </thead>
               <tbody>
                 {filteredResults.map((s) => (
-                  <tr key={s.student_id} className="student-row">
+                  <tr
+                    key={s.student_id}
+                    className="student-row"
+                    onDoubleClick={() => openDetail(s.student_id)}
+                    style={{ cursor: "zoom-in" }}
+                  >
                     <td className="student-cell">{s.name}</td>
                     <td>{s.student_number}</td>
                     <td>{s.course}</td>
@@ -192,9 +220,9 @@ const ExitInterview = () => {
                       </span>
                     </td>
                     <td>
-                      <a className="link-button" href={`/exit-interview/${s.student_id}`}>
+                      <button className="link-button" onClick={() => openDetail(s.student_id)}>
                         View
-                      </a>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -203,6 +231,12 @@ const ExitInterview = () => {
           </div>
         )}
       </div>
+
+      <OpenExitInterviewModal
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        studentId={selectedStudentId}
+      />
     </div>
   );
 };

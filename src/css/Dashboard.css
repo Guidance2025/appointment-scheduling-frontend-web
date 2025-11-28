@@ -193,10 +193,10 @@
 }
 
 .filter-button {
-  display: inline-flex;       /* enables centering */
-  align-items: center;        /* vertical center */
-  justify-content: center;    /* horizontal center */
-  text-align: center;         /* multi-line center */
+  display: inline-flex;      
+  align-items: center;        
+  justify-content: center;    
+  text-align: center;         
   gap: 6px;
 
   height: 40px;

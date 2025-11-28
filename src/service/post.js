@@ -1,15 +1,14 @@
-// src/service/post.js
 import {
   POSTS_URL,
   QUOTE_OF_THE_DAY_URL,
   DELETE_POST_URL
-} from "../api"; // if your api index is at src/api/index.js
+} from "../api"; 
 
-// Optional: add Authorization if your backend is secured with JWT
-const authHeaders = () => {
-  const JWT_TOKEN = localStorage.getItem("jwtToken");
-  return JWT_TOKEN ? { Authorization: `Bearer ${JWT_TOKEN}` } : {};
-};
+// // Optional: add Authorization if your backend is secured with JWT
+// const authHeaders = () => {
+//   const JWT_TOKEN = localStorage.getItem("jwtToken");
+//   return JWT_TOKEN ? { Authorization: `Bearer ${JWT_TOKEN}` } : {};
+// };
 
 // Fetch helper: throws detailed error with status + text
 const toJson = async (res) => {
@@ -57,7 +56,7 @@ export const createPost = async ({ categoryName, sectionId, postContent }) => {
       ...authHeaders()
     },
     body: JSON.stringify({
-      categoryName: categoryName?.trim(), // text only; backend inserts category
+      categoryName: categoryName?.trim(),
       sectionId: sectionId ?? null,
       postContent: postContent?.trim()
     })
