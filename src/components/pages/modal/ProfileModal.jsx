@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../../../css/ProfileModal.css";
 import "../../../css/Navbar.css";
 import { getProfileByEmployeeNumber } from "../../../service/counselor";
+import { DoorClosedIcon } from "lucide-react";
 
 const ProfileModal = ({ isOpen, onClose,}) => {
   const [profile, setProfile] = useState(null);
@@ -76,12 +77,8 @@ const ProfileModal = ({ isOpen, onClose,}) => {
               </div>
 
               <div className="profile-actions">
-                <button className="edit-profile">
-                {/* EDIT PROFILE ICON */}
-                  Edit Profile
-                </button>
+                
                 <button className="logout" onClick={handleLogout}>
-                 {/* LOGOUT ICON  */}
                   Log Out
                 </button>
               </div>
