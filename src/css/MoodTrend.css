@@ -313,3 +313,21 @@
     font-size: 12px;
   }
 }
+
+.clear-filter-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 14px;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+.clear-filter-icon:hover {
+  color: #1d6d1a;
+}
+.clear-filter-icon.hidden {
+  display: none;
+}
+
