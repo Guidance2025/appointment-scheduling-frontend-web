@@ -21,6 +21,7 @@ function Calendar() {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const JWT_TOKEN = localStorage.getItem('jwtToken');
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -50,6 +51,17 @@ function Calendar() {
     setShowSidePanel(true); 
   };
 
+  // Expose refresh function globally so NotificationModal can call it
+  useEffect(() => {
+    window.refreshCalendar = () => {
+      setRefreshTrigger(prev => prev + 1);
+    };
+    
+    return () => {
+      delete window.refreshCalendar;
+    };
+  }, []);
+
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
@@ -65,7 +77,7 @@ function Calendar() {
       }
     };
     fetchAppointments();
-  }, [JWT_TOKEN, status]);
+  }, [JWT_TOKEN, status, refreshTrigger]);
 
   const appointmentsThisMonth = appointments.filter((appointment) => {
     const appointmentDate = new Date(appointment.scheduledDate);

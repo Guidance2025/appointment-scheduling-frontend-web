@@ -1,10 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react';
 
-// Create Context
 const NotificationContext = createContext();
 
-// Hook to use notifications
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {

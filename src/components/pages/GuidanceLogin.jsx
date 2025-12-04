@@ -56,7 +56,6 @@ function GuidanceLogin({ onLoginSuccess }) {
 
  
   const extractUserRole = (roleData) => {
-    console.log("📋 Raw role data:", roleData, "Type:", typeof roleData);
 
    
     let roles = [];
@@ -71,8 +70,6 @@ function GuidanceLogin({ onLoginSuccess }) {
         roles = [roles];
       }
     }
-
-    console.log("🔍 Processed roles:", roles);
 
     const validRole = roles.find(r => 
       r === ALLOWED_ROLES.ADMIN || r === ALLOWED_ROLES.GUIDANCE

@@ -1,6 +1,4 @@
-/* src/css/CreatePostModal.css */
 
-/* Overlay */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -9,11 +7,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px; /* balanced edge spacing */
+  padding: 24px; 
   backdrop-filter: blur(2px);
 }
 
-/* Card */
+
 .modal-card {
   width: 100%;
   max-width: 560px;
@@ -22,7 +20,7 @@
   border: 1px solid #e2e8f0;
   box-shadow: 0 14px 30px rgba(2, 8, 23, 0.12);
   display: flex;
-  flex-direction: column; /* keep footer pinned while body scrolls */
+  flex-direction: column;
   max-height: 90vh;
   overflow: hidden;
   animation: modal-pop 140ms ease-out;
@@ -33,7 +31,7 @@
   to   { transform: translateY(0)    scale(1);    opacity: 1; }
 }
 
-/* Header */
+
 .modal-header {
   padding: 16px 24px;
   border-bottom: 1px solid #e2e8f0;
@@ -48,20 +46,20 @@
   text-align: center;
 }
 
-/* Body */
+
 .modal-body {
   padding: 16px 24px;
   background: #ffffff;
   flex: 1 1 auto;
-  overflow-y: auto; /* scroll body if it grows */
+  overflow-y: auto; 
 }
 
-/* Form groups */
+
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;         /* label-field gap */
-  margin-bottom: 16px; /* vertical rhythm */
+  gap: 8px;        
+  margin-bottom: 16px;
 }
 .modal-body .filter-group:last-child {
   margin-bottom: 0;
@@ -73,7 +71,6 @@
   color: #374151;
 }
 
-/* Inputs */
 input.filter-input,
 select.filter-select,
 textarea.filter-input {
@@ -119,7 +116,6 @@ textarea.filter-input:focus {
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.32);
 }
 
-/* Disabled */
 input.filter-input:disabled,
 select.filter-select:disabled,
 textarea.filter-input:disabled {
@@ -128,36 +124,33 @@ textarea.filter-input:disabled {
   cursor: not-allowed;
 }
 
-/* Helper text */
 .hint {
   color: #6b7280;
   font-size: 12px;
   line-height: 1.3;
 }
 
-/* Footer: CENTER the buttons (bigger, without changing your colors) */
 .modal-actions {
   display: flex;
-  justify-content: center;   /* center the buttons */
+  justify-content: center;   
   align-items: center;
-  gap: 14px;                 /* even spacing */
+  gap: 14px;                
   padding: 16px 20px 20px;
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
   flex: 0 0 auto;
 }
 
-/* Button base (keeps your existing color classes) */
 .filter-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 48px;      /* larger */
-  padding: 0 22px;   /* more horizontal padding */
+  height: 48px;      
+  padding: 0 22px;   
   border-radius: 12px;
-  font-size: 15px;   /* slightly larger text */
-  font-weight: 700;  /* bolder */
+  font-size: 15px;   
+  font-weight: 700; 
   text-align: center;
   border: 1px solid transparent;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 60ms ease;
@@ -170,7 +163,6 @@ textarea.filter-input:disabled {
   transform: translateY(0.5px);
 }
 
-/* Make primary wider (keeps your colors from .filter-button.primary) */
 .modal-actions .filter-button.primary {
   min-width: 200px;
 }
@@ -179,7 +171,6 @@ textarea.filter-input:disabled {
   min-width: 200px;
 }
 
-/* Mobile */
 @media (max-width: 520px) {
   .modal-overlay { padding: 16px; }
   .modal-header,
