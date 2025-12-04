@@ -88,7 +88,7 @@ const Dashboard = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (creating) return; // guard against double-click/press
+    if (creating) return; 
 
     const categoryName = (newPost.category_name || "").trim();
     const postContent = (newPost.post_content || "").trim();
@@ -119,7 +119,7 @@ const Dashboard = () => {
         return;
       }
 
-      // Reload from backend (source of truth)
+      
       await Promise.all([loadPosts(headers), loadQuote(headers)]);
 
       setNewPost({
@@ -150,7 +150,7 @@ const Dashboard = () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     if (!window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`)) return;
-
+    
     setBulkDeleting(true);
     const headers = { ...authHeaders() };
     const failed = [];

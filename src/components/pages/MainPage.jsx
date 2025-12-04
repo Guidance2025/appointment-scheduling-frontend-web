@@ -8,6 +8,7 @@ import Navbar from './../layout/Navbar';
 import Dashboard from "./Dashboard";
 import MoodTrend from "./MoodTrend";
 import ExitInterview from "./ExitInterview";
+import SelfAssesment from "./SelfAssessment";
 
 function MainPage() {
   const [currentPage, setCurrentPage] = useState("Dashboard");
@@ -28,6 +29,8 @@ function MainPage() {
         return <MoodTrend />;
       case "ExitInterview":
         return <ExitInterview />;
+      case "SelfAssesment":
+        return <SelfAssesment />;
       default:
         return <Dashboard />;
     }

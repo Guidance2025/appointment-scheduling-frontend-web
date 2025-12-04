@@ -1,5 +1,7 @@
 .sidebar {
-  width: 240px; 
+  width: fit-content;
+  min-width: 200px;
+  max-width: 280px;
   height: 100vh;
   background-color: #ffffff;
   border-right: 1px solid #e8e8e8;
@@ -11,7 +13,6 @@
   top: 0;
   z-index: 1000;
   overflow-y: auto;
-
 }
 
 .logout-button {
@@ -42,7 +43,6 @@
   transform: scale(0.98);
 }
 
-
 .logout-text {
   font-weight: 500;
 }
@@ -53,7 +53,7 @@
 }
 
 .sidebar-header {
-  padding: 20px 0;
+  padding: 20px 16px;
   border-bottom: 1px solid #e8e8e8;
   display: flex;
   justify-content: center;
@@ -65,7 +65,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0 16px;
+  white-space: nowrap;
 }
 
 .logo-icon {
@@ -81,10 +81,7 @@
   color: #1a1a1a;
   margin: 0;
   white-space: nowrap;
-  opacity: 1; 
 }
-
-
 
 .sidebar-nav {
   flex: 1;
@@ -97,7 +94,7 @@
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 14px 0;
+  padding: 14px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: #666;
@@ -105,7 +102,7 @@
   border-radius: 12px;
   position: relative;
   justify-content: flex-start;
-  overflow: hidden;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -126,22 +123,19 @@
 
 .nav-icon {
   font-size: 20px;
-  min-width: 48px;
+  min-width: 24px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
+  margin-right: 12px;
 }
 
 .nav-text {
   font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-  opacity: 1; 
-  overflow: hidden;
 }
-
-
 
 .nav-item.clicked {
   transform: scale(0.95);
@@ -160,9 +154,7 @@
   border-top: 2px solid white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
-  opacity: 1; 
 }
-
 
 @keyframes spin {
   0% { transform: translateY(-50%) rotate(0deg); }
@@ -184,7 +176,7 @@
   background-color: #f8f9fa;
   transition: all 0.2s ease;
   cursor: pointer;
-  overflow: hidden;
+  white-space: nowrap;
 }
 
 .user-info:hover {
@@ -208,10 +200,7 @@
 .user-details {
   flex: 1;
   min-width: 0;
-  opacity: 1; 
 }
-
-
 
 .user-name {
   font-size: 13px;
@@ -219,8 +208,6 @@
   color: #1a1a1a;
   margin-bottom: 2px;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .user-status {
@@ -229,6 +216,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 
 .user-status::before {
@@ -267,16 +255,15 @@
   outline-offset: -2px;
 }
 
-
-
 @media (max-width: 768px) {
   .sidebar {
-    width: 220px; 
+    min-width: 180px;
+    max-width: 240px;
   }
   
   .nav-icon {
     font-size: 18px;
-    min-width: 40px;
+    min-width: 20px;
   }
 }
 
