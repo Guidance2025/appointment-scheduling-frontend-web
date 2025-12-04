@@ -8,13 +8,7 @@ const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [newPost, setNewPost] = useState({
-    category_name: "",
-    category_id: "",
-    post_content: "",
-    section_id: "",
-    section_code: "",
-  });
+  const [newPost, setNewPost] = useState({category_name: "",category_id: "",post_content: "",section_id: "",section_code: "",});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
