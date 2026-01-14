@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Search, X } from "lucide-react";
 import "../../css/MoodTrend.css";
+import { MOODS_URL } from "../../../constants/api";
 
 const StudentEntryModal = ({ student, entries, onClose }) => (
   <div className="modal-card">
@@ -45,11 +46,43 @@ const MoodTrend = () => {
     const loadStudents = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/mood-trend/students");
+        const res = await fetch(MOODS_URL);
         const data = await res.json();
-        setStudents(data || []);
+        // Process back-end data: Group moods by student and compute latest mood, etc.
+        const studentMap = {};
+        (data || []).forEach((mood) => {
+          const student = mood.student;
+          if (!student) return;
+          const studentId = student.id;
+          if (!studentMap[studentId]) {
+            studentMap[studentId] = {
+              id: studentId,
+              name: `${student.person?.firstName || ''} ${student.person?.lastName || ''}`.trim(),
+              student_number: student.studentNumber,
+              course: student.section?.course,
+              cluster_name: student.section?.clusterName,
+              latest_mood: mood.mood, // Assume mood is a number (e.g., 1-10)
+              last_entry_date: mood.entryDate,
+              entries: [],
+            };
+          }
+          // Update latest mood if this entry is newer
+          if (new Date(mood.entryDate) > new Date(studentMap[studentId].last_entry_date)) {
+            studentMap[studentId].latest_mood = mood.mood;
+            studentMap[studentId].last_entry_date = mood.entryDate;
+          }
+          studentMap[studentId].entries.push({
+            mood_id: mood.id,
+            mood: mood.mood,
+            entry_date: mood.entryDate,
+            mood_notes: mood.moodNotes,
+          });
+        });
+        const processedStudents = Object.values(studentMap);
+        setStudents(processedStudents);
       } catch (e) {
         console.error("Failed to load students:", e);
+        setStudents([]);
       } finally {
         setLoading(false);
       }
@@ -74,16 +107,11 @@ const MoodTrend = () => {
     return matchesEmotion && matchesSearch;
   });
 
-  const onSelectStudent = async (student) => {
+  const onSelectStudent = (student) => {
     setSelectedStudent(student);
     setShowModal(true);
-    try {
-      const res = await fetch(`/api/mood-trend/${student.id}/entries`);
-      const data = await res.json();
-      setEntries(data || []);
-    } catch (e) {
-      console.error("Failed to load mood entries:", e);
-    }
+    // Entries are already grouped in the student object
+    setEntries(student.entries || []);
   };
 
   const closeModal = () => {
@@ -165,13 +193,13 @@ const MoodTrend = () => {
           <div className="empty-message">
             {hasActiveFilters ? (
               <div>
-                <div className="empty-icon">🔍</div>
+                <div className="empty-icon"></div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">No students match your current filters</p>
               </div>
             ) : (
               <div>
-                <div className="empty-icon">📋</div>
+                <div className="empty-icon"></div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">There are no mood trend records.</p>
               </div>

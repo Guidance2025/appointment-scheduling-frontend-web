@@ -2,25 +2,79 @@ import React, { useEffect, useState } from "react";
 import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
-import {POSTS_URL,QUOTE_OF_THE_DAY_URL,CATEGORIES_URL, DELETE_POST_URL,} from "../../api/api";
+import { POSTS_URL, POST_BY_ID_URL, QUOTE_OF_THE_DAY_URL, LATEST_POSTS_URL,
+  DELETE_POST_URL,
+  UPDATE_POST_URL,
+  CATEGORIES_URL,
+} from "../../../constants/api";
+
+const toJson = async (res) => {
+  if (!res.ok) {const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${res.statusText} ${text}`);
+  }
+  return res.json();
+};
+
+const fetchAllPosts = async () => {
+  const res = await fetch(POSTS_URL);
+  return toJson(res);
+};
+
+const fetchPostById = async (id) => {
+  const res = await fetch(POST_BY_ID_URL(id));
+  return toJson(res);
+};
+
+const createPostService = async (payload) => {
+  const res = await fetch(POSTS_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return toJson(res);
+};
+
+const fetchQuoteOfTheDay = async () => {
+  const res = await fetch(QUOTE_OF_THE_DAY_URL);
+  return toJson(res);
+};
+
+const fetchLatestPosts = async () => {
+  const res = await fetch(LATEST_POSTS_URL);
+  return toJson(res);
+};
+
+const updatePostService = async (id, payload) => {
+  const res = await fetch(UPDATE_POST_URL(id), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return toJson(res);
+};
+
+const deletePostService = async (id) => {
+  const res = await fetch(DELETE_POST_URL(id), { method: "DELETE" });
+  if (!res.ok) throw new Error(`Delete failed ${res.status}`);
+  return true;
+};
 
 const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [newPost, setNewPost] = useState({category_name: "",category_id: "",post_content: "",section_id: "",section_code: "",});
+  const [newPost, setNewPost] = useState({
+    category_name: "",
+    post_content: "",
+    section_id: "",
+    section_code: "",
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [pinnedPosts, setPinnedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-
-  const authHeaders = () => {
-    const token = localStorage.getItem("jwtToken");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
-  const isQuoteCategory = (name) => (name || "").trim().toLowerCase() === "quote";
 
   const uniqueById = (arr) => {
     const seen = new Set();
@@ -32,19 +86,14 @@ const Dashboard = () => {
     });
   };
 
-  const loadPosts = async (headers) => {
-    const res = await fetch(`${POSTS_URL}?limit=20`, { headers });
-    if (!res.ok) throw new Error(`Posts ${res.status}`);
-    const data = await res.json();
+  const loadPosts = async () => {
+    const data = await fetchLatestPosts();
     const normalized = (data || []).map(normalizePost);
-    const postsOnly = normalized.filter((p) => !isQuoteCategory(p.category_name));
-    setPosts(uniqueById(postsOnly));
+    setPosts(uniqueById(normalized));
   };
 
-  const loadQuote = async (headers) => {
-    const res = await fetch(QUOTE_OF_THE_DAY_URL, { headers });
-    if (!res.ok) return setQuoteOfTheDay(null);
-    const q = await res.json();
+  const loadQuote = async () => {
+    const q = await fetchQuoteOfTheDay();
     setQuoteOfTheDay(
       q && Object.keys(q).length
         ? {
@@ -57,8 +106,8 @@ const Dashboard = () => {
     );
   };
 
-  const loadCategories = async (headers) => {
-    const res = await fetch(CATEGORIES_URL, { headers });
+  const loadCategories = async () => {
+    const res = await fetch(CATEGORIES_URL);
     if (!res.ok) return setCategories([]);
     const data = await res.json();
     setCategories((data || []).map(normalizeCategory));
@@ -68,8 +117,7 @@ const Dashboard = () => {
     const init = async () => {
       setLoading(true);
       try {
-        const headers = { "Content-Type": "application/json", ...authHeaders() };
-        await Promise.all([loadPosts(headers), loadQuote(headers), loadCategories(headers)]);
+        await Promise.all([loadPosts(), loadQuote(), loadCategories()]);
         setSelectedIds(new Set());
       } catch (e) {
         console.error("Init failed:", e);
@@ -80,45 +128,78 @@ const Dashboard = () => {
     init();
   }, []);
 
+  const toggleSelect = (post_id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(post_id) ? next.delete(post_id) : next.add(post_id);
+      return next;
+    });
+  };
+
+  const togglePin = (post) => {
+    setPinnedPosts((prev) =>
+      prev.find((p) => p.post_id === post.post_id)
+        ? prev.filter((p) => p.post_id !== post.post_id)
+        : [...prev, post]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`)) return;
+
+    setBulkDeleting(true);
+    const failed = [];
+
+    try {
+      for (const id of ids) {
+        try {
+          await deletePostService(id);
+          setPosts((prev) => prev.filter((p) => p.post_id !== id));
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        } catch {
+          failed.push(id);
+        }
+      }
+      if (failed.length > 0) {
+        alert(`Some posts could not be deleted (${failed.length}).`);
+      }
+    } finally {
+      setBulkDeleting(false);
+      try {
+        await loadPosts();
+      } catch (e) {
+        console.error("Reload after delete failed:", e);
+      }
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (creating) return; 
+    if (creating) return;
 
-    const categoryName = (newPost.category_name || "").trim();
     const postContent = (newPost.post_content || "").trim();
-    if (!categoryName || !postContent) {
+    if (!newPost.category_name || !postContent) {
       alert("Category and content are required.");
       return;
     }
 
     setCreating(true);
     try {
-      const headers = { "Content-Type": "application/json", ...authHeaders() };
-      const payload = {
-        categoryName,
+      await createPostService({
         sectionId: newPost.section_id ? Number(newPost.section_id) : null,
         postContent,
-      };
-
-      const res = await fetch(POSTS_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
+        categoryName: newPost.category_name.trim(),
       });
 
-      if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        console.error("Create failed:", res.status, res.statusText, msg);
-        alert(`Failed to create post: ${res.status} ${res.statusText}\n${msg}`);
-        return;
-      }
-
-      
-      await Promise.all([loadPosts(headers), loadQuote(headers)]);
-
+      await Promise.all([loadPosts(), loadQuote()]);
       setNewPost({
         category_name: "",
-        category_id: "",
         post_content: "",
         section_id: "",
         section_code: "",
@@ -132,140 +213,10 @@ const Dashboard = () => {
     }
   };
 
-  const toggleSelect = (post_id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(post_id) ? next.delete(post_id) : next.add(post_id);
-      return next;
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-    if (!window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`)) return;
-    
-    setBulkDeleting(true);
-    const headers = { ...authHeaders() };
-    const failed = [];
-
-    try {
-      for (const id of ids) {
-        const url = DELETE_POST_URL(id);
-        try {
-          const res = await fetch(url, { method: "DELETE", headers });
-          if (!res.ok) {
-            const text = await res.text().catch(() => "");
-            console.error(`DELETE ${url}: ${res.status} ${res.statusText} ${text}`);
-            failed.push(id);
-          } else {
-            setPosts((prev) => prev.filter((p) => p.post_id !== id));
-            setSelectedIds((prev) => {
-              const next = new Set(prev);
-              next.delete(id);
-              return next;
-            });
-          }
-        } catch (err) {
-          console.error(`DELETE ${url} error:`, err);
-          failed.push(id);
-        }
-      }
-
-      if (failed.length > 0) {
-        alert(`Some posts could not be deleted (${failed.length}).`);
-      }
-      } finally {
-    setBulkDeleting(false);
-    try {
-      const headers = { ...authHeaders() };
-      await loadPosts(headers); 
-    } catch (e) {
-      console.error("Reload after delete failed:", e);
-    }
-  }
-  };
-
   return (
     <div className="page-container">
-      <div className="dashboard-header">
-        <h2 className="page-title"></h2>
-        <div className="header-actions" style={{ display: "flex", gap: "8px" }}>
-          <button
-            className="filter-button secondary"
-            onClick={handleBulkDelete}
-            disabled={selectedIds.size === 0 || bulkDeleting}
-          >
-            {bulkDeleting ? "Deleting..." : selectedIds.size > 0 ? `Delete (${selectedIds.size})` : "Delete"}
-          </button>
-          <button className="filter-button primary" onClick={() => setIsModalOpen(true)}>
-            + Create
-          </button>
-        </div>
-      </div>
-
-      {/* Quote of the Day */}
-      <div className="post-card highlight-card">
-        <div className="post-header">
-          <span className="post-author">Quote of the Day</span>
-          {quoteOfTheDay?.posted_date && (
-            <span className="post-date">{new Date(quoteOfTheDay.posted_date).toLocaleString()}</span>
-          )}
-        </div>
-        {(quoteOfTheDay?.section_name || quoteOfTheDay?.organization) && (
-          <div className="quote-meta">
-            {quoteOfTheDay?.organization && <span>{quoteOfTheDay.organization}</span>}
-            {quoteOfTheDay?.organization && quoteOfTheDay?.section_name ? <span> • </span> : null}
-            {quoteOfTheDay?.section_name && <span>{quoteOfTheDay.section_name}</span>}
-          </div>
-        )}
-        <div className="post-content">
-          <p className="quote-text">{quoteOfTheDay?.post_content || "No quote set today."}</p>
-        </div>
-      </div>
-
-      {/* Posts */}
-      <div className="post-card">
-        <div className="post-header">
-          <span className="post-author">Posts</span>
-        </div>
-        {loading ? (
-          <div className="loading-message">
-            <div className="loading-spinner" /> Loading posts...
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="empty-message">No posts yet.</div>
-        ) : (
-          <ul className="feed-list">
-            {posts.map((p) => (
-              <li key={p.post_id} className="feed-item">
-                <div className="feed-header">
-                  <div className="feed-meta">
-                    <span className="feed-author">{p.posted_by || "Guidance Staff"}</span>
-                    <span className="feed-category">{p.category_name}</span>
-                    {p.section_name && <span className="feed-section">• {p.section_name}</span>}
-                  </div>
-                  <span className="post-date">
-                    {p.posted_date ? new Date(p.posted_date).toLocaleString() : ""}
-                  </span>
-                </div>
-                <div className="feed-content">
-                  <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(p.post_id)}
-                      onChange={() => toggleSelect(p.post_id)}
-                      aria-label={`Select post ${p.post_id}`}
-                    />
-                    <span>{p.post_content}</span>
-                  </label>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
+      {/* Header */}
+      {/* ... your JSX from earlier ... */}
       <CreatePostModal
         newPost={newPost}
         setNewPost={setNewPost}

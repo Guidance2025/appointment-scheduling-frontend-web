@@ -294,3 +294,19 @@
   margin-top: -6px;
   margin-bottom: 8px;
 }
+
+/* Pinned Posts Card */
+.pinned-card {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.pinned-card .post-author {
+  color: #b45309;
+}
+
+.feed-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}

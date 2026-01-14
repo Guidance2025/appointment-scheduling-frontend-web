@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/SelfAssessment.css";
-import { API_BASE_URL } from '../../api/api';
+import { API_BASE_URL } from '../../../constants/api';
 
 const SelfAssessment = () => {
   const [activeTab, setActiveTab] = useState('questions');
