@@ -6,8 +6,8 @@ import Calendar from "../calendar/Calendar";
 import Navbar from './../layout/Navbar';
 
 import Dashboard from "./Dashboard";
-import MoodTrend from "./MoodTrend";
 import ExitInterview from "./ExitInterview";
+import MoodTrend from "./MoodTrend";
 import SelfAssesment from "./SelfAssessment";
 
 function MainPage() {
@@ -25,8 +25,6 @@ function MainPage() {
         return <Dashboard />;
       case "Appointments":
         return <Appointment />;
-      case "MoodTrend":
-        return <MoodTrend />;
       case "ExitInterview":
         return <ExitInterview />;
       case "SelfAssesment":

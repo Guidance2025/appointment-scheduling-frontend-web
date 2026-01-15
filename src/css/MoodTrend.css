@@ -110,7 +110,8 @@
 }
 
 .filter-group {
-  position: relative;
+  position: inherit;
+  
 }
 
 .filter-group::after {

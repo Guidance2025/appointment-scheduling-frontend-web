@@ -7,6 +7,46 @@ import { API_BASE_URL } from "../../../../constants/api";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
 import * as PHTimeUtils from "../../../utils/dateTime"; 
 
+const parseUTCToPH = (utcString) => {
+  if (!utcString) return null;
+  const date = new Date(utcString + "Z");
+  return isNaN(date.getTime()) ? null : date;
+};
+
+export const formatAppointmentDateTime = (scheduledDate, endDate) => {
+  const startDate = parseUTCToPH(scheduledDate);
+  if (!startDate) return { date: "N/A", timeRange: "N/A" };
+
+  const formattedDate = startDate.toLocaleDateString("en-US", {
+    timeZone: "Asia/Manila",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const startTime = startDate.toLocaleTimeString("en-US", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  if (!endDate) return { date: formattedDate, timeRange: startTime };
+
+  const actualEndDate = parseUTCToPH(endDate);
+  if (!actualEndDate) return { date: formattedDate, timeRange: startTime };
+
+  const endTime = actualEndDate.toLocaleTimeString("en-US", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  return { date: formattedDate, timeRange: `${startTime} - ${endTime}` };
+};
+
 const NotificationModal = ({ isOpen, fetchUnread }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -362,25 +402,8 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
       });
       if (!response.ok) throw new Error(`Failed to fetch: ${response.statusText}`);
       const data = await response.json();
-      
-      const now = new Date();
-      const filteredData = data.filter(notif => {
-        if (notif.actionType === "APPOINTMENT_EXPIRED") {
-          const notifTime = PHTimeUtils.parseUTCToPH(notif.createdAt);
-          const hoursSinceExpired = (now - notifTime) / (1000 * 60 * 60);
-          return hoursSinceExpired < 24;
-        }
-        
-        return true;
-      });
-      
-      filteredData.sort((a, b) => {
-        const timeA = PHTimeUtils.parseUTCToPH(a.createdAt);
-        const timeB = PHTimeUtils.parseUTCToPH(b.createdAt);
-        return timeB - timeA;
-      });
-      
-      setNotifications(filteredData);
+      data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setNotifications(data);
     } catch (err) {
       console.error("Error loading notifications:", err);
       setError("Failed to load notifications. Please try again.");

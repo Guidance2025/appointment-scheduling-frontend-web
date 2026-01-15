@@ -1,556 +1,560 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Search, X, Plus, Pencil, Trash2, Save, Check } from "lucide-react";
-import OpenExitInterviewModal from "./modal/OpenExitInterviewModal";
+import React, { useState, useEffect } from 'react';
 import "../../css/ExitInterview.css";
-import { QUESTIONS_URL, QUESTION_BY_ID_URL } from "../../api/api";
-
-const DEFAULT_COURSES = ["ECE", "IT", "BA", "BSA", "HM", "TM", "BIT"];
-const DEFAULT_CLUSTERS = ["CETE", "CBAM"];
-
-const uniq = (arr) => Array.from(new Set(arr));
+import { API_BASE_URL } from '../../../constants/api';
 
 const ExitInterview = () => {
-  // Tabs
-  const [activeTab, setActiveTab] = useState("students");
+  const [activeTab, setActiveTab] = useState('posted');  // Default to Posted Questions
+  const [questions, setQuestions] = useState(['']);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterDate, setFilterDate] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [questionsData, setQuestionsData] = useState([]);
+  const [fetchingQuestions, setFetchingQuestions] = useState(true);
+  const [responsesData, setResponsesData] = useState([]);
+  const [fetchingResponses, setFetchingResponses] = useState(false);
 
-  // Students state
-  const [course, setCourse] = useState("All");
-  const [cluster, setCluster] = useState("All");
-  const currentStaffId = localStorage.getItem("employeeNumber");
-  const [courses, setCourses] = useState(DEFAULT_COURSES);
-  const [clusters, setClusters] = useState(DEFAULT_CLUSTERS);
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  useEffect(() => {
+    fetchPostedQuestions();
+  }, []);
 
-  // Questions state
-  const [questions, setQuestions] = useState([]);
-  const [qLoading, setQLoading] = useState(false);
-  const [qError, setQError] = useState("");
-  const [qSearch, setQSearch] = useState("");
-  const [editingId, setEditingId] = useState(null); 
-  const [draft, setDraft] = useState({ text: "", category: "" });
-  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (activeTab === 'responses') {
+      fetchStudentResponses();
+    }
+  }, [activeTab]);
 
-  // Loaders
-  const loadFilters = async () => {
-    try {
-      const [coursesRes, clustersRes] = await Promise.all([
-        fetch("/api/sections/courses"),
-        fetch("/api/sections/clusters"),
-      ]);
-      const [coursesData, clustersData] = await Promise.all([
-        coursesRes.ok ? coursesRes.json() : [],
-        clustersRes.ok ? clustersRes.json() : [],
-      ]);
-
-      const fetchedCourses = (Array.isArray(coursesData) ? coursesData : [])
-        .map((c) => (typeof c === "string" ? c : c?.course))
-        .filter(Boolean);
-      const fetchedClusters = (Array.isArray(clustersData) ? clustersData : [])
-        .map((cl) => (typeof cl === "string" ? cl : cl?.cluster_name))
-        .filter(Boolean);
-
-      setCourses(uniq([...DEFAULT_COURSES, ...fetchedCourses]).sort());
-      setClusters(uniq([...DEFAULT_CLUSTERS, ...fetchedClusters]).sort());
-    } catch {
-      setCourses(DEFAULT_COURSES);
-      setClusters(DEFAULT_CLUSTERS);
+  const filterByDateRange = (dateString, filterType) => {
+    if (filterType === 'all') return true;
+    
+    const itemDate = new Date(dateString);
+    const now = new Date();
+    
+    now.setHours(0, 0, 0, 0);
+    itemDate.setHours(0, 0, 0, 0);
+    
+    switch (filterType) {
+      case 'today':
+        return itemDate.getTime() === now.getTime();
+        
+      case 'week':
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return itemDate >= weekAgo;
+        
+      case 'month':
+        const monthAgo = new Date(now);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return itemDate >= monthAgo;
+        
+      default:
+        return true;
     }
   };
 
-  const loadStudents = async () => {
-    setLoading(true);
+  const fetchPostedQuestions = async () => {
     try {
-      const res = await fetch(
-        `/api/exit-interview/students?course=${encodeURIComponent(course)}&cluster=${encodeURIComponent(cluster)}`
+      setFetchingQuestions(true);
+      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!guidanceStaffId || !token) {
+        console.log("No guidance staff ID or token found");
+        setFetchingQuestions(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/exit-interview/retrieve-questions/${guidanceStaffId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
-      const data = await res.json();
-      setStudents(Array.isArray(data) ? data : []);
-    } catch {
-      setStudents([]);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions');
+      }
+
+      const data = await response.json();
+      setQuestionsData(data);
+    } catch (err) {
+      console.error('Error fetching questions:', err);
     } finally {
+      setFetchingQuestions(false);
+    }
+  };
+
+  const fetchStudentResponses = async () => {
+    try {
+      setFetchingResponses(true);
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!token) {
+        console.log("No token found");
+        setFetchingResponses(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/exit-interview/student-response`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch responses');
+      }
+
+      const data = await response.json();
+      const answeredResponses = data.filter(item => item.responseText && item.responseText.trim() !== '');
+      setResponsesData(answeredResponses);
+    } catch (err) {
+      console.error('Error fetching responses:', err);
+    } finally {
+      setFetchingResponses(false);
+    }
+  };
+
+  const handleAddQuestion = () => {
+    if (questions.length >= 5) {
+      setError('You can only create up to 5 questions.');
+      return;
+    }
+    setQuestions([...questions, '']);
+    setError('');
+    setSuccess('');
+  };
+
+  const handleRemoveQuestion = (index) => {
+    if (questions.length > 1) {
+      const newQuestions = questions.filter((_, i) => i !== index);
+      setQuestions(newQuestions);
+    }
+  };
+
+  const handleQuestionChange = (index, value) => {
+    const newQuestions = [...questions];
+    newQuestions[index] = value;
+    setQuestions(newQuestions);
+  };
+
+  const handlePost = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess('');
+
+      const validQuestions = questions.filter(q => q.trim() !== '');
+
+      if (validQuestions.length === 0) {
+        setError('Please add at least one question.');
+        setLoading(false);
+        return;
+      }
+
+      if (validQuestions.length > 5) {
+        setError('You can only create up to 5 questions.');
+        setLoading(false);
+        return;
+      }
+
+      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!token || !guidanceStaffId) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/exit-interview/create/${guidanceStaffId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(validQuestions)
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || 'Failed to post questions');
+      }
+
+      const data = await response.json();
+      console.log('Questions posted successfully:', data);
+      
+      setQuestions(['']);
+      setSuccess(`Successfully posted ${data.length} question(s)!`);
+      fetchPostedQuestions();
+
+      setTimeout(() => {
+        setSuccess('');
+        setError('');
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error posting questions:', err);
+      setError(err.message || 'Failed to post questions. Please try again.');
+    } finally { 
       setLoading(false);
     }
   };
 
-  const loadQuestions = async () => {
-  setQError("");
-  setQLoading(true);
-  try {
-    const res = await fetch(QUESTIONS_URL);
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    setQuestions(Array.isArray(data) ? data : []);
-  } catch {
-    setQError("Unable to load questions. Please try again.");
-    setQuestions([]);
-  } finally {
-    setQLoading(false);
-  }
-};
-
-  const startAddNew = () => {
-    setEditingId("new");
-    setDraft({ text: "", category: "" });
-    setQError("");
+  const handleClear = () => {
+    setQuestions(['']);
+    setError('');
+    setSuccess('');
   };
 
-  const startEdit = (q) => {
-    setEditingId(q.id);
-    setDraft({ text: q.text ?? "", category: q.category ?? "" });;
-    setQError("");
+  const handleClearSearch = () => {
+    setSearchTerm('');
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setDraft({ text: "", category: "", is_required: false, is_active: true });
-    setQError("");
-  };
+  const filteredQuestions = questionsData.filter(item => {
+    const searchLower = searchTerm.toLowerCase();
+    const staffName = `${item.guidanceStaff?.person?.firstName || ''} ${item.guidanceStaff?.person?.lastName || ''}`.toLowerCase();
+    const questionText = item.questionText?.toLowerCase() || '';
+    
+    const matchesSearch = staffName.includes(searchLower) || questionText.includes(searchLower);
+    
+    const matchesDate = filterByDateRange(item.dateCreated, filterDate);
+    
+    return matchesSearch && matchesDate;
+  });
 
-  const saveQuestion = async () => {
-  const text = draft.text.trim();
-  if (!text) {
-    setQError("Question text is required.");
-    return;
-  }
-  if (text.length < 5) {
-    setQError("Question text should be at least 5 characters.");
-    return;
-  }
-
-  setQError("");
-  setSaving(true);
-  try {
-    if (editingId === "new") {
-      const res = await fetch(QUESTIONS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          category: draft.category?.trim() || null,
-          employee_number: currentStaffId, 
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const created = await res.json();
-      setQuestions((prev) => [created, ...prev]);
-    } else {
-      const res = await fetch(QUESTION_BY_ID_URL(editingId), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text,
-          category: draft.category?.trim() || null,
-          employee_number: currentStaffId,
-        }),
-      });
-      if (!res.ok) throw new Error();
-      const updated = await res.json();
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === updated.id ? updated : q))
-      );
-    }
-    cancelEdit();
-  } catch {
-    setQError("Save failed. Please try again.");
-    } finally {
-    setSaving(false);
-  }
-};
-
-  // Effects
-  useEffect(() => {
-    loadFilters().then(loadStudents);
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === "students") loadStudents();
-  }, [course, cluster, activeTab]);
-
-  useEffect(() => {
-    if (activeTab === "questions") loadQuestions();
-  }, [activeTab]);
-
-  const filteredResults = useMemo(() => {
-    let filtered = [...students];
-    const searchLower = searchTerm.trim().toLowerCase();
-    if (searchLower) {
-      filtered = filtered.filter((s) => {
-        const name = (s.name || "").toLowerCase();
-        const number = (s.student_number || "").toLowerCase();
-        return name.includes(searchLower) || number.includes(searchLower);
-      });
-    }
-    if (course !== "All") filtered = filtered.filter((s) => s.course === course);
-    if (cluster !== "All") filtered = filtered.filter((s) => s.cluster_name === cluster);
-    return filtered;
-  }, [students, searchTerm, course, cluster]);
-
-  const hasActiveFilters = Boolean(searchTerm || course !== "All" || cluster !== "All");
-
-  const filteredQuestions = useMemo(() => {
-    const term = qSearch.trim().toLowerCase();
-    if (!term) return questions;
-    return questions.filter((q) => {
-      const text = (q.text || "").toLowerCase();
-      const cat = (q.category || "").toLowerCase();
-      return text.includes(term) || cat.includes(term);
-    });
-  }, [qSearch, questions]);
-
-  // UI handlers
-  const handleClearFilters = () => {
-    setSearchTerm("");
-    setCourse("All");
-    setCluster("All");
-  };
-
-  const openDetail = (studentId) => {
-    setSelectedStudentId(studentId);
-    setDetailOpen(true);
-  };
+  const filteredResponses = responsesData.filter(item => {
+    const searchLower = searchTerm.toLowerCase();
+    const questionText = item.question?.questionText?.toLowerCase() || '';
+    const responseText = item.responseText?.toLowerCase() || '';
+    
+    const matchesSearch = questionText.includes(searchLower) || responseText.includes(searchLower);
+    
+    const matchesDate = filterByDateRange(item.submittedDate, filterDate);
+    
+    return matchesSearch && matchesDate;
+  });
 
   return (
     <div className="page-container">
-      {/* Tabs */}
+      {/* Form at top, mirroring SelfAssessment */}
+      <div className="exit-form-card">
+        <h2 className="form-title">Create Exit Interview Questions</h2>
+        <p className="form-description">Add questions for graduating students (Maximum 5 questions)</p>
+        
+        {error && (
+          <div style={{
+            padding: '12px',
+            marginBottom: '16px',
+            backgroundColor: '#fee',
+            border: '1px solid #fcc',
+            borderRadius: '4px',
+            color: '#c33'
+          }}>
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div style={{
+            padding: '12px',
+            marginBottom: '16px',
+            backgroundColor: '#d4edda',
+            border: '1px solid #c3e6cb',
+            borderRadius: '4px',
+            color: '#155724'
+          }}>
+            {success}
+          </div>
+        )}
+        
+        <div className="questions-list">
+          {questions.map((question, index) => (
+            <div key={index} className="question-item">
+              <div className="question-header">
+                <label className="question-label">Question {index + 1}</label>
+                {questions.length > 1 && (
+                  <button
+                    className="remove-question-btn"
+                    onClick={() => handleRemoveQuestion(index)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <textarea
+                className="question-textarea"
+                placeholder="Enter your question here..."
+                value={question}
+                onChange={(e) => handleQuestionChange(index, e.target.value)}
+                rows={3}
+              />
+            </div>
+          ))}
+        </div>
+
+        <button 
+          className="add-question-btn" 
+          onClick={handleAddQuestion}
+          disabled={questions.length >= 5}
+          style={{
+            opacity: questions.length >= 5 ? 0.5 : 1,
+            cursor: questions.length >= 5 ? 'not-allowed' : 'pointer'
+          }}
+        >
+          + Add Question {questions.length >= 5 && '(Maximum reached)'}
+        </button>
+
+        <div className="form-actions">
+          <button 
+            className="action-btn action-btn-clear" 
+            onClick={handleClear}
+            disabled={loading}
+          >
+            Clear
+          </button>
+          <button 
+            className="action-btn action-btn-post" 
+            onClick={handlePost}
+            disabled={loading}
+          >
+            {loading ? 'Posting...' : 'Post Questions'}
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs: Posted Questions and Student Responses */}
       <div className="tabs">
         <button
-          className={`tab-button ${activeTab === "students" ? "active" : ""}`}
-          onClick={() => setActiveTab("students")}
+          className={`tab-button ${activeTab === "posted" ? "active" : ""}`}
+          onClick={() => setActiveTab("posted")}
           type="button"
         >
-          Students
+          Posted Questions
         </button>
         <button
-          className={`tab-button ${activeTab === "questions" ? "active" : ""}`}
-          onClick={() => setActiveTab("questions")}
+          className={`tab-button ${activeTab === "responses" ? "active" : ""}`}
+          onClick={() => setActiveTab("responses")}
           type="button"
         >
-          Questions
+          Student Responses
         </button>
       </div>
 
-      {/* STUDENTS TAB */}
-      {activeTab === "students" && (
+      {/* POSTED QUESTIONS TAB */}
+      {activeTab === "posted" && (
         <>
-          <div className="filter-bar-container">
-          <div className="filter-bar filter-one-line">
-            <div className="filter-group search-group">
-              <label className="filter-label">
-                <Search size={12} /> Search
-              </label>
-              <div className="input-with-clear">
-                <input
-                  type="text"
-                  className="filter-input"
-                  placeholder="Search by student name or number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button
-                    className="clear-filter-icon"
-                    onClick={() => setSearchTerm("")}
-                    title="Clear search"
-                    type="button"
-                  >
-                    ×
-                  </button>
-                )}
+          <div className="assessment-filter-bar">
+            <div className="filter-row">
+              <div className="filter-group search-group">
+                <label className="filter-label">Search</label>
+                <div className="filter-input-wrapper">
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search by counselor or questions..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button className="clear-filter-icon" onClick={handleClearSearch}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="filter-group date-group">
+                <label className="filter-label">Date Range</label>
+                <select
+                  className="filter-select"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+              </div>
+
+              <div className="filter-actions">
+                <button className="filter-button secondary" onClick={() => {
+                  setSearchTerm('');
+                  setFilterDate('all');
+                }}>
+                  Reset
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="filter-group">
-              <label className="filter-label">Course</label>
-              <select className="filter-select" value={course} onChange={(e) => setCourse(e.target.value)}>
-                <option value="All">All courses</option>
-                {courses.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Cluster</label>
-              <select className="filter-select" value={cluster} onChange={(e) => setCluster(e.target.value)}>
-                <option value="All">All clusters</option>
-                {clusters.map((cl) => (
-                  <option key={cl} value={cl}>
-                    {cl}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="filter-actions">
-              {hasActiveFilters && (
-                <button className="btn-green-outline btn-same-height" onClick={handleClearFilters} type="button">
-                  <X size={16} /> Clear
-                </button>
+          <div className="appointments-content">
+            <div className="appointments-table-container">
+              {fetchingQuestions ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  Loading questions...
+                </div>
+              ) : (
+                <table className="appointments-table">
+                  <thead>
+                    <tr>
+                      <th>Question Text</th>
+                      <th>Posted By</th>
+                      <th>Date Posted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredQuestions.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>
+                          {searchTerm ? 'No questions found matching your search' : 'No questions posted yet'}
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredQuestions.map((item) => (
+                        <tr key={item.id} className="appointment-row">
+                          <td className="questions-cell">
+                            {item.questionText}
+                          </td>
+                          <td className="counselor-cell">
+                            {item.guidanceStaff?.person?.firstName} {item.guidanceStaff?.person?.lastName}
+                          </td>
+                          <td className="date-cell">
+                            {new Date(item.dateCreated).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
-          </div>
-          <div className="appointments-content">
-            {loading ? (
-              <div className="loading-message">
-                <div className="loading-spinner"></div>
-                <p>Loading students...</p>
-              </div>
-            ) : filteredResults.length === 0 ? (
-              <div className="empty-message">
-                {hasActiveFilters ? (
-                  <div>
-                    <div className="empty-icon"></div>
-                    <h3 className="empty-title">No students found</h3>
-                    <p className="empty-description">No students match your current filters</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="empty-icon"></div>
-                    <h3 className="empty-title">No students found</h3>
-                    <p className="empty-description">There are no exit interview records.</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="students-table-container">
-                <table className="students-table">
-                  <thead>
-                    <tr>
-                      <th>Student</th>
-                      <th>Number</th>
-                      <th>Course</th>
-                      <th>Cluster</th>
-                      <th>Responses</th>
-                      <th className="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredResults.map((s) => (
-                      <tr
-                        key={s.student_id}
-                        className="student-row"
-                        onDoubleClick={() => openDetail(s.student_id)}
-                      >
-                        <td className="student-cell">{s.name}</td>
-                        <td>{s.student_number}</td>
-                        <td>{s.course}</td>
-                        <td>{s.cluster_name}</td>
-                        <td>
-                          <span className={`status-badge ${s.has_response ? "completed" : "pending"}`}>
-                            {s.has_response ? "Answered" : "Not yet"}
-                          </span>
-                        </td>
-                        <td className="actions-cell">
-                          <button className="link-button" onClick={() => openDetail(s.student_id)} type="button">
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
         </>
       )}
 
-      {/* QUESTIONS TAB */}
-      {activeTab === "questions" && (
+      {/* STUDENT RESPONSES TAB (responses from mobile app) */}
+      {activeTab === "responses" && (
         <>
-        <div className="filter-bar-container">
-          <div className="filter-bar filter-one-line">
-            <div className="filter-group search-group">
-              <label className="filter-label">
-                <Search size={12} /> Search
-              </label>
-              <div className="input-with-clear">
-                <input
-                  type="text"
-                  className="filter-input"
-                  placeholder="Search by question text or category..."
-                  value={qSearch}
-                  onChange={(e) => setQSearch(e.target.value)}
-                />
-                {qSearch && (
-                  <button
-                    className="clear-filter-icon"
-                    onClick={() => setQSearch("")}
-                    title="Clear search"
-                    type="button"
-                  >
-                    ×
-                  </button>
-                )}
+          <div className="assessment-filter-bar">
+            <div className="filter-row">
+              <div className="filter-group search-group">
+                <label className="filter-label">Search</label>
+                <div className="filter-input-wrapper">
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search by question or response..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button className="clear-filter-icon" onClick={handleClearSearch}>
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="filter-actions">
-              <button
-                className="btn-green-btn-same-height"
-                type="button"
-                onClick={startAddNew}
-                disabled={editingId !== null}
-                title={editingId ? "Finish current edit first" : "Add a new question"}
-              >
-                <Plus size={17} /> Add Question
-              </button>
+              <div className="filter-group date-group">
+                <label className="filter-label">Date Range</label>
+                <select
+                  className="filter-select"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                >
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+              </div>
+
+              <div className="filter-actions">
+                <button className="filter-button secondary" onClick={() => {
+                  setSearchTerm('');
+                  setFilterDate('all');
+                }}>
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-
-          {qError && <p className="error-text">{qError}</p>}
 
           <div className="appointments-content">
-            {qLoading ? (
-              <div className="loading-message">
-                <div className="loading-spinner"></div>
-                <p>Loading questions...</p>
-              </div>
-            ) : filteredQuestions.length === 0 && editingId !== "new" ? (
-              <div className="empty-message">
-                {qSearch.trim() ? (
-                  <div>
-                    <div className="empty-icon"></div>
-                    <h3 className="empty-title">No questions found</h3>
-                    <p className="empty-description">No questions match your current search.</p>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="empty-icon"></div>
-                    <h3 className="empty-title">No questions found</h3>
-                    <p className="empty-description">There are no questions yet.</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="students-table-container">
-                <table className="students-table">
+            <div className="appointments-table-container">
+              {fetchingResponses ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  Loading responses...
+                </div>
+              ) : (
+                <table className="appointments-table">
                   <thead>
                     <tr>
-                      <th className="col-question">Question</th>
-                      <th className="col-category">Category</th>
-                      <th className="col-actions text-right">Actions</th>
+                      <th>Question</th>
+                      <th>Response</th>
+                      <th>Response Date</th>
+                      <th>Posted By</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {editingId === "new" && (
+                    {filteredResponses.length === 0 ? (
                       <tr>
-                        <td>
-                          <input
-                            className="table-input table-input-lg"
-                            type="text"
-                            placeholder="Type the question..."
-                            value={draft.text}
-                            onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            className="table-input"
-                            type="text"
-                            placeholder="Category (optional)"
-                            value={draft.category}
-                            onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-                          />
-                        </td>
-                        <td className="actions-cell">
-                          <button
-                            className="btn-icon-green"
-                            type="button"
-                            onClick={saveQuestion}
-                            disabled={saving}
-                            title="Save"
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button className="btn-icon-green-outline" type="button" onClick={cancelEdit} title="Cancel">
-                            <X size={16} />
-                          </button>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
+                          {searchTerm ? 'No responses found matching your search' : 'No student responses yet'}
                         </td>
                       </tr>
-                    )}
-
-                    {filteredQuestions.map((q) =>
-                      editingId === q.id ? (
-                        <tr key={q.id}>
-                          <td>
-                            <input
-                              className="table-input table-input-lg"
-                              type="text"
-                              value={draft.text}
-                              onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value }))}
-                            />
+                    ) : (
+                      filteredResponses.map((item) => (
+                        <tr key={item.id} className="appointment-row">
+                          <td className="questions-cell" style={{ maxWidth: '250px' }}>
+                            {item.question?.questionText}
                           </td>
-                          <td>
-                            <input
-                              className="table-input"
-                              type="text"
-                              value={draft.category}
-                              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
-                            />
+                          <td className="response-cell" style={{ maxWidth: '300px' }}>
+                            {item.responseText}
                           </td>
-                          <td className="actions-cell">
-                            <button
-                              className="btn-icon-green"
-                              type="button"
-                              onClick={saveQuestion}
-                              disabled={saving}
-                              title="Save"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button className="btn-icon-green-outline" type="button" onClick={cancelEdit} title="Cancel">
-                              <X size={16} />
-                            </button>
+                          <td className="date-cell">
+                            {new Date(item.submittedDate).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="counselor-cell">
+                            {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
                           </td>
                         </tr>
-                      ) : (
-                        <tr key={q.id}>
-                          <td>{q.text}</td>
-                          <td>{q.category || "—"}</td>
-                          <td className="col-toggle">
-                            <span className={`status-badge ${q.is_required ? "completed" : "pending"}`}>
-                              {q.is_required ? "Yes" : "No"}
-                            </span>
-                          </td>
-                          <td className="actions-cell">
-                            <button className="icon-btn" type="button" onClick={() => startEdit(q)} title="Edit">
-                              <Pencil size={16} /> Edit
-                            </button>
-                            <button
-                              className="icon-btn danger"
-                              type="button"
-                              onClick={() => deleteQuestion(q)}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} /> Delete
-                            </button>
-                          </td>
-                        </tr>
-                      )
+                      ))
                     )}
                   </tbody>
                 </table>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </>
       )}
-
-      <OpenExitInterviewModal
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        studentId={selectedStudentId}
-      />
     </div>
   );
 };
