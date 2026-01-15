@@ -1,0 +1,163 @@
+/* ===== APPOINTMENT INDICATOR STYLES FOR MANAGE AVAILABILITY ===== */
+/* These styles add appointment count badges to calendar days */
+
+/* Ensure calendar day can hold positioned elements */
+.calendar-day {
+  position: relative !important;
+}
+
+/* Appointment count badge - positioned in top-left corner with high priority */
+.calendar-day .appointment-indicator {
+  position: absolute !important;
+  top: 4px !important;
+  left: 4px !important;
+  background: #2563eb !important;
+  color: white !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  min-width: 20px !important;
+  height: 20px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 5px !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.5) !important;
+  z-index: 100 !important;
+  border: 2px solid white !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+}
+
+/* Light blue background for days with appointments */
+.calendar-day.has-appointment {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #93c5fd !important;
+}
+
+.calendar-day.has-appointment:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+  border-color: #3b82f6 !important;
+}
+
+/* TODAY with appointments - keep green, add blue badge */
+.calendar-day.today.has-appointment {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+  border-color: #6ee7b7 !important;
+  color: #059669 !important;
+}
+
+.calendar-day.today.has-appointment .appointment-indicator {
+  background: #2563eb !important;
+  border-color: white !important;
+}
+
+/* SELECTED day with appointments - keep green background, show blue badge */
+.calendar-day.selected.has-appointment {
+  background-color: #10b981 !important;
+  color: white !important;
+  border-color: #059669 !important;
+}
+
+.calendar-day.selected.has-appointment .appointment-indicator {
+  background: #2563eb !important;
+  border-color: white !important;
+}
+
+/* BLOCKED day with appointments - show both indicators */
+.calendar-day.blocked.has-appointment {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+  border-color: #f87171 !important;
+  color: #991b1b !important;
+}
+
+.calendar-day.blocked.has-appointment .appointment-indicator {
+  background: #2563eb !important;
+  border-color: white !important;
+  top: 4px !important;
+  left: 4px !important;
+  z-index: 101 !important;
+}
+
+/* Move blocked emoji to bottom-right when there's an appointment */
+.calendar-day.blocked.has-appointment::after {
+  position: absolute !important;
+  bottom: 4px !important;
+  right: 4px !important;
+  top: auto !important;
+  left: auto !important;
+  font-size: 12px !important;
+  z-index: 99 !important;
+}
+
+/* Subtle pulse animation for appointment badge */
+@keyframes appointmentPulse {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.5);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.8), 0 0 12px rgba(37, 99, 235, 0.3);
+  }
+}
+
+.calendar-day.has-appointment .appointment-indicator {
+  animation: appointmentPulse 2s ease-in-out infinite;
+}
+
+/* Stop animation on hover */
+.calendar-day:hover .appointment-indicator {
+  animation: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-day .appointment-indicator {
+    min-width: 18px !important;
+    height: 18px !important;
+    font-size: 9px !important;
+    top: 3px !important;
+    left: 3px !important;
+  }
+  
+  .calendar-day.blocked.has-appointment::after {
+    font-size: 11px !important;
+    bottom: 3px !important;
+    right: 3px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-day .appointment-indicator {
+    min-width: 16px !important;
+    height: 16px !important;
+    font-size: 8px !important;
+    top: 2px !important;
+    left: 2px !important;
+    padding: 0 4px !important;
+  }
+  
+  .calendar-day.blocked.has-appointment::after {
+    font-size: 10px !important;
+    bottom: 2px !important;
+    right: 2px !important;
+  }
+}
+
+/* Special case: Selected + Today + Appointments */
+.calendar-day.selected.today.has-appointment .appointment-indicator {
+  background: #2563eb !important;
+  border-color: white !important;
+}
+
+/* Ensure stacking order is correct */
+.calendar-day.has-appointment {
+  z-index: 1;
+}
+
+.calendar-day.has-appointment .appointment-indicator {
+  z-index: 100;
+}
+
+.calendar-day.blocked.has-appointment::after {
+  z-index: 99;
+}

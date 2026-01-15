@@ -3,51 +3,45 @@ import "../../../css/Calendar.css";
 import "../../../css/GoogleCalendar.css";
 import { MoveLeft } from "lucide-react";
 import { getAllCounselorAppointmentByStatus } from "../../../service/counselor";
-import { formatAppointmentDateTime } from "../../utils/dateHelper";
 import ViewStudentInfoModal from "../../pages/modal/ViewStudentInfoModal";
+import * as PHTimeUtils from "../../../utils/dateTime"; 
 
-const AppointmentCurrentMonthModal = ({ isOpen, onClose , currentDate }) => {
+const AppointmentCurrentMonthModal = ({ isOpen, onClose, currentDate }) => {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [status] = useState("SCHEDULED"); 
+  const [status] = useState("SCHEDULED");
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [selectedAppointmentId, setIsSelectedAppointmentId] = useState(null);
 
-  const filteredAppointments = async () => {
+  const fetchAppointments = async () => {
     const guidanceStaffId = localStorage.getItem("guidanceStaffId");
+    if (!guidanceStaffId) return;
 
     try {
       setIsLoading(true);
-      const filteredData = await getAllCounselorAppointmentByStatus(
-        guidanceStaffId,
-        status
-      );
-      setAppointments(filteredData);
+      const data = await getAllCounselorAppointmentByStatus(guidanceStaffId, status);
+      setAppointments(data || []);
     } catch (error) {
-      console.error("Error fetching filtered appointments:", error);
+      console.error("Error fetching appointments:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
-      filteredAppointments();
-    }
-  }, [isOpen]); 
+    if (isOpen) fetchAppointments();
+  }, [isOpen]);
 
-  const appointmentCurrentMonth = () => {
-    return appointments.filter((appointment) => {
-      const appointmentDate = new Date(appointment.scheduledDate);
-      return (
-        appointmentDate.getMonth() === currentDate.getMonth() &&
-        appointmentDate.getFullYear() === currentDate.getFullYear()
-      );
-    });
-  };
+  const appointmentsForCurrentMonth = appointments.filter((appointment) => {
+    const phDate = PHTimeUtils.parseUTCToPH(appointment.scheduledDate);
+    if (!phDate) return false;
+    return (
+      phDate.getMonth() === currentDate.getMonth() &&
+      phDate.getFullYear() === currentDate.getFullYear()
+    );
+  });
 
   if (!isOpen) return null;
-
 
   return (
     <div className="appointemnt-modal-overlay active">
@@ -68,23 +62,29 @@ const AppointmentCurrentMonthModal = ({ isOpen, onClose , currentDate }) => {
         <div className="appointment-modal-body">
           {isLoading ? (
             <p>Loading appointments...</p>
-          ) : appointmentCurrentMonth().length === 0 ? (
+          ) : appointmentsForCurrentMonth.length === 0 ? (
             <p>No appointments found for this month.</p>
           ) : (
             <div className="appointment-list">
-              {appointmentCurrentMonth().map((appointment) => {
-                const { date, timeRange } = formatAppointmentDateTime(
+              {appointmentsForCurrentMonth.map((appointment) => {
+                const { date, timeRange } = PHTimeUtils.formatAppointmentDateTime(
                   appointment.scheduledDate,
                   appointment.endDate
                 );
+
+                const studentName = appointment.student
+                  ? `${appointment.student.person.firstName} ${appointment.student.person.lastName}`
+                  : "Student info unavailable";
+
+                const typeClass = appointment.appointmentType?.toLowerCase() || "";
 
                 return (
                   <div
                     className="section-container"
                     key={appointment.appointmentId}
                     onClick={() => {
-                        setIsDetailsVisible(true);
-                        setIsSelectedAppointmentId(appointment.appointmentId);
+                      setIsDetailsVisible(true);
+                      setIsSelectedAppointmentId(appointment.appointmentId);
                     }}
                   >
                     <div className="calendar-appointment-header">
@@ -92,16 +92,8 @@ const AppointmentCurrentMonthModal = ({ isOpen, onClose , currentDate }) => {
                       <h3 className="calendar-appointment-time">{timeRange}</h3>
                     </div>
                     <div className="calendar-appointment-appointment-info">
-                      <h2 className="calendar-appointment-appointment-details">
-                        {appointment.student
-                          ? `${appointment?.student?.person?.firstName} ${appointment.student.person.lastName}`
-                          : "Student info unavailable"}
-                      </h2>
-                      <h2
-                        className={`calendar-appointment-appointment-type ${
-                          appointment.appointmentType?.toLowerCase() || ""
-                        }`}
-                      >
+                      <h2 className="calendar-appointment-appointment-details">{studentName}</h2>
+                      <h2 className={`calendar-appointment-appointment-type ${typeClass}`}>
                         {appointment.appointmentType}
                       </h2>
                     </div>

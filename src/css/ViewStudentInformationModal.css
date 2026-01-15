@@ -17,7 +17,7 @@
   background: #ffffff;
   border-radius: 16px;
   width: 90%;
-  max-width: 800px;
+  max-width: 900px;
   max-height: 90vh;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   position: relative;
@@ -28,10 +28,10 @@
 
 .student-modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 36px;
-  height: 36px;
+  top: 20px;
+  right: 20px;
+  width: 42px;
+  height: 42px;
   border: none;
   background: #f1f5f9;
   border-radius: 50%;
@@ -79,8 +79,8 @@
 .student-modal-header {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 32px 32px 24px;
+  gap: 14px;
+  padding: 36px 42px 28px;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -90,10 +90,10 @@
 }
 
 .student-name {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   color: #0f172a;
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
   line-height: 1.3;
   text-align: left;
 }
@@ -102,9 +102,9 @@
   display: inline-block;
   background: #a8efd2;
   color: #014b02;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 20px;
   margin: 0;
   letter-spacing: 0.3px;
@@ -122,8 +122,8 @@
   flex: 1;
   background: none;
   border: none;
-  padding: 16px 12px;
-  font-size: 14px;
+  padding: 18px 14px;
+  font-size: 15px;
   font-weight: 500;
   color: #64748b;
   cursor: pointer;
@@ -148,17 +148,17 @@
 }
 
 .tab-icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .student-modal-content {
-  padding: 28px 32px;
+  padding: 32px 42px;
   overflow-y: auto;
   max-height: calc(90vh - 280px);
 }
 
 .student-modal-content::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .student-modal-content::-webkit-scrollbar-track {
@@ -167,7 +167,7 @@
 
 .student-modal-content::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .student-modal-content::-webkit-scrollbar-thumb:hover {
@@ -181,13 +181,13 @@
 .info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 24px;
 }
 
 .info-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .info-item.full-width {
@@ -195,7 +195,7 @@
 }
 
 .info-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
@@ -203,7 +203,7 @@
 }
 
 .info-value {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   color: #0f172a;
   line-height: 1.5;
@@ -211,27 +211,28 @@
 
 .notes-text {
   background: #f8fafc;
-  padding: 12px;
+  padding: 14px 16px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   font-weight: 400;
   color: #475569;
+  font-size: 15px;
 }
 
 .appointment-type-badge {
   display: block;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: capitalize;
 }
 
 .status-badge {
   display: block;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-radius: 20px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -263,6 +264,12 @@
   }
 }
 
+@media (max-width: 960px) {
+  .student-modal-container {
+    width: 95%;
+  }
+}
+
 @media (max-width: 768px) {
   .student-modal-container {
     width: 95%;
@@ -271,7 +278,7 @@
   }
 
   .student-modal-header {
-    padding: 24px 20px 20px;
+    padding: 28px 24px 24px;
     flex-direction: column;
     text-align: center;
   }
@@ -283,11 +290,11 @@
   }
 
   .student-name {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .student-number-badge {
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .student-modal-tabs {
@@ -295,23 +302,23 @@
   }
 
   .tab-button {
-    padding: 14px 8px;
-    font-size: 12px;
+    padding: 16px 10px;
+    font-size: 14px;
     white-space: nowrap;
   }
 
   .tab-icon {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .student-modal-content {
-    padding: 20px 20px 24px;
+    padding: 24px 28px;
     max-height: calc(90vh - 260px);
   }
 
   .info-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 20px;
   }
 
   .info-item {
@@ -319,19 +326,19 @@
   }
 
   .info-label {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .info-value {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   .student-modal-close {
-    width: 32px;
-    height: 32px;
-    font-size: 20px;
-    top: 12px;
-    right: 12px;
+    width: 40px;
+    height: 40px;
+    font-size: 22px;
+    top: 16px;
+    right: 16px;
   }
 }
 
@@ -344,7 +351,7 @@
   }
 
   .student-modal-header {
-    padding: 20px 16px 16px;
+    padding: 24px 20px 20px;
   }
 
   .student-avatar {
@@ -354,21 +361,38 @@
   }
 
   .student-name {
-    font-size: 18px;
+    font-size: 22px;
+  }
+
+  .student-number-badge {
+    font-size: 12px;
   }
 
   .tab-button {
-    padding: 12px 6px;
-    font-size: 11px;
+    padding: 14px 8px;
+    font-size: 13px;
     gap: 4px;
   }
 
+  .tab-icon {
+    font-size: 15px;
+  }
+
   .student-modal-content {
-    padding: 16px;
+    padding: 20px 22px;
     max-height: calc(100vh - 240px);
   }
 
   .info-grid {
-    gap: 14px;
+    gap: 18px;
+  }
+
+  .info-value {
+    font-size: 14px;
+  }
+
+  .notes-text {
+    font-size: 14px;
+    padding: 12px 14px;
   }
 }

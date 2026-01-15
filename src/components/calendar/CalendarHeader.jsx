@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import "./../../css/Calendar.css";
+import ManageAvailability from './modal/ManageAvailability';
+import { useState } from 'react';
 
 export default function CalendarHeader({
   currentDate,
@@ -7,11 +9,22 @@ export default function CalendarHeader({
   setCurrentDate,
   setSelectedDate,
   setShowModal,
+  onViewAll,
+  onAvailabilityUpdate
 }) {
+  const [showManageAvailability, setShowManageAvailability] = useState(false);
+  
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
+
+  const handleCloseAvailability = () => {
+    setShowManageAvailability(false);
+    if (onAvailabilityUpdate) {
+      onAvailabilityUpdate();
+    }
+  };
 
   return (
     <div className="calendar-header">
@@ -39,9 +52,25 @@ export default function CalendarHeader({
         >
           Today
         </button>
+        
+        <button 
+          className='manage-availability' 
+          onClick={() => setShowManageAvailability(true)}
+        >
+          Manage Availability
+        </button>
+
+        <ManageAvailability 
+          onClose={handleCloseAvailability} 
+          isOpen={showManageAvailability} 
+        />
 
         <button className="create-button" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> Create
+          <Plus size={20} /> Create
+        </button>
+        
+        <button className="view-all-button" onClick={onViewAll}>
+          View All
         </button>
       </div>
     </div>

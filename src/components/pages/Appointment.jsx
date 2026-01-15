@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../../css/Appointment.css";
 import { getAllCounselorAppointmentByStatus, getAllAppointmentByGuidanceStaff } from "../../service/counselor";
 import { Search, X } from 'lucide-react';
-import { formatAppointmentDateTime } from "../../helper/dateHelper";
+import * as PHTimeUtils from "../../utils/dateTime";
 
 function Appointments() {
   const [status, setStatus] = useState("All");
@@ -13,7 +13,7 @@ function Appointments() {
   const [searchTerm, setSearchTerm] = useState("");
   const JWT_TOKEN = localStorage.getItem("jwtToken");
 
-  const fetchAppointments = async (selectedStatus) => {
+  const fetchAppointments = async () => {
     if (!JWT_TOKEN) {
       window.location.href = "/GuidanceLogin";
       throw new Error("No JWT token found. Please log in again.");
@@ -23,14 +23,18 @@ function Appointments() {
       setLoading(true);
       const guidanceStaffId = localStorage.getItem("guidanceStaffId");
       
-      let fetchedData;
-      if (selectedStatus === "All") {
-        fetchedData = await getAllAppointmentByGuidanceStaff(guidanceStaffId);
-      } else {
-        fetchedData = await getAllCounselorAppointmentByStatus(guidanceStaffId, selectedStatus);
-      }
+      const fetchedData = await getAllAppointmentByGuidanceStaff(guidanceStaffId);
+
+      const filteredData = Array.isArray(fetchedData) 
+        ? fetchedData.filter(appointment => {
+            const isBlocked = appointment.appointmentType?.toUpperCase() === 'AVAILABILITY_BLOCK' || 
+                             appointment.status?.toUpperCase() === 'BLOCKED' || 
+                             appointment.status?.toUpperCase() === 'EXPIRED';
+            return !isBlocked; 
+          })
+        : [];
       
-      setAppointments(Array.isArray(fetchedData) ? fetchedData : []);
+      setAppointments(filteredData);
     } catch (error) {
       console.error("Error fetching appointments:", error);
       setAppointments([]);
@@ -40,11 +44,17 @@ function Appointments() {
   };
 
   useEffect(() => {
-    fetchAppointments(status);
-  }, [status]);
+    fetchAppointments();
+  }, []);
 
   const applyAllFilters = () => {
     let filtered = [...appointments];
+
+    if (status !== "All") {
+      filtered = filtered.filter(appointment => 
+        appointment.status?.toUpperCase() === status.toUpperCase()
+      );
+    }
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -58,26 +68,22 @@ function Appointments() {
     }
 
     if (dateRange !== "All") {
-      const now = new Date();
+      const nowPH = PHTimeUtils.getCurrentPHTime();
+
       filtered = filtered.filter(appointment => {
-        const appointmentDate = new Date(appointment.scheduledDate);
-        
+        const appointmentDatePH = PHTimeUtils.parseUTCToPH(appointment.scheduledDate);
+        if (!appointmentDatePH) return false;
+
         switch(dateRange) {
           case "Today":
-            return appointmentDate.toDateString() === now.toDateString();
+            return PHTimeUtils.isTodayPH(appointmentDatePH);
+
           case "This Week":
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - now.getDay());
-            weekStart.setHours(0, 0, 0, 0);
-            
-            const weekEnd = new Date(now);
-            weekEnd.setDate(now.getDate() + (6 - now.getDay()));
-            weekEnd.setHours(23, 59, 59, 999);
-            
-            return appointmentDate >= weekStart && appointmentDate <= weekEnd;
+            return PHTimeUtils.isThisWeekPH(appointmentDatePH);
+
           case "This Month":
-            return appointmentDate.getMonth() === now.getMonth() && 
-                   appointmentDate.getFullYear() === now.getFullYear();
+            return PHTimeUtils.isThisMonthPH(appointmentDatePH);
+
           default:
             return true;
         }
@@ -91,11 +97,12 @@ function Appointments() {
 
   const handleClearFilters = () => {
     setSearchTerm("");
+    setStatus("All");
     setAppointmentType("All");
     setDateRange("All");
   };
 
-  const hasActiveFilters = searchTerm || appointmentType !== "All" || dateRange !== "All";
+  const hasActiveFilters = searchTerm || status !== "All" || appointmentType !== "All" || dateRange !== "All";
 
   return (
     <div className="page-container">
@@ -103,7 +110,7 @@ function Appointments() {
         <div className="filter-row">
           <div className="filter-group search-group">
             <label className="filter-label">
-              <Search size={12} style={{ display: 'inline', marginRight: '4px' }} />
+              <Search size={12} style={{ marginRight: '4px' }} />
               Search
             </label>
             <div style={{ position: 'relative' }}>
@@ -136,7 +143,7 @@ function Appointments() {
               <option value="All">All Status</option>
               <option value="PENDING">Pending</option>
               <option value="COMPLETED">Completed</option>
-              <option value="CANCELED">Canceled</option>
+              <option value="CANCELLED">Cancelled</option>
               <option value="SCHEDULED">Scheduled</option>
             </select>
           </div>
@@ -161,8 +168,7 @@ function Appointments() {
                 className="filter-button secondary"
                 onClick={handleClearFilters}
               >
-                <X size={16} />
-                Clear
+                <X size={16} /> Clear
               </button>
             )}
           </div>
@@ -181,9 +187,7 @@ function Appointments() {
               <div>
                 <div className="empty-icon">🔍</div>
                 <h3 className="empty-title">No appointments found</h3>
-                <p className="empty-description">
-                  No appointments match your current filters
-                </p>
+                <p className="empty-description">No appointments match your current filters</p>
               </div>
             ) : (
               <div>
@@ -204,16 +208,18 @@ function Appointments() {
                   <th>Time</th>
                   <th>Status</th>
                   <th>Created</th>
-                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredResults.map((appointment) => {
-                  const { date, timeRange } = formatAppointmentDateTime(
+                  const { date, timeRange } = PHTimeUtils.formatAppointmentDateTime(
                     appointment.scheduledDate,
                     appointment.endDate
                   );
-                                                                                    
+                  const createdDate = appointment.dateCreated 
+                    ? PHTimeUtils.formatShortDatePH(appointment.dateCreated)
+                    : "N/A";
+
                   return (
                     <tr key={appointment.appointmentId} className="appointment-row">
                       <td className="student-cell">
@@ -225,49 +231,20 @@ function Appointments() {
                                 : "N/A"}
                             </span>
                             {appointment.student?.studentNumber && (
-                              <span className="student-number-table">
-                                {appointment.student.studentNumber}
-                              </span>
+                              <span className="student-number-table">{appointment.student.studentNumber}</span>
                             )}
                           </div>
                         </div>
                       </td>
-                      
-                      <td className="type-cell">
-                        {appointment.appointmentType || "N/A"}
-                      </td>
-                      
-                      <td className="date-cell">
-                        {date}
-                      </td>
-                      
-                      <td className="time-cell">
-                        {timeRange}
-                      </td>
-                      
+                      <td className="type-cell">{appointment.appointmentType || "N/A"}</td>
+                      <td className="date-cell">{date}</td>
+                      <td className="time-cell">{timeRange}</td>
                       <td className="status-cell">
                         <span className={`status-badge-table ${appointment.status?.toLowerCase() || 'pending'}`}>
                           {appointment.status || "PENDING"}
                         </span>
                       </td>
-                      
-                      <td className="created-cell">
-                        {appointment.dateCreated 
-                          ? new Date(appointment.dateCreated).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                      
-                      <td className="notes-cell">
-                        {appointment.notes ? (
-                          <div className="notes-preview-table" title={appointment.notes}>
-                            {appointment.notes.length > 30 
-                              ? `${appointment.notes.substring(0, 30)}...` 
-                              : appointment.notes}
-                          </div>
-                        ) : (
-                          <span className="no-notes">—</span>
-                        )}
-                      </td>
+                      <td className="created-cell">{createdDate}</td>
                     </tr>
                   );
                 })}

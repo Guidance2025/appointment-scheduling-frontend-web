@@ -197,7 +197,16 @@ const Dashboard = () => {
         categoryName: newPost.category_name.trim(),
       });
 
-      await Promise.all([loadPosts(), loadQuote()]);
+      if (!res.ok) {
+        const msg = await res.text().catch(() => "");
+        console.error("Create failed:", res.status, res.statusText, msg);
+        alert(`Failed to create post: ${res.status} ${res.statusText}\n${msg}`);
+        return;
+      }
+
+      
+      await Promise.all([loadPosts(headers), loadQuote(headers)]);
+
       setNewPost({
         category_name: "",
         post_content: "",
