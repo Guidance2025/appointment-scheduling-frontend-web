@@ -47,7 +47,6 @@ export const fetchQuoteOfTheDay = async () => {
   return toJson(res);
 };
 
-// Create post (ALWAYS send categoryName so backend inserts category row)
 export const createPost = async ({ categoryName, sectionId, postContent }) => {
   const res = await fetch(POSTS_URL, {
     method: "POST",
@@ -64,7 +63,6 @@ export const createPost = async ({ categoryName, sectionId, postContent }) => {
   return toJson(res);
 };
 
-// Delete post
 export const deletePost = async (postId) => {
   const res = await fetch(DELETE_POST_URL(postId), {
     method: "DELETE",

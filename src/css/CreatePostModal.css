@@ -171,6 +171,7 @@ textarea.filter-input:disabled {
   min-width: 200px;
 }
 
+
 @media (max-width: 520px) {
   .modal-overlay { padding: 16px; }
   .modal-header,

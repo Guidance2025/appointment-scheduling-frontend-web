@@ -16,15 +16,22 @@ const ProfileModal = ({ isOpen, onClose }) => {
     contactNumber: ""
   });
 
+  const [originalForm, setOriginalForm] = useState({
+    email: "",
+    contactNumber: ""
+  });
+
   const displayProfile = async (employeeNumber) => {
     try {
       setIsLoading(true);
       const data = await getProfileByEmployeeNumber(employeeNumber);
       setProfile(data);
-      setEditForm({
+      const formData = {
         email: data.email || "",
         contactNumber: data.contactNumber || ""
-      });
+      };
+      setEditForm(formData);
+      setOriginalForm(formData);
     } catch (err) {
       console.error("Error fetching profile:", err);
       showError("Failed to load profile. Please try again.", "", 3000);
@@ -37,19 +44,50 @@ const ProfileModal = ({ isOpen, onClose }) => {
     if (isOpen) {
       const employeeNumber = localStorage.getItem("guidanceStaffId");
       if (employeeNumber) displayProfile(employeeNumber);
-    } else setIsEditing(false);
+    } else {
+      setIsEditing(false);
+    }
   }, [isOpen]);
+
+  const hasChanges = () => {
+    return editForm.email.trim() !== originalForm.email.trim() || 
+           editForm.contactNumber.trim() !== originalForm.contactNumber.trim();
+  };
+
+  const getChangedFields = () => {
+    const changes = [];
+    if (editForm.email.trim() !== originalForm.email.trim()) {
+      changes.push('email');
+    }
+    if (editForm.contactNumber.trim() !== originalForm.contactNumber.trim()) {
+      changes.push('contact number');
+    }
+    return changes;
+  };
 
   const handleSaveProfile = async () => {
     try {
-      if (!editForm.email.trim()) return showError('Email address is required.', '', 3000);
-      if (!editForm.contactNumber.trim()) return showError('Contact number is required.', '', 3000);
+      if (!editForm.email.trim()) {
+        showError('Email address is required.', '', 3000);
+        return;
+      }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(editForm.email.trim())) return showError('Please enter a valid email.', '', 3000);
+      if (!emailRegex.test(editForm.email.trim())) {
+        showError('Please enter a valid email address.', '', 3000);
+        return;
+      }
+
+      if (!editForm.contactNumber.trim()) {
+        showError('Contact number is required.', '', 3000);
+        return;
+      }
 
       const phoneRegex = /\d{10,}/;
-      if (!phoneRegex.test(editForm.contactNumber.trim().replace(/\D/g, ''))) return showError('Valid contact number required.', '', 3000);
+      if (!phoneRegex.test(editForm.contactNumber.trim().replace(/\D/g, ''))) {
+        showError('Please enter a valid contact number (at least 10 digits).', '', 3000);
+        return;
+      }
 
       setIsSaving(true);
       const guidanceStaffId = localStorage.getItem("guidanceStaffId");
@@ -57,20 +95,42 @@ const ProfileModal = ({ isOpen, onClose }) => {
 
       const updatedStaff = await updateCounselorProfile(guidanceStaffId, editForm);
 
-      setProfile({
+      const newProfileData = {
         ...profile,
         email: updatedStaff.person.email,
         contactNumber: updatedStaff.person.contactNumber
-      });
+      };
+      setProfile(newProfileData);
+
+      const newFormData = {
+        email: updatedStaff.person.email,
+        contactNumber: updatedStaff.person.contactNumber
+      };
+      setOriginalForm(newFormData);
+      setEditForm(newFormData);
 
       setIsEditing(false);
-      showSuccess("Updated Successfully", "", 2000);
+
+      const changedFields = getChangedFields();
+      const fieldsText = changedFields.length === 1 
+        ? changedFields[0] 
+        : changedFields.join(' and ');
+      
+      showSuccess(
+        "Profile Updated Successfully!", 
+        `Your ${fieldsText} has been updated.`, 
+        3000
+      );
     } catch (err) {
       console.error('Profile update error:', err);
-      if (err.message.includes('EMAIL ALREADY EXIST') || err.message.includes('409') || err.message.includes('CONFLICT')) {
-        showError('This email address is already in use.', '', 3000);
+      if (err.message.includes('EMAIL ALREADY EXIST') || 
+          err.message.includes('409') || 
+          err.message.includes('CONFLICT')) {
+        showError('This email address is already in use. Please try a different email.', '', 3000);
+      } else if (err.message.includes('PHONE') || err.message.includes('CONTACT')) {
+        showError('This contact number is already in use. Please try a different number.', '', 3000);
       } else {
-        showError(err.message || 'Failed to update profile.', '', 3000);
+        showError(err.message || 'Failed to update profile. Please try again.', '', 3000);
       }
     } finally {
       setIsSaving(false);
@@ -78,7 +138,12 @@ const ProfileModal = ({ isOpen, onClose }) => {
   };
 
   const handleCancelEdit = () => {
-    if (profile) setEditForm({ email: profile.email || "", contactNumber: profile.contactNumber || "" });
+    if (profile) {
+      setEditForm({ 
+        email: originalForm.email, 
+        contactNumber: originalForm.contactNumber 
+      });
+    }
     setIsEditing(false);
   };
 
@@ -152,10 +217,18 @@ const ProfileModal = ({ isOpen, onClose }) => {
               <div className={`profile-actions ${isEditing ? 'editing' : ''}`}>
                 {isEditing ? (
                   <>
-                    <button className="save-profile" onClick={handleSaveProfile} disabled={isSaving}>
+                    <button 
+                      className="save-profile" 
+                      onClick={handleSaveProfile} 
+                      disabled={isSaving || !hasChanges()}
+                    >
                       {isSaving ? "Saving..." : "Save Changes"}
                     </button>
-                    <button className="cancel-edit" onClick={handleCancelEdit} disabled={isSaving}>
+                    <button 
+                      className="cancel-edit" 
+                      onClick={handleCancelEdit} 
+                      disabled={isSaving}
+                    >
                       Cancel
                     </button>
                   </>

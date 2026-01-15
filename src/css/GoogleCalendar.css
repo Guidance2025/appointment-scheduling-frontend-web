@@ -69,34 +69,14 @@
     align-items: center;
 }
 
-.today-button {
-    background: #f8fafc;
-    border: 1px solid #48bb78;
-    color: #48bb78;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.today-button:hover {
-    background: #48bb78;
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
-}
-
 .create-button {
     background: #48bb78;
     border: none;
     color: white;
-    padding: 8px 16px;
+    padding: 12px 25px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -106,9 +86,7 @@
 }
 
 .create-button:hover {
-    background: linear-gradient(135deg, #38a169, #2f855a);
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
 }
 
 .calendar-weekdays {
@@ -215,7 +193,6 @@
 }
 
 .appointment-indicator {
-    background: linear-gradient(135deg, #48bb78, #38a169);
     color: white;
     font-size: 11px;
     padding: 2px 6px;
@@ -226,14 +203,37 @@
     cursor: pointer;
     transition: all 0.2s ease;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(72, 187, 120, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .appointment-indicator:hover {
     transform: scale(1.02);
-    box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Status-based colors */
+.appointment-indicator.status-scheduled {
+    background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.appointment-indicator.status-pending {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.appointment-indicator.status-ongoing {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.appointment-indicator.status-default {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* Blocked slots */
+.appointment-indicator.blocked-slot {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Legacy type-based classes (in case they're still used) */
 .appointment-indicator.academic {
     background: linear-gradient(135deg, #48bb78, #38a169);
 }
@@ -252,10 +252,6 @@
 
 .appointment-indicator.office {
     background: linear-gradient(135deg, #6ee7b7, #34d399);
-}
-
-.appointment-indicator.default {
-    background: linear-gradient(135deg, #6b7280, #4b5563);
 }
 
 .appointment-time {

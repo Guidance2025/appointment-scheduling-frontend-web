@@ -31,10 +31,10 @@ export async function getAllAppointmentByGuidanceStaff(guidanceStaffId) {
   }
 }
 
-export async function getAllCounselorAppointmentByStatus(guidanceStaffId,status) {
+export async function getAllCounselorAppointmentByStatus(guidanceStaffId) {
   const JWT_TOKEN = localStorage.getItem("jwtToken");
   try {
-    const response = await fetch(GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF_STATUS(guidanceStaffId,status), {
+    const response = await fetch(GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF_STATUS(guidanceStaffId), {
       method: "GET",
       headers: {
         "Content-Type" : "application/json",

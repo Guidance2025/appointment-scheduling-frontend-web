@@ -280,6 +280,19 @@
   background: #9ca3af;
 }
 
+/* ✅ Section headers (New/Earlier) */
+.notification-section-header {
+  padding: 12px 20px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
 .notification-item {
   padding: 14px 20px;
   border-bottom: 1px solid #f3f4f6;
@@ -299,35 +312,129 @@
   background-color: #f9fafb;
 }
 
+/* ✅ Unread notification (general) - Blue */
 .notification-item.unread {
-  background-color: #e3f2fd;
+  background-color: #eff6ff;
 }
 
 .notification-item.unread:hover {
   background-color: #dbeafe;
 }
 
+/* ✅ Appointment Accepted - Green */
 .notification-item.notification-accepted {
-  background-color: #f1f8f4;
+  background-color: #f0fdf4;
+}
+
+.notification-item.notification-accepted:hover {
+  background-color: #dcfce7;
 }
 
 .notification-item.notification-accepted.unread {
-  background-color: #e8f5e9;
+  background-color: #dcfce7;
 }
 
+/* ✅ Appointment Declined/Cancelled - Red */
 .notification-item.notification-declined {
-  background-color: #fef1f0;
+  background-color: #fef2f2;
+}
+
+.notification-item.notification-declined:hover {
+  background-color: #fee2e2;
 }
 
 .notification-item.notification-declined.unread {
-  background-color: #ffebee;
+  background-color: #fee2e2;
 }
 
+/* ✅ Appointment Request/Response - Blue */
 .notification-item.notification-request {
-  background-color: #e3f2fd;
+  background-color: #eff6ff;
 }
 
+.notification-item.notification-request:hover {
+  background-color: #dbeafe;
+}
 
+.notification-item.notification-request.unread {
+  background-color: #dbeafe;
+}
+
+/* ✅ Appointment Reminder - Yellow */
+.notification-item.notification-reminder {
+  background-color: #fef9c3;
+}
+
+.notification-item.notification-reminder:hover {
+  background-color: #fef08a;
+}
+
+.notification-item.notification-reminder.unread {
+  background-color: #fef08a;
+}
+
+/* ✅ Appointment Update - Orange */
+.notification-item.notification-update {
+  background-color: #fff7ed;
+}
+
+.notification-item.notification-update:hover {
+  background-color: #ffedd5;
+}
+
+.notification-item.notification-update.unread {
+  background-color: #ffedd5;
+}
+
+.notification-item.notification-expired {
+  background-color: #fef2f2;
+}
+
+.notification-item.notification-expired:hover {
+  background-color: #fef2f2;
+}
+
+.notification-item.notification-expired.unread {
+  background-color: #fef2f2;
+}
+
+.notification-item.notification-reschedule {
+  background-color: #faf5ff;
+}
+
+.notification-item.notification-reschedule:hover {
+  background-color: #f3e8ff;
+}
+
+.notification-item.notification-reschedule.unread {
+  background-color: #f3e8ff;
+}
+
+/* ✅ Reschedule Approved - Teal */
+.notification-item.notification-reschedule-approved {
+  background-color: #f0fdfa;
+}
+
+.notification-item.notification-reschedule-approved:hover {
+  background-color: #ccfbf1;
+}
+
+.notification-item.notification-reschedule-approved.unread {
+  background-color: #ccfbf1;
+}
+
+/* ✅ Reschedule Declined - Pink */
+.notification-item.notification-reschedule-declined {
+  background-color: #fdf2f8;
+}
+
+.notification-item.notification-reschedule-declined:hover {
+  background-color: #fce7f3;
+}
+
+.notification-item.notification-reschedule-declined.unread {
+  background-color: #fce7f3;
+}
 
 .notification-unread-dot {
   position: absolute;
@@ -364,14 +471,21 @@
   font-weight: 500;
 }
 
+/* ✅ Relative time */
+.notification-time {
+  margin: 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
 .notification-date {
   margin: 0;
   font-size: 12px;
   color: #9ca3af;
   line-height: 1.4;
 }
-
-
 
 .notification-loading,
 .notification-error {
@@ -380,6 +494,7 @@
   color: #6b7280;
   font-size: 14px;
 }
+
 .notification-actions {
   display: flex;
   gap: 8px;
@@ -399,29 +514,30 @@
 }
 
 .notification-accept-btn {
-  background: #5dd174;
+  background: #16a34a;
   color: white;
 }
 
 .notification-accept-btn:hover:not(:disabled) {
-  background: #45a049;
+  background: #15803d;
 }
 
 .notification-decline-btn {
-  background: #e3726a;
+  background: #dc2626;
   color: white;
 }
 
 .notification-decline-btn:hover:not(:disabled) {
-  background: #bb7b76;
+  background: #b91c1c;
 }
 
 .notification-accept-btn:disabled,
 .notification-decline-btn:disabled {
-  background: #999;
+  background: #9ca3af;
   cursor: not-allowed;
   opacity: 0.6;
 }
+
 .notification-error {
   color: #ef4444;
   background-color: #fef2f2;
@@ -439,6 +555,37 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
+}
+
+/* ✅ "See previous notifications" button at bottom */
+.notification-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
+  flex-shrink: 0;
+}
+
+.see-previous-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.see-previous-button:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.see-previous-button:active {
+  background-color: #dbeafe;
 }
 
 .profile-modal {
