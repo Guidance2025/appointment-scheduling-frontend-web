@@ -1,76 +1,59 @@
-/* src/css/CreatePostModal.css */
-
-/* Overlay */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 999;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px; /* balanced edge spacing */
-  backdrop-filter: blur(2px);
+  padding: 24px;
+  backdrop-filter: blur(4px);
 }
 
-/* Card */
 .modal-card {
   width: 100%;
-  max-width: 560px;
+  max-width: 600px;
   background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 14px 30px rgba(2, 8, 23, 0.12);
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 16px 32px rgba(0,0,0,0.12);
   display: flex;
-  flex-direction: column; /* keep footer pinned while body scrolls */
+  flex-direction: column;
   max-height: 90vh;
   overflow: hidden;
-  animation: modal-pop 140ms ease-out;
+  animation: modal-pop 180ms ease-out;
 }
 
 @keyframes modal-pop {
-  from { transform: translateY(6px) scale(0.99); opacity: 0; }
-  to   { transform: translateY(0)    scale(1);    opacity: 1; }
+  from { transform: translateY(12px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* Header */
 .modal-header {
-  padding: 16px 24px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
-  flex: 0 0 auto;
-}
-.modal-title {
-  margin: 0;
-  font-size: 18px;
-  color: #374151;
-  font-weight: 700;
-  text-align: center;
+  padding: 32px 36px;
+  border-bottom: 2px solid #e5e7eb;
+  background: linear-gradient(90deg, #16a34a, #22c55e); /* emerald gradient */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Body */
-.modal-body {
-  padding: 16px 24px;
-  background: #ffffff;
-  flex: 1 1 auto;
-  overflow-y: auto; /* scroll body if it grows */
-}
 
 /* Form groups */
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;         /* label-field gap */
-  margin-bottom: 16px; /* vertical rhythm */
+  gap: 6px;
+  margin-bottom: 22px;
 }
 .modal-body .filter-group:last-child {
   margin-bottom: 0;
 }
 
 .filter-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: #1f2937;
 }
 
 /* Inputs */
@@ -78,26 +61,26 @@ input.filter-input,
 select.filter-select,
 textarea.filter-input {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 12px;
   background: #ffffff;
   color: #111827;
-  font-size: 14px;
-  line-height: 1.3;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease, color 0.15s ease;
+  font-size: 15px;
+  line-height: 1.4;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input.filter-input,
 select.filter-select {
-  height: 42px;
-  padding: 0 12px;
+  height: 46px;
+  padding: 0 14px;
 }
 
 textarea.filter-input {
-  min-height: 120px;
-  padding: 10px 12px;
+  min-height: 140px;
+  padding: 14px;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 input.filter-input::placeholder,
@@ -115,87 +98,158 @@ input.filter-input:focus,
 select.filter-select:focus,
 textarea.filter-input:focus {
   outline: none;
-  border-color: #16a34a; /* emerald-600 */
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.32);
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
 }
 
-/* Disabled */
-input.filter-input:disabled,
-select.filter-select:disabled,
-textarea.filter-input:disabled {
-  background: #ffffff;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-/* Helper text */
+/* Hint text */
 .hint {
   color: #6b7280;
   font-size: 12px;
-  line-height: 1.3;
+  font-style: italic;
+  margin-top: 2px;
 }
 
-/* Footer: CENTER the buttons (bigger, without changing your colors) */
+/* Actions */
 .modal-actions {
   display: flex;
-  justify-content: center;   /* center the buttons */
-  align-items: center;
-  gap: 14px;                 /* even spacing */
-  padding: 16px 20px 20px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
-  flex: 0 0 auto;
+  justify-content: center;
+  gap: 16px;
+  padding: 18px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-/* Button base (keeps your existing color classes) */
 .filter-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 48px;      /* larger */
-  padding: 0 22px;   /* more horizontal padding */
+  height: 48px;
+  padding: 0 24px;
   border-radius: 12px;
-  font-size: 15px;   /* slightly larger text */
-  font-weight: 700;  /* bolder */
+  font-size: 15px;
+  font-weight: 600;
   text-align: center;
-  border: 1px solid transparent;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 60ms ease;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
 }
+
 .filter-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.35) !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.35);
 }
+
 .filter-button:active {
-  transform: translateY(0.5px);
+  transform: translateY(1px);
 }
 
-/* Make primary wider (keeps your colors from .filter-button.primary) */
-.modal-actions .filter-button.primary {
-  min-width: 200px;
+.filter-button.primary {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #ffffff;
+  min-width: 160px;
+}
+.filter-button.primary:hover:not(:disabled) {
+  background: #15803d;
+  border-color: #15803d;
 }
 
-.modal-actions .filter-button-seondary {
-  min-width: 200px;
+.filter-button.secondary {
+  background: #ffffff;
+  border-color: #d1d5db;
+  color: #374151;
+  min-width: 160px;
+}
+.filter-button.secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
-/* Mobile */
+/* Responsive */
 @media (max-width: 520px) {
   .modal-overlay { padding: 16px; }
-  .modal-header,
-  .modal-body,
-  .modal-actions {
+  .modal-header, .modal-body, .modal-actions {
     padding-left: 16px;
     padding-right: 16px;
   }
   .modal-actions {
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 }
 
-.filter-button-primary1 {
-  background: #16a34a;   
-  border-color: #16a34a;
-  color: #16a34a;
+/* Center the form content and constrain max width */
+.modal-body {
+  padding: 34px 38px;
+  background: #ffffff;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center groups */
+}
+
+/* Base group sizing */
+.filter-group {
+  width: 100%;
+  max-width: 480px; /* slightly wider but not full modal */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+/* Two-column row for short fields */
+.filter-row.two-col {
+  width: 100%;
+  max-width: 480px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Ensure inner groups don't override spacing */
+.filter-row.two-col .filter-group {
+  margin-bottom: 0;
+}
+
+/* Inputs keep consistent height and padding */
+input.filter-input,
+select.filter-select {
+  height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* Balanced textarea width */
+textarea.filter-input {
+  min-height: 140px;
+  padding: 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 100%;
+  max-width: 480px;
+  line-height: 1.6;
+}
+
+/* Mobile: stack the two columns */
+@media (max-width: 520px) {
+  .filter-row.two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 34px;          /* larger headline */
+  color: #ffffff;
+  font-weight: 800;         /* extra bold */
+  text-align: center;
+  letter-spacing: 0.5px;    /* subtle spacing */
+  text-transform: uppercase;/* optional: makes it feel like a strong header */
 }

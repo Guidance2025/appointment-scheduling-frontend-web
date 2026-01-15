@@ -6,7 +6,9 @@ import {
   LayoutGrid, 
   CalendarClock, 
   UserSquare2, 
-  FolderOpen 
+  FolderOpen, 
+  GitCommit,
+  ShieldHalfIcon
 } from 'lucide-react';
 
 const Sidebar = ({ onNavigate, currentPage }) => {
@@ -19,7 +21,7 @@ const Sidebar = ({ onNavigate, currentPage }) => {
     { name: 'Appointments', icon: CalendarClock, component: 'Appointments' },
     { name: 'Exit Interview', icon: FolderOpen, component: 'ExitInterview' },
     { name: 'Mood Management', icon: UserSquare2, component: 'MoodTrend' },
-    //{ name: 'Self-Assessment', icon: FolderOpen, component: 'SelfAssessment' },
+    { name: 'Self-Assessment', icon: ShieldHalfIcon, component: 'SelfAssesment' },
   ];
 
   const handleItemClick = (item) => {

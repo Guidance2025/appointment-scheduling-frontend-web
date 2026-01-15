@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import "../../css/ExitInterview.css";
+import "../../css/SelfAssessment.css";
 import { API_BASE_URL } from '../../../constants/api';
 
-const ExitInterview = () => {
-  const [activeTab, setActiveTab] = useState('posted');  // Default to Posted Questions
+const SelfAssessment = () => {
+  const [activeTab, setActiveTab] = useState('questions');
   const [questions, setQuestions] = useState(['']);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -66,7 +67,7 @@ const ExitInterview = () => {
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/exit-interview/retrieve-questions/${guidanceStaffId}`,
+        `http://localhost:8080/self-assessment/retrieve-questions/${guidanceStaffId}`,
         {
           method: 'GET',
           headers: {
@@ -101,7 +102,7 @@ const ExitInterview = () => {
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/exit-interview/student-response`,
+        `http://localhost:8080/self-assessment/student-response`,
         {
           method: 'GET',
           headers: {
@@ -178,7 +179,7 @@ const ExitInterview = () => {
       }
 
       const response = await fetch(
-        `${API_BASE_URL}/api/exit-interview/create/${guidanceStaffId}`,
+        `${API_BASE_URL}/self-assessment/create/${guidanceStaffId}`,
         {
           method: 'POST',
           headers: {
@@ -243,17 +244,16 @@ const ExitInterview = () => {
     
     const matchesSearch = questionText.includes(searchLower) || responseText.includes(searchLower);
     
-    const matchesDate = filterByDateRange(item.submittedDate, filterDate);
+    const matchesDate = filterByDateRange(item.responseDate, filterDate);
     
     return matchesSearch && matchesDate;
   });
 
   return (
     <div className="page-container">
-      {/* Form at top, mirroring SelfAssessment */}
-      <div className="exit-form-card">
-        <h2 className="form-title">Create Exit Interview Questions</h2>
-        <p className="form-description">Add questions for graduating students (Maximum 5 questions)</p>
+      <div className="assessment-form-card">
+        <h2 className="form-title">Create Self-Assessment</h2>
+        <p className="form-description">Add questions for students to reflect on their progress (Maximum 5 questions)</p>
         
         {error && (
           <div style={{
@@ -331,78 +331,75 @@ const ExitInterview = () => {
             onClick={handlePost}
             disabled={loading}
           >
-            {loading ? 'Posting...' : 'Post Questions'}
+            {loading ? 'Posting...' : 'Post Assessment'}
           </button>
         </div>
       </div>
 
-      {/* Tabs: Posted Questions and Student Responses */}
-      <div className="tabs">
-        <button
-          className={`tab-button ${activeTab === "posted" ? "active" : ""}`}
-          onClick={() => setActiveTab("posted")}
-          type="button"
-        >
-          Posted Questions
-        </button>
-        <button
-          className={`tab-button ${activeTab === "responses" ? "active" : ""}`}
-          onClick={() => setActiveTab("responses")}
-          type="button"
-        >
-          Student Responses
-        </button>
-      </div>
+      <div className="assessment-tabs-container">
+        <div className="tabs-header">
+          <button
+            className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('questions')}
+          >
+            Posted Questions  
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'responses' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('responses')}
+          >
+            Student Responses
+          </button>
+        </div>
 
-      {/* POSTED QUESTIONS TAB */}
-      {activeTab === "posted" && (
-        <>
-          <div className="assessment-filter-bar">
-            <div className="filter-row">
-              <div className="filter-group search-group">
-                <label className="filter-label">Search</label>
-                <div className="filter-input-wrapper">
-                  <input
-                    type="text"
-                    className="filter-input"
-                    placeholder="Search by counselor or questions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {searchTerm && (
-                    <button className="clear-filter-icon" onClick={handleClearSearch}>
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="filter-group date-group">
-                <label className="filter-label">Date Range</label>
-                <select
-                  className="filter-select"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                </select>
-              </div>
-
-              <div className="filter-actions">
-                <button className="filter-button secondary" onClick={() => {
-                  setSearchTerm('');
-                  setFilterDate('all');
-                }}>
-                  Reset
-                </button>
+        <div className="assessment-filter-bar">
+          <div className="filter-row">
+            <div className="filter-group search-group">
+              <label className="filter-label">Search</label>
+              <div className="filter-input-wrapper">
+                <input
+                  type="text"
+                  className="filter-input"
+                  placeholder={activeTab === 'questions' ? 'Search by counselor or questions...' : 'Search by question or response...'}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button className="clear-filter-icon" onClick={handleClearSearch}>
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="appointments-content">
+            <div className="filter-group date-group">
+              <label className="filter-label">Date Range</label>
+              <select
+                className="filter-select"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              >
+                <option value="all">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+            </div>
+
+            <div className="filter-actions">
+              <button className="filter-button secondary" onClick={() => {
+                setSearchTerm('');
+                setFilterStatus('all');
+                setFilterDate('all');
+              }}>
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="appointments-content">
+          {activeTab === 'questions' ? (
             <div className="appointments-table-container">
               {fetchingQuestions ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -449,59 +446,7 @@ const ExitInterview = () => {
                 </table>
               )}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* STUDENT RESPONSES TAB (responses from mobile app) */}
-      {activeTab === "responses" && (
-        <>
-          <div className="assessment-filter-bar">
-            <div className="filter-row">
-              <div className="filter-group search-group">
-                <label className="filter-label">Search</label>
-                <div className="filter-input-wrapper">
-                  <input
-                    type="text"
-                    className="filter-input"
-                    placeholder="Search by question or response..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {searchTerm && (
-                    <button className="clear-filter-icon" onClick={handleClearSearch}>
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="filter-group date-group">
-                <label className="filter-label">Date Range</label>
-                <select
-                  className="filter-select"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                </select>
-              </div>
-
-              <div className="filter-actions">
-                <button className="filter-button secondary" onClick={() => {
-                  setSearchTerm('');
-                  setFilterDate('all');
-                }}>
-                  Reset
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="appointments-content">
+          ) : (
             <div className="appointments-table-container">
               {fetchingResponses ? (
                 <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -534,7 +479,7 @@ const ExitInterview = () => {
                             {item.responseText}
                           </td>
                           <td className="date-cell">
-                            {new Date(item.submittedDate).toLocaleDateString('en-US', { 
+                            {new Date(item.responseDate).toLocaleDateString('en-US', { 
                               month: 'short', 
                               day: 'numeric', 
                               year: 'numeric',
@@ -552,11 +497,11 @@ const ExitInterview = () => {
                 </table>
               )}
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default ExitInterview;
+export default SelfAssessment;

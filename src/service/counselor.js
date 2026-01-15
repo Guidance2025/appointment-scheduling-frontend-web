@@ -164,3 +164,56 @@ export async function getProfileByEmployeeNumber(employeeNumber){
     throw error;
   }
 }
+
+
+export async function updateCounselorProfile(guidanceStaffId, profileData) {
+  try {
+    const jwtToken = localStorage.getItem("jwtToken");
+    
+    console.log("=== UPDATE COUNSELOR PROFILE DEBUG ===");
+    console.log("Guidance Staff ID:", guidanceStaffId);
+    console.log("JWT Token exists:", !!jwtToken);
+    
+    if (!jwtToken) {
+      throw new Error("No JWT Token Found. Please log in again.");
+    }
+
+    const requestBody = {};
+    if (profileData.email?.trim()) {
+      requestBody.email = profileData.email.trim();
+    }
+    if (profileData.contactNumber?.trim()) {
+      requestBody.contactNumber = profileData.contactNumber.trim();
+    }
+
+    console.log("Request Body:", requestBody);
+    
+
+    const response = await fetch(`${API_BASE_URL}/counselor-profile/${guidanceStaffId}/profile`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${jwtToken}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    console.log("Response Status:", response.status);
+    console.log("Response OK:", response.ok);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("Error Response:", errorText);
+      throw new Error(`Failed to update profile: ${response.status} - ${errorText}`);
+    }
+
+    const updatedStaff = await response.json();
+    console.log("Update successful!");
+    return updatedStaff;
+
+  } catch (error) {
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    throw error;
+  }
+}

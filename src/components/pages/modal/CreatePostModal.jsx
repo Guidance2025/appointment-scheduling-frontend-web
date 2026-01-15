@@ -4,11 +4,11 @@ import "../../../css/CreatePostModal.css";
 const CreatePostModal = ({
   newPost,
   setNewPost,
-  categories,    
+  categories,
   creating,
   handleCreate,
   isOpen,
-  onClose
+  onClose,
 }) => {
   if (!isOpen) return null;
 
@@ -17,85 +17,62 @@ const CreatePostModal = ({
       <div className="modal-card">
         <form onSubmit={handleCreate}>
           <div className="modal-header">
-            <h3 className="modal-title">Create Post</h3>
+            <h3>Create New Post</h3>
+            <button type="button" className="close-btn" onClick={onClose}>
+              ×
+            </button>
           </div>
-
           <div className="modal-body">
-            <div className="filter-group">
-              <label className="filter-label">Category</label>
-              <input
-                className="filter-input"
-                list="category-list"
-                placeholder="Type: Announcement, Quote, Events"
-                value={newPost.category_name || ""}
+            <div className="form-group">
+              <label htmlFor="category">Category</label>
+              <select
+                id="category"
+                value={newPost.category_name}
                 onChange={(e) =>
-                  setNewPost((s) => ({
-                    ...s,
-                    category_name: e.target.value, 
-                    category_id: ""               
-                  }))
+                  setNewPost({ ...newPost, category_name: e.target.value })
                 }
                 required
-              />
-              <datalist id="category-list">
-                <option value="Announcement" />
-                <option value="Quote" />
-                <option value="Events" />
-              </datalist>
-              <small className="hint">
-                You can type a new or existing category. It will be saved automatically.
-              </small>
-            </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Section (optional)</label>
-              <select
-                className="filter-select"
-                value={newPost.section_id}
-                onChange={(e) => setNewPost((s) => ({ ...s, section_id: e.target.value }))}
               >
-                <option value="">All Sections</option> 
-                <option value="1">ROCS - BSIT</option>
-                <option value="2">ELITES - BSECE</option>
-                <option value="3">MERX - BSBA</option>
-                <option value="3">JPIA - BSA</option>
-              </select>
-            </div> 
-
-            <div className="filter-group">
-              <label className="filter-label">Section Code (optional)</label>
-              <select
-                className="filter-select"
-                value={newPost.section_code || ""}
-                onChange={(e) => setNewPost((s) => ({ ...s, section_code: e.target.value }))}
-              >
-                <option value="">None</option>
-                <option value="101">101</option>
-                <option value="301">301</option>
-                <option value="501">501</option>
-                <option value="701">701</option>
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.category_id} value={cat.category_name}>
+                    {cat.category_name}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <div className="filter-group">
-              <label className="filter-label">Content</label>
+            <div className="form-group">
+              <label htmlFor="content">Post Content</label>
               <textarea
-                className="filter-input"
-                rows={4}
-                placeholder="Write your post..."
+                id="content"
                 value={newPost.post_content}
-                onChange={(e) => setNewPost((s) => ({ ...s, post_content: e.target.value }))}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, post_content: e.target.value })
+                }
+                placeholder="Enter your post content..."
+                rows={4}
                 required
               />
             </div>
+            <div className="form-group">
+              <label htmlFor="section">Section (Optional)</label>
+              <input
+                id="section"
+                type="text"
+                value={newPost.section_id}
+                onChange={(e) =>
+                  setNewPost({ ...newPost, section_id: e.target.value })
+                }
+                placeholder="Enter section ID if targeting specific section"
+              />
+            </div>
           </div>
-
-          <div className="modal-actions">
-            <button type="button" className="filter-button secondary" onClick={onClose}>
+          <div className="modal-footer">
+            <button type="button" className="btn-secondary" onClick={onClose}>
               Cancel
             </button>
-            <button type="submit" className="filter-button primary" disabled={creating}>
-              {creating ? "Creating..." : "Create"}
+            <button type="submit" className="btn-primary" disabled={creating}>
+              {creating ? "Creating..." : "Create Post"}
             </button>
           </div>
         </form>

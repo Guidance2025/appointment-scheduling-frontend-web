@@ -19,7 +19,31 @@ export const UPDATE_GUIDANCE_STAFF_ACCOUNT = (`${API_BASE_URL}/admin/guidance-st
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF = (guidanceStaffId) => (`${API_BASE_URL}/counselor/find/appointment/${guidanceStaffId}`);
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF_STATUS = (guidanceStaffId,status) => (`${API_BASE_URL}/counselor/appointment/${status}/${guidanceStaffId}`);
 export const GET_NOTIFICATION_BY_USER = (userId) => (`${API_BASE_URL}/notification/${userId}`);
-export const GET_PROFILE_BY_EMPLOYEENUMBER = (employeeNumber) => (`${API_BASE_URL}/counselor/profile/${employeeNumber}`);
+export const GET_PROFILE_BY_EMPLOYEENUMBER = (employeeNumber) => (`${API_BASE_URL}/counselor-profile/${employeeNumber}`);
+
+//POST
+export const POSTS_URL = `${API_BASE_URL}/api/posts`;
+export const QUOTE_OF_THE_DAY_URL = `${API_BASE_URL}/api/posts/quote-of-the-day`;
+export const CATEGORIES_URL = `${API_BASE_URL}/api/categories`;
+export const LATEST_POSTS_URL = `${API_BASE_URL}/api/posts/latest`;
+export const SECTIONS_URL = `${API_BASE_URL}/api/sections`;
+export const DELETE_POST_URL = (id) => `${API_BASE_URL}/api/${id}`;
+export const POST_BY_ID_URL = (id) => `${API_BASE_URL}/api/posts/${id}`;
+export const UPDATE_POST_URL = (id) => `${API_BASE_URL}/api/posts/${id}`;
+export const SECTIONS_COURSES_URL = `${SECTIONS_URL}/courses`;
+export const SECTIONS_CLUSTERS_URL = `${SECTIONS_URL}/clusters`;
+
+//EXIT INTERVIEW
+export const EXIT_INTERVIEW_CREATE_MULTIPLE_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/create/${staffId}`;
+export const EXIT_INTERVIEW_RETRIEVE_QUESTIONS_STAFF_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/retrieve-questions/${staffId}`;
+export const EXIT_INTERVIEW_ALL_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/student/all-questions`;
+export const EXIT_INTERVIEW_SUBMIT_ANSWER_URL = `${API_BASE_URL}/api/exit-interview/submit-answer`;
+export const EXIT_INTERVIEW_STUDENT_RESPONSES_URL = `${API_BASE_URL}/api/exit-interview/student-response`;
+export const EXIT_INTERVIEW_UNANSWERED_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/questions/unanswered`;
+export const EXIT_INTERVIEW_STUDENTS_URL = `${API_BASE_URL}/api/exit-interview/students`;
+
+//MOODS
+export const MOODS_URL = `${API_BASE_URL}/api/moods`;
 
 //NOTIFICATION
 export const GET_UNREAD_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification/unreadCount/${userId}`);
@@ -28,3 +52,4 @@ export const CLEAR_ALL_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification
 
 // FORGET PASSWORD
 export const FORGET_PASSWORD = `${API_BASE_URL}/user/reset-password`;
+
