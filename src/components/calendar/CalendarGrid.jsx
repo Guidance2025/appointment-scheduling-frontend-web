@@ -1,15 +1,17 @@
 import { getDaysInMonth, getFirstDayOfMonth } from '../../helper/validation/hooks/calendarHelper';
-import { formatAppointmentDateTime } from '../../helper/dateHelper';
-import "./../../css/Calendar.css";
+import * as PHTimeUtils from '../../utils/dateTime';
+import "../../css/Calendar.css";
+
 export default function CalendarGrid({
   currentDate,
-  appointments,
+  appointments = [],
+  blockedPeriods = [],
   selectedDate,
   handleDateClick,
   daysOfWeek
-}) { 
+}) {
   const isToday = (day) => {
-    const today = new Date();
+    const today = PHTimeUtils.getCurrentPHTime();
     return (
       day === today.getDate() &&
       currentDate.getMonth() === today.getMonth() &&
@@ -26,17 +28,55 @@ export default function CalendarGrid({
     );
   };
 
+  const isDateBlocked = (day) => {
+    const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return blockedPeriods.some(block => {
+      const blockDate = PHTimeUtils.parseUTCToPH(block.scheduledDate);
+      return (
+        blockDate.getDate() === dayDate.getDate() &&
+        blockDate.getMonth() === dayDate.getMonth() &&
+        blockDate.getFullYear() === dayDate.getFullYear()
+      );
+    });
+  };
+
+  const getBlocksForDay = (day) => {
+    const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return blockedPeriods.filter(block => {
+      const blockDate = PHTimeUtils.parseUTCToPH(block.scheduledDate);
+      return (
+        blockDate.getDate() === dayDate.getDate() &&
+        blockDate.getMonth() === dayDate.getMonth() &&
+        blockDate.getFullYear() === dayDate.getFullYear()
+      );
+    });
+  };
+
   const getAppointmentsForDay = (day) => {
     const dayDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     return appointments.filter((appointment) => {
       if (!appointment.scheduledDate) return false;
-      const date = new Date(appointment.scheduledDate);
+      const date = PHTimeUtils.parseUTCToPH(appointment.scheduledDate);
       return (
         date.getDate() === dayDate.getDate() &&
         date.getMonth() === dayDate.getMonth() &&
         date.getFullYear() === dayDate.getFullYear()
       );
     });
+  };
+
+  const getStatusClass = (status) => {
+    const normalizedStatus = status?.toUpperCase().trim();
+    switch (normalizedStatus) {
+      case 'SCHEDULED':
+        return 'status-scheduled';
+      case 'PENDING':
+        return 'status-pending';
+      case 'ONGOING':
+        return 'status-ongoing';
+      default:
+        return 'status-default';
+    }
   };
 
   const renderCalendarDays = () => {
@@ -50,29 +90,45 @@ export default function CalendarGrid({
 
     for (let day = 1; day <= totalDays; day++) {
       const dayAppointments = getAppointmentsForDay(day);
+      const dayBlocks = getBlocksForDay(day);
+      const isBlocked = isDateBlocked(day);
+
       const classes = [
         'calendar-day',
         isToday(day) ? 'today' : '',
         isSelected(day) ? 'selected' : '',
         dayAppointments.length > 0 ? 'has-appointments' : '',
-      ]
-        .filter(Boolean)
-        .join(' ');
+        isBlocked ? 'blocked' : ''
+      ].filter(Boolean).join(' ');
 
       days.push(
         <div key={day} className={classes} onClick={() => handleDateClick(day)}>
           <div className="day-header">
             <span className="day-number">{day}</span>
+            {isBlocked && <span className="blocked-indicator">🚫</span>}
           </div>
+
           <div className="day-appointments">
-            {dayAppointments.slice(0, 3).map((appointment, i) => {
-              const { timeRange } = formatAppointmentDateTime(
+            {dayBlocks.map((block, i) => {
+              const startTime = PHTimeUtils.formatTimePH(block.scheduledDate);
+              const endTime = block.endDate ? PHTimeUtils.formatTimePH(block.endDate) : null;
+              const timeRange = endTime ? `${startTime} - ${endTime}` : 'All Day';
+              return (
+                <div key={`block-${i}`} className="appointment-indicator blocked-slot">
+                  <span>{timeRange}</span>
+                  <span>{block.reason || 'Blocked'}</span>
+                </div>
+              );
+            })}
+
+            {dayAppointments.slice(0, isBlocked ? 2 : 3).map((appointment, i) => {
+              const { timeRange } = PHTimeUtils.formatAppointmentDateTime(
                 appointment.scheduledDate,
                 appointment.endDate
               );
-              const type = appointment.appointmentType?.toLowerCase() || 'default';
+              const statusClass = getStatusClass(appointment.status);
               return (
-                <div key={i} className={`appointment-indicator ${type}`}>
+                <div key={i} className={`appointment-indicator ${statusClass}`}>
                   <span>{timeRange.split(' - ')[0]}</span>
                   <span>
                     {appointment.student?.firstName} {appointment.student?.lastName}
@@ -80,9 +136,10 @@ export default function CalendarGrid({
                 </div>
               );
             })}
-            {dayAppointments.length > 3 && (
+
+            {(dayAppointments.length + dayBlocks.length) > 3 && (
               <div className="more-appointments">
-                +{dayAppointments.length - 3} more
+                +{(dayAppointments.length + dayBlocks.length) - 3} more
               </div>
             )}
           </div>

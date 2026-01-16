@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import schoolLogo from "../../assets/school-logo.png";
 import "../../css/GabayLogin.css";
@@ -10,14 +10,19 @@ import { usePopUp } from "../../helper/message/pop/up/provider/PopUpModalProvide
 function GuidanceLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
 
-
   const [formData, setFormData] = useState({
     username: "",
     password: ""
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockTimer, setLockTimer] = useState(null);
+  const [remainingTime, setRemainingTime] = useState(null); 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  
+  const lockTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
 
   const ALLOWED_ROLES = {
     ADMIN: "ADMIN_ROLE",
@@ -29,15 +34,66 @@ function GuidanceLogin({ onLoginSuccess }) {
     [ALLOWED_ROLES.GUIDANCE]: "/dashboard/MainPage"
   };
 
-  
-  
+  useEffect(() => {
+    const savedLockTime = localStorage.getItem('accountLockTime');
+    
+    if (savedLockTime) {
+      const lockTime = parseInt(savedLockTime, 10);
+      const now = Date.now();
+      
+      if (lockTime > now) {
+        setIsLocked(true);
+        setLockTimer(lockTime);
+        setError("Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.");
+      } else {
+        localStorage.removeItem('accountLockTime');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLocked && lockTimer) {
+      countdownIntervalRef.current = setInterval(() => {
+        const remaining = lockTimer - Date.now();
+        
+        if (remaining <= 0) {
+          setIsLocked(false);
+          setLockTimer(null);
+          setRemainingTime(null);  
+          setError("");
+          localStorage.removeItem('accountLockTime');
+          console.log(" Account automatically unlocked");
+        } else {
+          const minutes = Math.floor(remaining / 60000);
+          const seconds = Math.floor((remaining % 60000) / 1000);
+          setRemainingTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+        }
+      }, 1000);
+    } else {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+      setRemainingTime(null);
+    }
+    
+    return () => {
+      if (lockTimeoutRef.current) {
+        clearTimeout(lockTimeoutRef.current);
+      }
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+    };
+  }, [isLocked, lockTimer]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setError("");
+    if (!isLocked) {
+      setError("");
+    }
   };
 
-  
   const validateForm = () => {
     const { username, password } = formData;
     
@@ -54,10 +110,7 @@ function GuidanceLogin({ onLoginSuccess }) {
     return true;
   };
 
- 
   const extractUserRole = (roleData) => {
-
-   
     let roles = [];
     
     if (Array.isArray(roleData)) {
@@ -95,7 +148,6 @@ function GuidanceLogin({ onLoginSuccess }) {
     }
   };
 
-
   const handleRoleBasedRedirect = (role) => {
     const route = ROLE_ROUTES[role];
     
@@ -110,23 +162,21 @@ function GuidanceLogin({ onLoginSuccess }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
     setError("");
 
     try {
-      
-      
+      const lockTime = localStorage.getItem('accountLockTime');
       localStorage.clear();
-      
+      if (lockTime) {
+        localStorage.setItem('accountLockTime', lockTime);
+      }
       
       const response = await login(formData.username, formData.password);
       console.log(" Login response:", response);
 
-      
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
       }
@@ -134,13 +184,8 @@ function GuidanceLogin({ onLoginSuccess }) {
       const { data, jwtToken, guidanceStaffId } = response;
       const { userId, role } = data;
 
-      if (!userId) {
-        throw new Error("No user ID received from server");
-      }
-
-      if (!role) {
-        throw new Error("No role information received");
-      }
+      if (!userId) throw new Error("No user ID received from server");
+      if (!role) throw new Error("No role information received");
 
       const userRole = extractUserRole(role);
       
@@ -149,28 +194,80 @@ function GuidanceLogin({ onLoginSuccess }) {
       }
 
       storeUserSession(userId, guidanceStaffId, jwtToken, userRole);
+      localStorage.removeItem('accountLockTime');
 
       try {
         await registerFcmToken(userId);
       } catch (fcmError) {
         console.warn(" Failed to register FCM token:", fcmError);
       }
+      
       handleRoleBasedRedirect(userRole);
 
     } catch (err) {
       console.error(" Login failed:", err);
+      console.error(" Error status:", err.status);
+      console.error(" Error message:", err.message);
       
       let errorMessage = "Login failed. Please try again.";
+      let accountLocked = false;
       
-      if (err.message.includes("401") || err.message.includes("Unauthorized")) {
-        errorMessage = "Invalid username or password";
-      } else if (err.message.includes("network") || err.message.includes("fetch")) {
+      const errorMsg = (err.message || "").toUpperCase();
+      
+
+      if (err.status === 423) {
+      
+        errorMessage = "Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.";
+        accountLocked = true;
+        console.log(" Account locked detected via status 423");
+      }
+      else if (
+        errorMsg.includes("LOCKED") || 
+        errorMsg.includes("ACCOUNT HAS BEEN LOCKED") ||
+        errorMsg.includes("MULTIPLE FAILED LOGIN ATTEMPTS") ||
+        errorMsg.includes("TOO MANY") ||
+        errorMsg.includes("MAX LOGIN ATTEMPTS")
+      ) {
+        errorMessage = "Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.";
+        accountLocked = true;
+        console.log(" Account locked detected via error message");
+      }
+      else if (errorMsg.includes("DISABLED") || errorMsg.includes("ACCOUNT HAS BEEN DISABLED")) {
+        errorMessage = "Your account has been disabled. Please contact support.";
+        accountLocked = true;
+        console.log(" Account disabled detected");
+      }
+      else if (
+        err.status === 401 || 
+        errorMsg.includes("INCORRECT") || 
+        errorMsg.includes("USERNAME/PASSWORD") ||
+        errorMsg.includes("BAD CREDENTIALS")
+      ) {
+        errorMessage = "Incorrect username or password. Please try again.";
+        console.log(" Invalid credentials");
+      }
+      else if (err.status === 403) {
+        errorMessage = "Access denied. Please check your credentials.";
+        console.log(" Access forbidden");
+      }
+      else if (errorMsg.includes("NETWORK") || errorMsg.includes("FETCH")) {
         errorMessage = "Network error. Please check your connection.";
-      } else if (err.message) {
+        console.log(" Network error");
+      }
+      else if (err.message && err.message.length < 100) {
         errorMessage = err.message;
       }
       
       setError(errorMessage);
+      
+      if (accountLocked && !isLocked) {
+        const unlockTime = Date.now() + (15 * 60 * 1000);
+        localStorage.setItem('accountLockTime', unlockTime.toString());
+        setLockTimer(unlockTime);
+        setIsLocked(true);
+        console.log(" Account locked. Unlock time:", new Date(unlockTime));
+      }
+      
     } finally {
       setIsLoading(false);
     }
@@ -199,8 +296,19 @@ function GuidanceLogin({ onLoginSuccess }) {
             <h2 className="login-title">Login</h2>
             
             {error && (
-              <div className="error-message" role="alert" aria-live="polite">
+              <div 
+                className={`error-message ${
+                  error.toLowerCase().includes('locked') ? 'error-locked' : ''
+                }`}
+                role="alert" 
+                aria-live="polite"
+              >
                 {error}
+                {isLocked && remainingTime && (
+                  <div className="lock-timer">
+                    Unlock in: {remainingTime}
+                  </div>
+                )}
               </div>
             )}
 
@@ -216,7 +324,7 @@ function GuidanceLogin({ onLoginSuccess }) {
                   type="text"
                   value={formData.username}
                   onChange={handleInputChange}
-                  disabled={isLoading}
+                  disabled={isLoading || isLocked}
                   autoComplete="username"
                   required
                   aria-required="true"
@@ -235,7 +343,7 @@ function GuidanceLogin({ onLoginSuccess }) {
                   type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  disabled={isLoading}
+                  disabled={isLoading || isLocked}
                   autoComplete="current-password"
                   required
                   aria-required="true"
@@ -245,11 +353,16 @@ function GuidanceLogin({ onLoginSuccess }) {
 
               <button 
                 type="submit" 
-                disabled={isLoading} 
+                disabled={isLoading || isLocked}
                 className="login-button"
                 aria-busy={isLoading}
               >
-                {isLoading ? "LOGGING IN..." : "LOGIN"}
+                {isLoading 
+                  ? "LOGGING IN..." 
+                  : isLocked 
+                    ? `ACCOUNT LOCKED ${remainingTime ? `(${remainingTime})` : ''}` 
+                    : "LOGIN"
+                }
               </button>
             </form>
 

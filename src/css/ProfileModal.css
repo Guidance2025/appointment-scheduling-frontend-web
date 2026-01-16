@@ -109,11 +109,14 @@
 }
 
 .field-input.error {
-  border-color: #f37f8a;
+  border-color: #EF4444;
+  background-color: #FEE2E2;
 }
 
 .field-input.error:focus {
-  box-shadow: 0 0 0 3px rgba(243, 127, 138, 0.1);
+  border-color: #DC2626;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .field-input:disabled {
@@ -138,18 +141,50 @@
   width: 40px;
   height: 40px;
   border: 3px solid #f3f4f6;
-  border-top-color: rgb(64, 110, 64);
+  border-top-color: #48BB78;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
   margin-bottom: 16px;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 .loading-container p {
   color: #6b7280;
   font-size: 14px;
   margin: 0;
+}
+
+/* UNSAVED CHANGES INDICATOR */
+.profile-changes-indicator {
+  margin: 12px 0;
+  padding: 10px 16px;
+  background-color: #FEF3C7;
+  border-left: 3px solid #F59E0B;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.changes-text {
+  font-size: 13px;
+  color: #92400E;
+  font-weight: 500;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* PROFILE ACTIONS */
@@ -208,6 +243,7 @@
 .save-profile:hover:not(:disabled) {
   transform: translateY(-2px);
   background-color: #4eb866;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-edit {
@@ -219,12 +255,19 @@
 .cancel-edit:hover:not(:disabled) {
   transform: translateY(-2px);
   background-color: #fff5f6;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
+}
+
+.save-profile:disabled,
+.cancel-edit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {
@@ -250,5 +293,13 @@ button:disabled {
 
   .profile-actions button {
     width: 100%;
+  }
+
+  .profile-changes-indicator {
+    padding: 8px 12px;
+  }
+
+  .changes-text {
+    font-size: 12px;
   }
 }

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import "../../../css/ViewStudentInformationModal.css";
-import { formatAppointmentDateTime } from "../../../helper/dateHelper";
+import { formatAppointmentDateTime } from "../../../utils/dateTime";
 
 const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
   const JWT_TOKEN = localStorage.getItem("jwtToken");
   const [appointment, setAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("student"); 
+  const [activeTab, setActiveTab] = useState("student");
 
   useEffect(() => {
     if (isOpen && appointmentId) {
@@ -18,11 +18,12 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
             {
               method: "GET",
               headers: {
-                Authorization: "Bearer " + JWT_TOKEN,
+                Authorization: `Bearer ${JWT_TOKEN}`,
                 "Content-Type": "application/json",
               },
             }
           );
+
           if (response.ok) {
             const data = await response.json();
             setAppointment(data);
@@ -35,6 +36,7 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
           setLoading(false);
         }
       };
+
       fetchStudentInformation();
     }
   }, [isOpen, appointmentId, JWT_TOKEN]);
@@ -43,13 +45,8 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
 
   return (
     <div className="student-modal-overlay" onClick={isClose}>
-      <div
-        className="student-modal-container"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className="student-modal-close" onClick={isClose}>
-          ×
-        </button>
+      <div className="student-modal-container" onClick={(e) => e.stopPropagation()}>
+        <button className="student-modal-close" onClick={isClose}>×</button>
 
         {loading ? (
           <div className="student-modal-loading">
@@ -61,9 +58,7 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
             <div className="student-modal-header">
               <div className="student-header-info">
                 <h1 className="student-name">
-                  {appointment.student?.person?.firstName || ""}{" "}
-                  {appointment.student?.person?.middleName || ""}{" "}
-                  {appointment.student?.person?.lastName || ""}
+                  {`${appointment.student?.person?.firstName || ""} ${appointment.student?.person?.middleName || ""} ${appointment.student?.person?.lastName || ""}`.trim()}
                 </h1>
                 <p className="student-number-badge">
                   {appointment.student?.studentNumber || "N/A"}
@@ -98,33 +93,23 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Gender</span>
-                      <span className="info-value">
-                        {appointment.student?.person?.gender || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.person?.gender || "N/A"}</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Age</span>
-                      <span className="info-value">
-                        {appointment.student?.person?.age || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.person?.age || "N/A"}</span>
                     </div>
                     <div className="info-item full-width">
                       <span className="info-label">Email</span>
-                      <span className="info-value">
-                        {appointment.student?.person?.email || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.person?.email || "N/A"}</span>
                     </div>
                     <div className="info-item full-width">
                       <span className="info-label">Contact Number</span>
-                      <span className="info-value">
-                        {appointment.student?.person?.contactNumber || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.person?.contactNumber || "N/A"}</span>
                     </div>
                     <div className="info-item full-width">
                       <span className="info-label">Section</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.sectionName || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.sectionName || "N/A"}</span>
                     </div>
                   </div>
                 </div>
@@ -135,42 +120,32 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
                   <div className="info-grid">
                     <div className="info-item">
                       <span className="info-label">Type</span>
-                      <span className="info-value">
-                        {appointment.appointmentType || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.appointmentType || "N/A"}</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Status</span>
-                      <span className="info-value">
-                        {appointment.status || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.status || "N/A"}</span>
                     </div>
+
                     {(() => {
-                      if (appointment.scheduledDate && appointment.endDate) {
-                        const { date, timeRange } = formatAppointmentDateTime(
-                          appointment.scheduledDate,
-                          appointment.endDate
-                        );
-                        return (
-                          <>
-                            <div className="info-item full-width">
-                              <span className="info-label">Scheduled Date</span>
-                              <span className="info-value">{date}</span>
-                            </div>
-                            <div className="info-item full-width">
-                              <span className="info-label">Time</span>
-                              <span className="info-value">{timeRange}</span>
-                            </div>
-                          </>
-                        );
-                      }
+                      const { date, timeRange } = formatAppointmentDateTime(
+                        appointment.scheduledDate,
+                        appointment.endDate
+                      );
                       return (
-                        <div className="info-item full-width">
-                          <span className="info-label">Schedule</span>
-                          <span className="info-value">N/A</span>
-                        </div>
+                        <>
+                          <div className="info-item full-width">
+                            <span className="info-label">Scheduled Date</span>
+                            <span className="info-value">{date}</span>
+                          </div>
+                          <div className="info-item full-width">
+                            <span className="info-label">Time</span>
+                            <span className="info-value">{timeRange}</span>
+                          </div>
+                        </>
                       );
                     })()}
+
                     <div className="info-item full-width">
                       <span className="info-label">Notes</span>
                       <span className="info-value notes-text">
@@ -186,33 +161,23 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
                   <div className="info-grid">
                     <div className="info-item full-width">
                       <span className="info-label">Organization</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.organization || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.organization || "N/A"}</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Cluster Name</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.clusterName || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.clusterName || "N/A"}</span>
                     </div>
                     <div className="info-item">
                       <span className="info-label">Section Name</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.sectionName || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.sectionName || "N/A"}</span>
                     </div>
                     <div className="info-item full-width">
                       <span className="info-label">Cluster Head</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.clusterHead || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.clusterHead || "N/A"}</span>
                     </div>
                     <div className="info-item full-width">
                       <span className="info-label">Course</span>
-                      <span className="info-value">
-                        {appointment.student?.section?.course || "N/A"}
-                      </span>
+                      <span className="info-value">{appointment.student?.section?.course || "N/A"}</span>
                     </div>
                   </div>
                 </div>
