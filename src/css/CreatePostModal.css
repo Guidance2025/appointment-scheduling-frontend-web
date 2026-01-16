@@ -101,7 +101,6 @@ textarea.filter-input:focus {
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
 }
 
-<<<<<<< HEAD
 input.filter-input:disabled,
 select.filter-select:disabled,
 textarea.filter-input:disabled {
@@ -110,9 +109,6 @@ textarea.filter-input:disabled {
   cursor: not-allowed;
 }
 
-=======
-/* Hint text */
->>>>>>> bbe7df9378d9558de084f87ee2588efcee380f95
 .hint {
   color: #6b7280;
   font-size: 12px;
