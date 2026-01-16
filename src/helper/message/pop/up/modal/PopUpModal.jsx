@@ -2,18 +2,20 @@ import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import '../../../../../css/PopUpModal.css';
 
-const NotificationContext = createContext();
-
-export const useNotification = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotification must be used within NotificationProvider');
-  }
-  return context;
-};
-
-export const PopUpModal = ({ type, title, message, onClose }) => {
-  const getTypeStyles = () => {
+export const PopUpModal = ({
+  type = 'info',
+  title,
+  message,
+  onClose,
+  isConfirm = false,
+  onConfirm,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  isLoading = false
+}) => {
+  const getIcon = () => {
+    const iconProps = { size: 28, className: 'popup-icon' };
+    
     switch (type) {
       case 'success':
         return <CheckCircle {...iconProps} />;
