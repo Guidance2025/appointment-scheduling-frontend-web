@@ -67,7 +67,7 @@ const SelfAssessment = () => {
       }
 
       const response = await fetch(
-        `http://localhost:8080/self-assessment/retrieve-questions/${guidanceStaffId}`,
+      `${API_BASE_URL}/self-assessment/retrieve-questions/${guidanceStaffId}`,
         {
           method: 'GET',
           headers: {
@@ -102,7 +102,7 @@ const SelfAssessment = () => {
       }
 
       const response = await fetch(
-        `http://localhost:8080/self-assessment/student-response`,
+      `${API_BASE_URL}/self-assessment/student-response`,
         {
           method: 'GET',
           headers: {
@@ -178,6 +178,11 @@ const SelfAssessment = () => {
         return;
       }
 
+      const payload = {
+        questionTexts: validQuestions,  
+        categoryName: "SELF ASSESSMENT"  
+      };
+
       const response = await fetch(
         `${API_BASE_URL}/self-assessment/create/${guidanceStaffId}`,
         {
@@ -186,7 +191,7 @@ const SelfAssessment = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(validQuestions)
+          body: JSON.stringify(payload)  
         }
       );
 

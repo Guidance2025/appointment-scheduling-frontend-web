@@ -33,14 +33,14 @@ export const UPDATE_POST_URL = (id) => `${API_BASE_URL}/api/posts/${id}`;
 export const SECTIONS_COURSES_URL = `${SECTIONS_URL}/courses`;
 export const SECTIONS_CLUSTERS_URL = `${SECTIONS_URL}/clusters`;
 
-//EXIT INTERVIEW
-export const EXIT_INTERVIEW_CREATE_MULTIPLE_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/create/${staffId}`;
-export const EXIT_INTERVIEW_RETRIEVE_QUESTIONS_STAFF_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/retrieve-questions/${staffId}`;
-export const EXIT_INTERVIEW_ALL_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/student/all-questions`;
-export const EXIT_INTERVIEW_SUBMIT_ANSWER_URL = `${API_BASE_URL}/api/exit-interview/submit-answer`;
-export const EXIT_INTERVIEW_STUDENT_RESPONSES_URL = `${API_BASE_URL}/api/exit-interview/student-response`;
-export const EXIT_INTERVIEW_UNANSWERED_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/questions/unanswered`;
-export const EXIT_INTERVIEW_STUDENTS_URL = `${API_BASE_URL}/api/exit-interview/students`;
+// //EXIT INTERVIEW
+// export const EXIT_INTERVIEW_CREATE_MULTIPLE_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/create/${staffId}`;
+// export const EXIT_INTERVIEW_RETRIEVE_QUESTIONS_STAFF_URL = (staffId) => `${API_BASE_URL}/api/exit-interview/retrieve-questions/${staffId}`;
+// export const EXIT_INTERVIEW_ALL_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/student/all-questions`;
+// export const EXIT_INTERVIEW_SUBMIT_ANSWER_URL = `${API_BASE_URL}/api/exit-interview/submit-answer`;
+// export const EXIT_INTERVIEW_STUDENT_RESPONSES_URL = `${API_BASE_URL}/api/exit-interview/student-response`;
+// export const EXIT_INTERVIEW_UNANSWERED_QUESTIONS_URL = `${API_BASE_URL}/api/exit-interview/questions/unanswered`;
+// export const EXIT_INTERVIEW_STUDENTS_URL = `${API_BASE_URL}/api/exit-interview/students`;
 
 //MOODS
 export const MOODS_URL = `${API_BASE_URL}/api/moods`;
