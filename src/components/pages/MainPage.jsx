@@ -27,6 +27,8 @@ function MainPage() {
         return <Appointment />;
       case "ExitInterview":
         return <ExitInterview />;
+      case "MoodTrend":
+        return <MoodTrend />;
       case "SelfAssesment":
         return <SelfAssesment />;
       default:

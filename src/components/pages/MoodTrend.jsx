@@ -48,7 +48,6 @@ const MoodTrend = () => {
       try {
         const res = await fetch(MOODS_URL);
         const data = await res.json();
-        // Process back-end data: Group moods by student and compute latest mood, etc.
         const studentMap = {};
         (data || []).forEach((mood) => {
           const student = mood.student;
@@ -61,12 +60,11 @@ const MoodTrend = () => {
               student_number: student.studentNumber,
               course: student.section?.course,
               cluster_name: student.section?.clusterName,
-              latest_mood: mood.mood, // Assume mood is a number (e.g., 1-10)
+              latest_mood: mood.mood,
               last_entry_date: mood.entryDate,
               entries: [],
             };
           }
-          // Update latest mood if this entry is newer
           if (new Date(mood.entryDate) > new Date(studentMap[studentId].last_entry_date)) {
             studentMap[studentId].latest_mood = mood.mood;
             studentMap[studentId].last_entry_date = mood.entryDate;
@@ -110,7 +108,6 @@ const MoodTrend = () => {
   const onSelectStudent = (student) => {
     setSelectedStudent(student);
     setShowModal(true);
-    // Entries are already grouped in the student object
     setEntries(student.entries || []);
   };
 
