@@ -263,12 +263,8 @@ function Calendar() {
       }
     };
     fetchAppointments();
-<<<<<<< HEAD
     fetchBlockedPeriods();
   }, [JWT_TOKEN, refreshTrigger, guidanceStaffId]);
-=======
-  }, [JWT_TOKEN, status, refreshTrigger]);
->>>>>>> bbe7df9378d9558de084f87ee2588efcee380f95
 
   const appointmentsThisMonth = appointments.filter((appointment) => {
     const appointmentDate = new Date(appointment.scheduledDate);

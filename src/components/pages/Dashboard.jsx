@@ -1,95 +1,49 @@
 import React, { useEffect, useState } from "react";
 import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
+import PostCard from "./PostCard";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
 import { POSTS_URL, POST_BY_ID_URL, QUOTE_OF_THE_DAY_URL, LATEST_POSTS_URL,
   DELETE_POST_URL,
   UPDATE_POST_URL,
   CATEGORIES_URL,
 } from "../../../constants/api";
+import {
+  fetchLatestPosts,
+  fetchQuoteOfTheDay,
+  fetchCategories,
+  createPost,
+  deletePost,
+} from "../../service/post";
 
 const toJson = async (res) => {
-  if (!res.ok) {const text = await res.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(`HTTP ${res.status} ${res.statusText} ${text}`);
   }
   return res.json();
-};
-
-const fetchAllPosts = async () => {
-  const res = await fetch(POSTS_URL);
-  return toJson(res);
-};
-
-const fetchPostById = async (id) => {
-  const res = await fetch(POST_BY_ID_URL(id));
-  return toJson(res);
-};
-
-const createPostService = async (payload) => {
-  const res = await fetch(POSTS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return toJson(res);
-};
-
-const fetchQuoteOfTheDay = async () => {
-  const res = await fetch(QUOTE_OF_THE_DAY_URL);
-  return toJson(res);
-};
-
-const fetchLatestPosts = async () => {
-  const res = await fetch(LATEST_POSTS_URL);
-  return toJson(res);
-};
-
-const updatePostService = async (id, payload) => {
-  const res = await fetch(UPDATE_POST_URL(id), {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return toJson(res);
-};
-
-const deletePostService = async (id) => {
-  const res = await fetch(DELETE_POST_URL(id), { method: "DELETE" });
-  if (!res.ok) throw new Error(`Delete failed ${res.status}`);
-  return true;
 };
 
 const Dashboard = () => {
   const [posts, setPosts] = useState([]);
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [sections, setSections] = useState([]);
   const [newPost, setNewPost] = useState({
     category_name: "",
     post_content: "",
-    section_id: "",
+    section_ids: [],
     section_code: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [pinnedPosts, setPinnedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-
-  const uniqueById = (arr) => {
-    const seen = new Set();
-    return (arr || []).filter((item) => {
-      const id = item?.post_id ?? item?.postId;
-      if (id == null || seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
-  };
+  const [isGuidanceStaff, setIsGuidanceStaff] = useState(false);
 
   const loadPosts = async () => {
     const data = await fetchLatestPosts();
     const normalized = (data || []).map(normalizePost);
-    setPosts(uniqueById(normalized));
+    setPosts(normalized);
   };
 
   const loadQuote = async () => {
@@ -97,28 +51,61 @@ const Dashboard = () => {
     setQuoteOfTheDay(
       q && Object.keys(q).length
         ? {
-            post_content: q.POST_CONTENT ?? q.post_content,
-            posted_date: q.POSTED_DATE ?? q.posted_date,
-            section_name: q.SECTION_NAME ?? q.section_name,
-            organization: q.ORGANIZATION ?? q.organization,
+            post_content: q.post_content || q.POST_CONTENT,
+            posted_date: q.posted_date || q.POSTED_DATE,
+            section_name: q.section_name || q.SECTION_NAME,
+            organization: q.organization || q.ORGANIZATION,
           }
         : null
     );
   };
 
   const loadCategories = async () => {
-    const res = await fetch(CATEGORIES_URL);
-    if (!res.ok) return setCategories([]);
-    const data = await res.json();
+    const data = await fetchCategories();
     setCategories((data || []).map(normalizeCategory));
+  };
+
+  const loadSections = async () => {
+    try {
+      const token = localStorage.getItem("jwtToken");
+      const res = await fetch("http://localhost:8080/api/sections", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        console.warn("Failed to load sections, status:", res.status);
+        return setSections([]);
+      }
+      const data = await res.json();
+      console.log("[Dashboard] Raw sections from API:", data);
+      const normalized = (data || []).map((s) => ({
+        id: s.section_id || s.id,
+        code: s.section_code || s.code,
+        name: s.section_name || s.name,
+      }));
+      console.log("[Dashboard] Normalized sections:", normalized);
+      setSections(normalized);
+    } catch (e) {
+      console.error("Load sections failed:", e);
+    }
+  };
+
+  const checkUserRole = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const isStaff = user.role === "GUIDANCE_STAFF" || user.role === "guidance_staff" || user.role === "ADMIN" || user.role === "admin";
+      setIsGuidanceStaff(isStaff);
+    } catch (e) {
+      console.error("Check user role failed:", e);
+      setIsGuidanceStaff(true); // Show buttons for testing
+    }
   };
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       try {
-        await Promise.all([loadPosts(), loadQuote(), loadCategories()]);
-        setSelectedIds(new Set());
+        checkUserRole();
+        await Promise.all([loadPosts(), loadQuote(), loadCategories(), loadSections()]);
       } catch (e) {
         console.error("Init failed:", e);
       } finally {
@@ -128,54 +115,14 @@ const Dashboard = () => {
     init();
   }, []);
 
-  const toggleSelect = (post_id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(post_id) ? next.delete(post_id) : next.add(post_id);
-      return next;
-    });
-  };
-
-  const togglePin = (post) => {
-    setPinnedPosts((prev) =>
-      prev.find((p) => p.post_id === post.post_id)
-        ? prev.filter((p) => p.post_id !== post.post_id)
-        : [...prev, post]
-    );
-  };
-
-  const handleBulkDelete = async () => {
-    const ids = Array.from(selectedIds);
-    if (ids.length === 0) return;
-    if (!window.confirm(`Delete ${ids.length} selected post(s)? This cannot be undone.`)) return;
-
-    setBulkDeleting(true);
-    const failed = [];
-
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Delete this post? This cannot be undone.")) return;
     try {
-      for (const id of ids) {
-        try {
-          await deletePostService(id);
-          setPosts((prev) => prev.filter((p) => p.post_id !== id));
-          setSelectedIds((prev) => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-          });
-        } catch {
-          failed.push(id);
-        }
-      }
-      if (failed.length > 0) {
-        alert(`Some posts could not be deleted (${failed.length}).`);
-      }
-    } finally {
-      setBulkDeleting(false);
-      try {
-        await loadPosts();
-      } catch (e) {
-        console.error("Reload after delete failed:", e);
-      }
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((p) => p.post_id !== postId));
+    } catch (e) {
+      console.error("Delete failed:", e);
+      alert("Failed to delete post: " + e.message);
     }
   };
 
@@ -191,26 +138,27 @@ const Dashboard = () => {
 
     setCreating(true);
     try {
-      await createPostService({
-        sectionId: newPost.section_id ? Number(newPost.section_id) : null,
-        postContent,
-        categoryName: newPost.category_name.trim(),
-      });
-
-      if (!res.ok) {
-        const msg = await res.text().catch(() => "");
-        console.error("Create failed:", res.status, res.statusText, msg);
-        alert(`Failed to create post: ${res.status} ${res.statusText}\n${msg}`);
-        return;
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!token) {
+        throw new Error("Authentication token not found. Please log in again.");
       }
 
-      
-      await Promise.all([loadPosts(headers), loadQuote(headers)]);
+      console.log("Creating post with category:", newPost.category_name);
+      console.log("Token exists:", !!token);
+
+      await createPost({
+        categoryName: newPost.category_name.trim(),
+        sectionIds: newPost.section_ids || [],
+        postContent,
+      });
+
+      await Promise.all([loadPosts(), loadQuote()]);
 
       setNewPost({
         category_name: "",
         post_content: "",
-        section_id: "",
+        section_ids: [],
         section_code: "",
       });
       setIsModalOpen(false);
@@ -223,13 +171,72 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="page-container">
-      {/* Header */}
-      {/* ... your JSX from earlier ... */}
+    <div className="dashboard-container">
+      <div className="dashboard-header">
+        <div className="header-content">
+          <h1>Dashboard</h1>
+          <p className="header-subtitle">
+            {isGuidanceStaff ? "Guidance Staff Posts Management" : "Student Updates Feed"}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            console.log("[Dashboard] Opening CreatePostModal with sections:", sections);
+            // Reset form when opening modal
+            setNewPost({
+              category_name: "",
+              post_content: "",
+              section_ids: [],
+              section_code: "",
+            });
+            setIsModalOpen(true);
+          }}
+          className="btn-create-post"
+          disabled={loading || creating}
+          title="Create a new post"
+        >
+          <span className="btn-icon">+</span>
+          <span className="btn-text">Create Post</span>
+        </button>
+      </div>
+
+      {loading && (
+        <div className="loading-container">
+          <div className="spinner"></div>
+          <p className="loading-text">Loading posts...</p>
+        </div>
+      )}
+
+      {quoteOfTheDay && (
+        <div className="quote-of-the-day">
+          <h3>Quote of the Day</h3>
+          <p>{quoteOfTheDay.post_content}</p>
+          {quoteOfTheDay.section_name && (
+            <small>— {quoteOfTheDay.section_name}</small>
+          )}
+        </div>
+      )}
+
+      <div className="posts-container">
+        {posts && posts.length > 0 ? (
+          posts.map((post) => (
+            <PostCard
+              key={post.post_id}
+              post={post}
+              onDelete={handleDeletePost}
+              isGuidanceStaff={isGuidanceStaff}
+            />
+          ))
+        ) : (
+          !loading && <p className="no-posts-text">No posts yet.</p>
+        )}
+      </div>
+
       <CreatePostModal
         newPost={newPost}
         setNewPost={setNewPost}
         categories={categories}
+        sections={sections}
         creating={creating}
         handleCreate={handleCreate}
         isOpen={isModalOpen}
