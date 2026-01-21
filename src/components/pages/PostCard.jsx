@@ -126,7 +126,7 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
             disabled={isDeleting}
             title="Delete this post"
           >
-            🗑️ {isDeleting ? "Deleting..." : "Delete"}
+           {isDeleting ? "Deleting..." : "Delete"}
           </button>
         </div>
 
@@ -138,16 +138,16 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
 
         <div className="post-metadata">
           <small>
-            📅 {formatDate(post.posted_date || post.POSTED_DATE)}
+             {formatDate(post.posted_date || post.POSTED_DATE)}
           </small>
           {post.section_name || post.SECTION_NAME ? (
             <small>
-              👥 {post.section_name || post.SECTION_NAME}
+               {post.section_name || post.SECTION_NAME}
             </small>
           ) : null}
           {post.posted_by || post.POSTED_BY ? (
             <small>
-              ✍️ Posted by {post.posted_by || post.POSTED_BY}
+               Posted by {post.posted_by || post.POSTED_BY}
             </small>
           ) : null}
         </div>
@@ -160,7 +160,7 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
               onClick={() => setShowCommentModal(true)}
               disabled={isSubmittingComment}
             >
-              💬 Add Anonymous Comment ({comments.length})
+               Add Anonymous Comment ({comments.length})
             </button>
 
             {isLoadingComments && (

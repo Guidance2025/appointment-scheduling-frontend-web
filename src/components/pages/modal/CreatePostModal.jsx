@@ -74,8 +74,8 @@ const CreatePostModal = ({
                 <option value="">-- Select Category --</option>
                 {categories && categories.length > 0 ? (
                   categories.map((cat) => (
-                    <option key={cat.categoryId || cat.category_id} value={cat.categoryName || cat.category_name}>
-                      {cat.categoryName || cat.category_name}
+                    <option key={cat.category_id || cat.categoryId} value={cat.category_name || cat.categoryName}>
+                      {cat.category_name || cat.categoryName}
                     </option>
                   ))
                 ) : (
