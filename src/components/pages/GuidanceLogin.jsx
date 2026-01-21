@@ -20,6 +20,7 @@ function GuidanceLogin({ onLoginSuccess }) {
   const [lockTimer, setLockTimer] = useState(null);
   const [remainingTime, setRemainingTime] = useState(null); 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isPermanentLock, setIsPermanentLock] = useState(false); 
   
   const lockTimeoutRef = useRef(null);
   const countdownIntervalRef = useRef(null);
@@ -44,6 +45,7 @@ function GuidanceLogin({ onLoginSuccess }) {
       if (lockTime > now) {
         setIsLocked(true);
         setLockTimer(lockTime);
+        setIsPermanentLock(false);
         setError("Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.");
       } else {
         localStorage.removeItem('accountLockTime');
@@ -52,7 +54,7 @@ function GuidanceLogin({ onLoginSuccess }) {
   }, []);
 
   useEffect(() => {
-    if (isLocked && lockTimer) {
+    if (isLocked && lockTimer && !isPermanentLock) {
       countdownIntervalRef.current = setInterval(() => {
         const remaining = lockTimer - Date.now();
         
@@ -73,7 +75,9 @@ function GuidanceLogin({ onLoginSuccess }) {
       if (countdownIntervalRef.current) {
         clearInterval(countdownIntervalRef.current);
       }
-      setRemainingTime(null);
+      if (isPermanentLock) {
+        setRemainingTime(null);
+      }
     }
     
     return () => {
@@ -84,12 +88,12 @@ function GuidanceLogin({ onLoginSuccess }) {
         clearInterval(countdownIntervalRef.current);
       }
     };
-  }, [isLocked, lockTimer]);
+  }, [isLocked, lockTimer, isPermanentLock]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (!isLocked) {
+    if (!isLocked || !isPermanentLock) {
       setError("");
     }
   };
@@ -159,7 +163,7 @@ function GuidanceLogin({ onLoginSuccess }) {
     navigate(route);
   };
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -175,7 +179,7 @@ function GuidanceLogin({ onLoginSuccess }) {
       }
       
       const response = await login(formData.username, formData.password);
-      console.log(" Login response:", response);
+      console.log("✅ Login response:", response);
 
       if (!response || !response.data) {
         throw new Error("Invalid response from server");
@@ -199,43 +203,50 @@ function GuidanceLogin({ onLoginSuccess }) {
       try {
         await registerFcmToken(userId);
       } catch (fcmError) {
-        console.warn(" Failed to register FCM token:", fcmError);
+        console.warn("⚠️ Failed to register FCM token:", fcmError);
       }
       
       handleRoleBasedRedirect(userRole);
 
     } catch (err) {
-      console.error(" Login failed:", err);
-      console.error(" Error status:", err.status);
-      console.error(" Error message:", err.message);
+      console.error("❌ Login failed:", err);
+      console.error("❌ Error status:", err.status);
+      console.error("❌ Error message:", err.message);
       
       let errorMessage = "Login failed. Please try again.";
       let accountLocked = false;
+      let isAdminLocked = false;
       
       const errorMsg = (err.message || "").toUpperCase();
       
-
-      if (err.status === 423) {
-      
-        errorMessage = "Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.";
-        accountLocked = true;
-        console.log(" Account locked detected via status 423");
-      }
-      else if (
-        errorMsg.includes("LOCKED") || 
-        errorMsg.includes("ACCOUNT HAS BEEN LOCKED") ||
-        errorMsg.includes("MULTIPLE FAILED LOGIN ATTEMPTS") ||
-        errorMsg.includes("TOO MANY") ||
-        errorMsg.includes("MAX LOGIN ATTEMPTS")
+      // Check for admin lock (permanent lock)
+      if (
+        errorMsg.includes("LOCKED BY ADMINISTRATOR") ||
+        errorMsg.includes("ACCOUNT HAS BEEN LOCKED BY ADMINISTRATOR")
       ) {
-        errorMessage = "Your account has been locked due to 5 failed login attempts. Please wait 15 minutes or use 'Forgot Password' to unlock your account.";
+        errorMessage = "Your account has been locked by an administrator. Please contact support to unlock your account.";
+        isAdminLocked = true;
         accountLocked = true;
-        console.log(" Account locked detected via error message");
+        console.log("🔒 Admin lock detected");
+      }
+      // Check for failed-attempt lock (temporary lock)
+      else if (
+        err.status === 423 ||
+        errorMsg.includes("MULTIPLE FAILED LOGIN ATTEMPTS") ||
+        errorMsg.includes("ACCOUNT LOCKED DUE TO MULTIPLE FAILED LOGIN ATTEMPTS") ||
+        errorMsg.includes("TOO MANY") ||
+        errorMsg.includes("MAX LOGIN ATTEMPTS") ||
+        errorMsg.includes("5 FAILED")
+      ) {
+        errorMessage = "Your account has been locked due to 5 failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.";
+        accountLocked = true;
+        console.log("🔒 Failed-attempt lock detected");
       }
       else if (errorMsg.includes("DISABLED") || errorMsg.includes("ACCOUNT HAS BEEN DISABLED")) {
         errorMessage = "Your account has been disabled. Please contact support.";
         accountLocked = true;
-        console.log(" Account disabled detected");
+        isAdminLocked = true;
+        console.log("🔒 Account disabled detected");
       }
       else if (
         err.status === 401 || 
@@ -244,15 +255,15 @@ function GuidanceLogin({ onLoginSuccess }) {
         errorMsg.includes("BAD CREDENTIALS")
       ) {
         errorMessage = "Incorrect username or password. Please try again.";
-        console.log(" Invalid credentials");
+        console.log("❌ Invalid credentials");
       }
       else if (err.status === 403) {
         errorMessage = "Access denied. Please check your credentials.";
-        console.log(" Access forbidden");
+        console.log("❌ Access forbidden");
       }
       else if (errorMsg.includes("NETWORK") || errorMsg.includes("FETCH")) {
         errorMessage = "Network error. Please check your connection.";
-        console.log(" Network error");
+        console.log("❌ Network error");
       }
       else if (err.message && err.message.length < 100) {
         errorMessage = err.message;
@@ -261,11 +272,20 @@ function GuidanceLogin({ onLoginSuccess }) {
       setError(errorMessage);
       
       if (accountLocked && !isLocked) {
-        const unlockTime = Date.now() + (15 * 60 * 1000);
-        localStorage.setItem('accountLockTime', unlockTime.toString());
-        setLockTimer(unlockTime);
-        setIsLocked(true);
-        console.log(" Account locked. Unlock time:", new Date(unlockTime));
+        if (isAdminLocked) {
+          setIsLocked(true);
+          setIsPermanentLock(true);
+          setLockTimer(null);
+          setRemainingTime(null);
+          console.log(" Permanent lock activated (admin)");
+        } else {
+          const unlockTime = Date.now() + (3 * 60 * 1000);
+          localStorage.setItem('accountLockTime', unlockTime.toString());
+          setLockTimer(unlockTime);
+          setIsLocked(true);
+          setIsPermanentLock(false);
+          console.log("⏱️ Temporary lock activated. Unlock time:", new Date(unlockTime));
+        }
       }
       
     } finally {
@@ -304,7 +324,7 @@ function GuidanceLogin({ onLoginSuccess }) {
                 aria-live="polite"
               >
                 {error}
-                {isLocked && remainingTime && (
+                {isLocked && remainingTime && !isPermanentLock && (
                   <div className="lock-timer">
                     Unlock in: {remainingTime}
                   </div>
@@ -360,7 +380,9 @@ function GuidanceLogin({ onLoginSuccess }) {
                 {isLoading 
                   ? "LOGGING IN..." 
                   : isLocked 
-                    ? `ACCOUNT LOCKED ${remainingTime ? `(${remainingTime})` : ''}` 
+                    ? isPermanentLock
+                      ? "ACCOUNT LOCKED"
+                      : `ACCOUNT LOCKED ${remainingTime ? `(${remainingTime})` : ''}`
                     : "LOGIN"
                 }
               </button>

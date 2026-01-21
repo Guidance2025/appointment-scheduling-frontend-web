@@ -17,7 +17,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     firstname: "",
     lastname: "",
     middlename: "",
-    birthDate: "",
     gender: "",
     contactNumber: "",
     email: "",
@@ -32,7 +31,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     firstname: "",
     lastname: "",
     middlename: "",
-    age: "",
+    birthdate: "",  // Changed from 'age' to 'birthdate'
     gender: "",
     email: "",
     address: "",
@@ -47,25 +46,11 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   const studentForm = useFormValidation(initialStudentData);
   const currentForm = currentRole === "GUIDANCE" ? guidanceForm : studentForm;
 
-  // Validation Rules
   const guidanceValidationRules = {
     username: { required: true, minLength: 4 },
     password: { required: true, minLength: 6 },
     firstname: { required: true },
     lastname: { required: true },
-    birthDate: {
-      required: true,
-      custom: (value) => {
-        if (!value) return "Birthdate is required";
-        const today = new Date();
-        const birth = new Date(value);
-        if (birth > today) return "Birthdate cannot be in the future";
-        const age = today.getFullYear() - birth.getFullYear();
-        if (age < 10) return "Age must be at least 10 years";
-        if (age > 100) return "Age cannot be greater than 100 years";
-        return null;
-      },
-    },
     gender: { required: true },
     contactNumber: {
       required: true,
@@ -87,11 +72,22 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     studentNumber: { required: true },
     firstname: { required: true },
     lastname: { required: true },
-    age: {
+    birthdate: {  
       required: true,
-      number: true,
       custom: (value) => {
-        if (value < 10 || value > 100) return "Age must be between 10 and 100";
+        if (!value) return "Birthdate is required";
+        
+        const birthDate = new Date(value);
+        const today = new Date();
+        
+        if (isNaN(birthDate.getTime())) return "Invalid date format";
+        
+        if (birthDate > today) return "Birthdate cannot be in the future";
+        
+        const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        
+        if (age < 10 || age > 100) return "Age must be between 10 and 100 years";
+        
         return null;
       }
     },
@@ -119,7 +115,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             firstName: guidanceForm.formData.firstname.trim(),
             lastName: guidanceForm.formData.lastname.trim(),
             middleName: guidanceForm.formData.middlename.trim(),
-            birthDate: guidanceForm.formData.birthDate,
             gender: guidanceForm.formData.gender,
             contactNumber: guidanceForm.formData.contactNumber.trim(),
             email: guidanceForm.formData.email.trim(),
@@ -140,7 +135,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             firstName: studentForm.formData.firstname.trim(),
             lastName: studentForm.formData.lastname.trim(),
             middleName: studentForm.formData.middlename.trim(),
-            age: studentForm.formData.age,
+            birthdate: studentForm.formData.birthdate,  
             gender: studentForm.formData.gender,
             email: studentForm.formData.email.trim(),
             address: studentForm.formData.address.trim(),
@@ -209,7 +204,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Firstname" name="firstname" value={guidanceForm.formData.firstname} onChange={guidanceForm.handleChange} error={guidanceForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={guidanceForm.formData.lastname} onChange={guidanceForm.handleChange} error={guidanceForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={guidanceForm.formData.middlename} onChange={guidanceForm.handleChange} error={guidanceForm.errors.middlename} options={{ small: true }} maxLength={1} />
-      <FormField label="BirthDate" name="birthDate" type="date" value={guidanceForm.formData.birthDate} onChange={guidanceForm.handleChange} error={guidanceForm.errors.birthDate} />
       <FormField label="Gender" name="gender" type="select" value={guidanceForm.formData.gender} onChange={guidanceForm.handleChange} error={guidanceForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Contact Number" name="contactNumber" type="tel" value={guidanceForm.formData.contactNumber} onChange={guidanceForm.handleChange} error={guidanceForm.errors.contactNumber} />
       <FormField label="Email" name="email" type="email" value={guidanceForm.formData.email} onChange={guidanceForm.handleChange} error={guidanceForm.errors.email} options={{ fullWidth: true }} />
@@ -226,7 +220,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Firstname" name="firstname" value={studentForm.formData.firstname} onChange={studentForm.handleChange} error={studentForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={studentForm.formData.lastname} onChange={studentForm.handleChange} error={studentForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={studentForm.formData.middlename} onChange={studentForm.handleChange} error={studentForm.errors.middlename} options={{ small: true }} maxLength={1} />
-      <FormField label="Age" name="age" type="number" value={studentForm.formData.age} onChange={studentForm.handleChange} error={studentForm.errors.age} />
+      <FormField label="Birthdate" name="birthdate" type="date" value={studentForm.formData.birthdate} onChange={studentForm.handleChange} error={studentForm.errors.birthdate} />
       <FormField label="Gender" name="gender" type="select" value={studentForm.formData.gender} onChange={studentForm.handleChange} error={studentForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Email" name="email" type="email" value={studentForm.formData.email} onChange={studentForm.handleChange} error={studentForm.errors.email} options={{ fullWidth: true }} />
       <FormField label="Address" name="address" value={studentForm.formData.address} onChange={studentForm.handleChange} error={studentForm.errors.address} options={{ fullWidth: true }} />
@@ -241,13 +235,16 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   return (
     <div className="registration-modal-overlay">
       <div className="registration-modal-content">
-        <button className='back-button' onClick={handleClose}><ArrowLeft/></button>
+        <button className='back' onClick={handleClose}><ArrowLeft/></button>
         <h2 className="registration-modal-title">
           Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
         </h2>
         <div className="registration-form">
           {currentRole === "GUIDANCE" ? renderGuidanceForm() : renderStudentForm()}
           <div className="registration-form-actions">
+            <button onClick={handleClose} className="registration-cancel-btn" type="button">
+              Cancel
+            </button>
             <button onClick={handleSubmit} className="registration-submit-btn" disabled={isProcessing}>
               {isProcessing ? "Processing ..." : "Register"}
             </button>

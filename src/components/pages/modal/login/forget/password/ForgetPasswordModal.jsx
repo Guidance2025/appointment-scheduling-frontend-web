@@ -3,11 +3,6 @@ import "../../../../../../css/ForgetPassword.css";
 
 const API_BASE_URL = "http://localhost:8080";
 
-/**
- * Modal component for password reset
- * Allows user to enter username and new password
- * Sends reset request to backend which emails verification link
- */
 function ForgetPasswordModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     username: "",
@@ -25,13 +20,16 @@ function ForgetPasswordModal({ isOpen, onClose }) {
     setError("");
   };
 
-  
-
   const validateForm = () => {
     const { username, newPassword, confirmPassword } = formData;
 
     if (!username.trim()) {
       setError("Username is required");
+      return false;
+    }
+
+    if (username.trim().length < 3) {
+      setError("Username must be at least 3 characters long");
       return false;
     }
 
@@ -63,7 +61,6 @@ function ForgetPasswordModal({ isOpen, onClose }) {
     setSuccessMessage("");
 
     try {
-        setDisableSubmit(true);
       const response = await fetch(
         `${API_BASE_URL}/user/password-reset/initiate`,
         {
@@ -72,24 +69,53 @@ function ForgetPasswordModal({ isOpen, onClose }) {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            username: formData.username,
+            username: formData.username.trim(),
             newPassword: formData.newPassword
           })
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || "Failed to initiate password reset");
+        let errorMessage = "Something went wrong. Please try again.";
+        try {
+          const errorData = await response.json();
+          
+          if (response.status === 404) {
+            if (errorData.message?.includes("USER DOES NOT EXIST") || 
+                errorData.reason === "NOT FOUND") {
+              errorMessage = "No account found with this username. Please check and try again.";
+            } else {
+              errorMessage = errorData.message || "User does not exist.";
+            }
+          } else if (response.status === 400) {
+            errorMessage = errorData.message || "Invalid request. Please check your information.";
+          } else if (response.status === 500) {
+            errorMessage = "Server error. Please try again later.";
+          } else {
+            errorMessage = errorData.message || errorMessage;
+          }
+        } catch (parseError) {
+          // If JSON parsing fails, try to get text
+          try {
+            const textError = await response.text();
+            if (textError) {
+              errorMessage = textError;
+            }
+          } catch (textError) {
+            console.error("Error parsing response:", textError);
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+
       setSuccessMessage(
         data.message || 
         "Password reset email sent! Please check your inbox and click the verification link."
       );
-         setDisableSubmit(true);
-
+      setDisableSubmit(true);
 
       setTimeout(() => {
         setFormData({
@@ -98,12 +124,14 @@ function ForgetPasswordModal({ isOpen, onClose }) {
           confirmPassword: ""
         });
         setSuccessMessage("");
+        setDisableSubmit(false);
         onClose();
       }, 3000);
 
     } catch (err) {
       console.error("Password reset error:", err);
       setError(err.message || "Failed to send reset email. Please try again.");
+      setDisableSubmit(false);
     } finally {
       setIsLoading(false);
     }
@@ -117,6 +145,7 @@ function ForgetPasswordModal({ isOpen, onClose }) {
     });
     setError("");
     setSuccessMessage("");
+    setDisableSubmit(false);
     onClose();
   };
 
@@ -156,9 +185,10 @@ function ForgetPasswordModal({ isOpen, onClose }) {
               type="text"
               value={formData.username}
               onChange={handleInputChange}
-              disabled={isLoading}
+              disabled={isLoading || disableSubmit}
               placeholder="Enter your username"
               autoComplete="username"
+              required
             />
           </label>
 
@@ -170,9 +200,10 @@ function ForgetPasswordModal({ isOpen, onClose }) {
               type="password"
               value={formData.newPassword}
               onChange={handleInputChange}
-              disabled={isLoading}
-              placeholder="Enter new password"
+              disabled={isLoading || disableSubmit}
+              placeholder="Enter new password (min. 6 characters)"
               autoComplete="new-password"
+              required
             />
           </label>
 
@@ -187,14 +218,16 @@ function ForgetPasswordModal({ isOpen, onClose }) {
               disabled={isLoading || disableSubmit}
               placeholder="Confirm new password"
               autoComplete="new-password"
+              required
             />
           </label>
 
-          <button className="forget-password-submit-button"
+          <button 
+            className="forget-password-submit-button"
             type="submit"
             disabled={isLoading || disableSubmit}
           >
-            {isLoading  ? "Sending..." : disableSubmit ? "Sent" : "Submit"}
+            {isLoading ? "Sending..." : disableSubmit ? "Sent" : "Submit"}
           </button>
         </form>
 

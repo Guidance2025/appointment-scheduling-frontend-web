@@ -57,17 +57,16 @@ const SelfAssessment = () => {
   const fetchPostedQuestions = async () => {
     try {
       setFetchingQuestions(true);
-      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
       const token = localStorage.getItem("jwtToken");
       
-      if (!guidanceStaffId || !token) {
-        console.log("No guidance staff ID or token found");
+      if (!token) {
+        console.log("No token found");
         setFetchingQuestions(false);
         return;
       }
 
       const response = await fetch(
-      `${API_BASE_URL}/self-assessment/retrieve-questions/${guidanceStaffId}`,
+        `${API_BASE_URL}/self-assessment/student/all-questions`,
         {
           method: 'GET',
           headers: {
@@ -179,8 +178,7 @@ const SelfAssessment = () => {
       }
 
       const payload = {
-        questionTexts: validQuestions,  
-        categoryName: "SELF ASSESSMENT"  
+        questionTexts: validQuestions
       };
 
       const response = await fetch(
@@ -358,29 +356,29 @@ const SelfAssessment = () => {
         </div>
 
         <div className="assessment-filter-bar">
-          <div className="filter-row">
-            <div className="filter-group search-group">
-              <label className="filter-label">Search</label>
-              <div className="filter-input-wrapper">
+          <div className="assessment-filter-row">
+            <div className="assessment-filter-group assessment-search-group">
+              <label className="assessment-filter-label">Search</label>
+              <div className="assessment-filter-input-wrapper">
                 <input
                   type="text"
-                  className="filter-input"
+                  className="assessment-filter-input"
                   placeholder={activeTab === 'questions' ? 'Search by counselor or questions...' : 'Search by question or response...'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button className="clear-filter-icon" onClick={handleClearSearch}>
+                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>
                     ✕
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="filter-group date-group">
-              <label className="filter-label">Date Range</label>
+            <div className="assessment-filter-group assessment-date-group">
+              <label className="assessment-filter-label">Date Range</label>
               <select
-                className="filter-select"
+                className="assessment-filter-select"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
               >
@@ -389,16 +387,6 @@ const SelfAssessment = () => {
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
               </select>
-            </div>
-
-            <div className="filter-actions">
-              <button className="filter-button secondary" onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setFilterDate('all');
-              }}>
-                Reset
-              </button>
             </div>
           </div>
         </div>

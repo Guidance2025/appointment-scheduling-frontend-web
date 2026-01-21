@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./../../../css/Account.css";
 import "./../../../css/Pagination.css";
-import "./../../../css/Table.css";
+import "./../../../css/table.css";
 import { getGuidanceStaffAccounts, getStudentAccounts } from "../../../service/admin";
 import CreateAccountModal from './modal/CreateAccountModal';
 import { Search } from "lucide-react";
@@ -54,7 +54,6 @@ function Accounts() {
   fetchGuidanceAccounts();
   fetchStudentAccounts();
 };
-
 
   useEffect(() => {
    refreshAccounts();
