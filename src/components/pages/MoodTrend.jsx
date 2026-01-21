@@ -126,24 +126,24 @@ const MoodTrend = () => {
 
   return (
     <div className="page-container">
-      <div className="advanced-filter-bar">
-        <div className="filter-row">
-          <div className="filter-group search-group">
-            <label className="filter-label">
-              <Search size={12} style={{ display: "inline", marginRight: "4px" }} />
+      <div className="appointments-filter-bar">
+        <div className="appointments-filter-row">
+          <div className="appointments-filter-group appointments-search-group">
+            <label className="appointments-filter-label">
+              <Search size={12} style={{ marginRight: "4px" }} />
               Search
             </label>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                className="filter-input"
+                className="appointments-filter-input"
                 placeholder="Search by student name or number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
                 <button
-                  className="clear-filter-icon"
+                  className="appointments-clear-filter-icon"
                   onClick={() => setSearchTerm("")}
                   title="Clear search"
                 >
@@ -153,10 +153,10 @@ const MoodTrend = () => {
             </div>
           </div>
 
-          <div className="filter-group type-group">
-            <label className="filter-label">Emotional State</label>
+          <div className="appointments-filter-group appointments-status-group">
+            <label className="appointments-filter-label">Emotional State</label>
             <select
-              className="filter-select"
+              className="appointments-filter-select"
               value={emotionFilter}
               onChange={(e) => setEmotionFilter(e.target.value)}
             >
@@ -168,14 +168,6 @@ const MoodTrend = () => {
               <option value="calm">Calm</option>
               <option value="happy">Happy</option>
             </select>
-          </div>
-
-          <div className="filter-actions">
-            {hasActiveFilters && (
-              <button className="filter-button secondary" onClick={handleClearFilters}>
-                <X size={16} /> Clear
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -190,13 +182,13 @@ const MoodTrend = () => {
           <div className="empty-message">
             {hasActiveFilters ? (
               <div>
-                <div className="empty-icon"></div>
+                <div className="empty-icon">🔍</div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">No students match your current filters</p>
               </div>
             ) : (
               <div>
-                <div className="empty-icon"></div>
+                <div className="empty-icon">📊</div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">There are no mood trend records.</p>
               </div>

@@ -1,4 +1,4 @@
-/* Modal Base Styles */
+
 .update-modal-overlay {
   position: fixed;
   inset: 0;
@@ -211,7 +211,6 @@
   gap: 6px;
 }
 
-/* Loading Indicator */
 .loading-indicator {
   background: #f0fdf4;
   border: 1px solid #6ee7b7;
@@ -224,7 +223,6 @@
   font-weight: 500;
 }
 
-/* Blocked Dates Info */
 .blocked-dates-info {
   background: #fef3c7;
   border: 1px solid #fcd34d;
@@ -235,11 +233,10 @@
   align-items: center;
   gap: 6px;
   color: #92400e;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 500;
 }
 
-/* ✅ UPDATED: Date and Start Time side by side, End Time full width below */
 .date-time-row {
   display: flex;
   gap: 12px;
@@ -250,7 +247,6 @@
   flex: 1;
 }
 
-/* Date Picker Wrapper */
 .date-picker-wrapper {
   position: relative;
   width: 100%;

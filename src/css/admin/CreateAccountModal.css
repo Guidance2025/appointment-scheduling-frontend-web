@@ -15,12 +15,15 @@
 }
 
 
-.back-button{
+.back{
+    
+    border: none;
     position: absolute;
-    left: 8px;
+    left: 16px;
     top: 15px;
     color: black;
 }
+
 
 .back-button svg {
   stroke: #333; 

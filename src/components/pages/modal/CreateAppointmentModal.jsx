@@ -511,7 +511,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         if (!res.ok) {
           setFirstname("");
           setLastname("");
-          setError(res.status === 404 ? "Student not found" : "Error fetching student information");
+          setError(res.status === 404 ? "Student not found" : "Network Problem. Please Check you internet connection");
           return;
         }
 
