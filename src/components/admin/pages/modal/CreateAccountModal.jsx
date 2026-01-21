@@ -31,7 +31,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     firstname: "",
     lastname: "",
     middlename: "",
-    age: "",
+    birthdate: "",  // Changed from 'age' to 'birthdate'
     gender: "",
     email: "",
     address: "",
@@ -72,11 +72,22 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     studentNumber: { required: true },
     firstname: { required: true },
     lastname: { required: true },
-    age: {
+    birthdate: {  
       required: true,
-      number: true,
       custom: (value) => {
-        if (value < 10 || value > 100) return "Age must be between 10 and 100";
+        if (!value) return "Birthdate is required";
+        
+        const birthDate = new Date(value);
+        const today = new Date();
+        
+        if (isNaN(birthDate.getTime())) return "Invalid date format";
+        
+        if (birthDate > today) return "Birthdate cannot be in the future";
+        
+        const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        
+        if (age < 10 || age > 100) return "Age must be between 10 and 100 years";
+        
         return null;
       }
     },
@@ -124,7 +135,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             firstName: studentForm.formData.firstname.trim(),
             lastName: studentForm.formData.lastname.trim(),
             middleName: studentForm.formData.middlename.trim(),
-            age: studentForm.formData.age,
+            birthdate: studentForm.formData.birthdate,  
             gender: studentForm.formData.gender,
             email: studentForm.formData.email.trim(),
             address: studentForm.formData.address.trim(),
@@ -209,7 +220,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Firstname" name="firstname" value={studentForm.formData.firstname} onChange={studentForm.handleChange} error={studentForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={studentForm.formData.lastname} onChange={studentForm.handleChange} error={studentForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={studentForm.formData.middlename} onChange={studentForm.handleChange} error={studentForm.errors.middlename} options={{ small: true }} maxLength={1} />
-      <FormField label="Age" name="age" type="number" value={studentForm.formData.age} onChange={studentForm.handleChange} error={studentForm.errors.age} />
+      <FormField label="Birthdate" name="birthdate" type="date" value={studentForm.formData.birthdate} onChange={studentForm.handleChange} error={studentForm.errors.birthdate} />
       <FormField label="Gender" name="gender" type="select" value={studentForm.formData.gender} onChange={studentForm.handleChange} error={studentForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Email" name="email" type="email" value={studentForm.formData.email} onChange={studentForm.handleChange} error={studentForm.errors.email} options={{ fullWidth: true }} />
       <FormField label="Address" name="address" value={studentForm.formData.address} onChange={studentForm.handleChange} error={studentForm.errors.address} options={{ fullWidth: true }} />
@@ -231,6 +242,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         <div className="registration-form">
           {currentRole === "GUIDANCE" ? renderGuidanceForm() : renderStudentForm()}
           <div className="registration-form-actions">
+            <button onClick={handleClose} className="registration-cancel-btn" type="button">
+              Cancel
+            </button>
             <button onClick={handleSubmit} className="registration-submit-btn" disabled={isProcessing}>
               {isProcessing ? "Processing ..." : "Register"}
             </button>
