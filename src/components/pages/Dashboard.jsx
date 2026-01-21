@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
 import PostCard from "./PostCard";
+import Tabs from "../common/Tabs";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
 import { POSTS_URL, POST_BY_ID_URL, QUOTE_OF_THE_DAY_URL, LATEST_POSTS_URL,
   DELETE_POST_URL,
@@ -32,7 +33,7 @@ const Dashboard = () => {
   const [newPost, setNewPost] = useState({
     category_name: "",
     post_content: "",
-    section_ids: [],
+    section_id: null,  // Changed from section_ids (array) to section_id (single)
     section_code: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -62,7 +63,18 @@ const Dashboard = () => {
 
   const loadCategories = async () => {
     const data = await fetchCategories();
-    setCategories((data || []).map(normalizeCategory));
+    const normalized = (data || []).map(normalizeCategory);
+    // Deduplicate categories by category_name to prevent duplicate options
+    const uniqueCategories = [];
+    const seenNames = new Set();
+    for (const cat of normalized) {
+      const name = cat.category_name;
+      if (!seenNames.has(name)) {
+        seenNames.add(name);
+        uniqueCategories.push(cat);
+      }
+    }
+    setCategories(uniqueCategories);
   };
 
   const loadSections = async () => {
@@ -149,7 +161,7 @@ const Dashboard = () => {
 
       await createPost({
         categoryName: newPost.category_name.trim(),
-        sectionIds: newPost.section_ids || [],
+        sectionId: newPost.section_id,  // Changed from sectionIds to sectionId
         postContent,
       });
 
@@ -158,7 +170,7 @@ const Dashboard = () => {
       setNewPost({
         category_name: "",
         post_content: "",
-        section_ids: [],
+        section_id: null,  // Reset to null
         section_code: "",
       });
       setIsModalOpen(false);
@@ -186,7 +198,7 @@ const Dashboard = () => {
             setNewPost({
               category_name: "",
               post_content: "",
-              section_ids: [],
+              section_id: null,  // Reset to null
               section_code: "",
             });
             setIsModalOpen(true);
@@ -217,19 +229,89 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="posts-container">
-        {posts && posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard
-              key={post.post_id}
-              post={post}
-              onDelete={handleDeletePost}
-              isGuidanceStaff={isGuidanceStaff}
-            />
-          ))
-        ) : (
-          !loading && <p className="no-posts-text">No posts yet.</p>
-        )}
+      {/* Tabs for Announcements and Events */}
+      <Tabs
+        tabs={[
+          {
+            label: "Announcements",
+            content: (
+              <div className="posts-container">
+                {posts && posts.some(p => 
+                  (p.category_name?.toLowerCase() === "announcement" || 
+                   p.CATEGORY_NAME?.toLowerCase() === "announcement")
+                ) ? (
+                  posts
+                    .filter(p => 
+                      p.category_name?.toLowerCase() === "announcement" || 
+                      p.CATEGORY_NAME?.toLowerCase() === "announcement"
+                    )
+                    .map((post) => (
+                      <PostCard
+                        key={post.post_id}
+                        post={post}
+                        onDelete={handleDeletePost}
+                        isGuidanceStaff={isGuidanceStaff}
+                      />
+                    ))
+                ) : (
+                  <p className="no-posts-text">No announcements yet.</p>
+                )}
+              </div>
+            ),
+          },
+          {
+            label: "Events",
+            content: (
+              <div className="posts-container">
+                {posts && posts.some(p => 
+                  (p.category_name?.toLowerCase() === "events" || 
+                   p.CATEGORY_NAME?.toLowerCase() === "events")
+                ) ? (
+                  posts
+                    .filter(p => 
+                      p.category_name?.toLowerCase() === "events" || 
+                      p.CATEGORY_NAME?.toLowerCase() === "events"
+                    )
+                    .map((post) => (
+                      <PostCard
+                        key={post.post_id}
+                        post={post}
+                        onDelete={handleDeletePost}
+                        isGuidanceStaff={isGuidanceStaff}
+                      />
+                    ))
+                ) : (
+                  <p className="no-posts-text">No events yet.</p>
+                )}
+              </div>
+            ),
+          },
+        ]}
+        defaultTab={0}
+      />
+
+      {/* All Other Posts */}
+      <div className="all-posts-section">
+        <h2 className="section-title">Latest Posts</h2>
+        <div className="posts-container">
+          {posts && posts.length > 0 ? (
+            posts
+              .filter(p => {
+                const catLower = (p.category_name || p.CATEGORY_NAME || "").toLowerCase();
+                return catLower !== "announcement" && catLower !== "events";
+              })
+              .map((post) => (
+                <PostCard
+                  key={post.post_id}
+                  post={post}
+                  onDelete={handleDeletePost}
+                  isGuidanceStaff={isGuidanceStaff}
+                />
+              ))
+          ) : (
+            !loading && <p className="no-posts-text">No posts yet.</p>
+          )}
+        </div>
       </div>
 
       <CreatePostModal
