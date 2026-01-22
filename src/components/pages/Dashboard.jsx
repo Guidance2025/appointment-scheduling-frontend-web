@@ -161,7 +161,7 @@ const Dashboard = () => {
 
       await createPost({
         categoryName: newPost.category_name.trim(),
-        sectionId: newPost.section_id,  // Changed from sectionIds to sectionId
+        sectionName: newPost.section_id,
         postContent,
       });
 

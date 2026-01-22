@@ -113,7 +113,6 @@ const ActionModal = ({ isOpen, onClose, selectedUserType, studentNumber,
                 initialEmail={selectedUserData?.email || ""}
                 initialIsLocked={selectedUserData?.isLocked}
             />
-
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
                 onClose={() => setShowDeleteConfirm(false)}

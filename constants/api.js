@@ -32,6 +32,7 @@ export const POST_BY_ID_URL = (id) => `${API_BASE_URL}/api/posts/${id}`;
 export const UPDATE_POST_URL = (id) => `${API_BASE_URL}/api/posts/${id}`;
 export const SECTIONS_COURSES_URL = `${SECTIONS_URL}/courses`;
 export const SECTIONS_CLUSTERS_URL = `${SECTIONS_URL}/clusters`;
+export const FETCH_ALL_SECTIONS_BY_STUDENT = `${API_BASE_URL}/api/posts/students/section`;
 
 //MOODS
 export const MOODS_URL = `${API_BASE_URL}/api/moods`;
