@@ -35,7 +35,7 @@ export const SECTIONS_CLUSTERS_URL = `${SECTIONS_URL}/clusters`;
 export const FETCH_ALL_SECTIONS_BY_STUDENT = `${API_BASE_URL}/api/posts/students/section`;
 
 //MOODS
-export const MOODS_URL = `${API_BASE_URL}/api/moods`;
+export const MOODS_URL = `${API_BASE_URL}/moods/retrieve-all`;
 
 //NOTIFICATION
 export const GET_UNREAD_NOTIFICATION = (userId) => (`${API_BASE_URL}/notification/unreadCount/${userId}`);

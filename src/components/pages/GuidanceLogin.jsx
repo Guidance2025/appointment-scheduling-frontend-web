@@ -49,7 +49,6 @@ function GuidanceLogin({ onLoginSuccess }) {
       return;
     }
     
-    // Then check for temporary lock
     if (savedLockTime) {
       const lockTime = parseInt(savedLockTime, 10);
       const now = Date.now();
@@ -64,10 +63,7 @@ function GuidanceLogin({ onLoginSuccess }) {
       }
     }
   }, []);
-
-  // FIXED: Improved timer management with proper cleanup
   useEffect(() => {
-    // Clear any existing interval first to prevent race conditions
     if (countdownIntervalRef.current) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
@@ -83,7 +79,7 @@ function GuidanceLogin({ onLoginSuccess }) {
           setRemainingTime(null);  
           setError("");
           localStorage.removeItem('accountLockTime');
-          console.log("✅ Account automatically unlocked");
+          console.log(" Account automatically unlocked");
           
           if (countdownIntervalRef.current) {
             clearInterval(countdownIntervalRef.current);
@@ -100,8 +96,7 @@ function GuidanceLogin({ onLoginSuccess }) {
         setRemainingTime(null);
       }
     }
-    
-    // Cleanup function
+   
     return () => {
       if (lockTimeoutRef.current) {
         clearTimeout(lockTimeoutRef.current);
@@ -187,7 +182,7 @@ function GuidanceLogin({ onLoginSuccess }) {
     navigate(route);
   };
 
-  const handleLogin = async (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -234,31 +229,30 @@ function GuidanceLogin({ onLoginSuccess }) {
       try {
         await registerFcmToken(userId);
       } catch (fcmError) {
-        console.warn("⚠️ Failed to register FCM token:", fcmError);
+        console.warn(" Failed to register FCM token:", fcmError);
       }
       
       handleRoleBasedRedirect(userRole);
 
     } catch (err) {
-      console.error("❌ Login failed:", err);
-      console.error("❌ Error status:", err.status);
-      console.error("❌ Error message:", err.message);
+      console.error(" Login failed:", err);
+      console.error(" Error status:", err.status);
+      console.error(" Error message:", err.message);
       
       let errorMessage = "Login failed. Please try again.";
       let accountLocked = false;
       let isAdminLocked = false;
       
-      // FIXED: Check for structured error response first
       if (err.lockType) {
         if (err.lockType === 'ADMIN_LOCK' || err.lockType === 'DISABLED') {
           errorMessage = err.message || "Your account has been locked by an administrator. Please contact support to unlock your account.";
           isAdminLocked = true;
           accountLocked = true;
-          console.log("🔒 Admin lock detected (structured response)");
+          console.log(" Admin lock detected (structured response)");
         } else if (err.lockType === 'FAILED_ATTEMPTS') {
           errorMessage = err.message || "Your account has been locked due to multiple failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.";
           accountLocked = true;
-          console.log("🔒 Failed-attempt lock detected (structured response)");
+          console.log(" Failed-attempt lock detected (structured response)");
         }
       } else {
         // Fallback to string matching if structured response not available
@@ -272,16 +266,14 @@ function GuidanceLogin({ onLoginSuccess }) {
           errorMessage = "Your account has been locked by an administrator. Please contact support to unlock your account.";
           isAdminLocked = true;
           accountLocked = true;
-          console.log("🔒 Admin lock detected");
+          console.log(" Admin lock detected");
         }
-        // Check for disabled account
         else if (err.status === 403 || errorMsg.includes("DISABLED") || errorMsg.includes("ACCOUNT HAS BEEN DISABLED")) {
           errorMessage = "Your account has been disabled. Please contact support.";
           accountLocked = true;
           isAdminLocked = true;
-          console.log("🔒 Account disabled detected");
+          console.log(" Account disabled detected");
         }
-        // Check for failed-attempt lock (temporary lock)
         else if (
           err.status === 423 ||
           errorMsg.includes("MULTIPLE FAILED LOGIN ATTEMPTS") ||
@@ -289,10 +281,9 @@ function GuidanceLogin({ onLoginSuccess }) {
           errorMsg.includes("TOO MANY") ||
           errorMsg.includes("MAX LOGIN ATTEMPTS")
         ) {
-          // FIXED: Removed hardcoded "5 failed" reference
           errorMessage = "Your account has been locked due to multiple failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.";
           accountLocked = true;
-          console.log("🔒 Failed-attempt lock detected");
+          console.log(" Failed-attempt lock detected");
         }
         else if (
           err.status === 401 || 
@@ -301,7 +292,7 @@ function GuidanceLogin({ onLoginSuccess }) {
           errorMsg.includes("BAD CREDENTIALS")
         ) {
           errorMessage = "Incorrect username or password. Please try again.";
-          console.log("❌ Invalid credentials");
+          console.log(" Invalid credentials");
         }
         else if (errorMsg.includes("NETWORK") || errorMsg.includes("FETCH")) {
           errorMessage = "Network error. Please check your connection.";
