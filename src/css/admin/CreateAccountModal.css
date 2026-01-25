@@ -14,12 +14,21 @@
   padding: 20px; 
 }
 
+.back {
+  border: none;
+  position: absolute;
+  left: 16px;
+  top: 15px;
+  color: black;
+  background: transparent;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
 
-.back-button{
-    position: absolute;
-    left: 8px;
-    top: 15px;
-    color: black;
+.back:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .back-button svg {
@@ -31,7 +40,7 @@
 .registration-modal-content {
   background: #f5f5f5;
   border-radius: 20px;
-  width: 700px;
+  width: 900px; 
   max-width: 95%;
   min-width: 320px;
   max-height: 90vh; 
@@ -44,7 +53,6 @@
   box-sizing: border-box;
   flex-shrink: 0;
 }
-
 
 .registration-modal-title {
   font-size: 24px;
@@ -135,30 +143,54 @@
 
 .registration-form-actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
 }
 
-.registration-submit-btn {
-  width: 100%;
-  padding: 13px 24px;
-  background-color: #5cc5a7;
-  color: white;
+.registration-submit-btn,
+.registration-cancel-btn {
+  padding: 14px 50px;
   border: none;
   border-radius: 10px;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.registration-submit-btn {
+  background-color: #5cc5a7;
+  color: white;
 }
 
 .registration-submit-btn:hover {
   background-color: #4ab394;
-  box-shadow: rgba(92, 197, 167, 0.3) 0 8px 15px;
-  transform: translateY(-2px);
 }
 
 .registration-submit-btn:active {
-  transform: translateY(0);
+  transform: scale(0.98);
+}
+
+.registration-submit-btn:disabled {
+  background-color: #b3e0d4;
+  cursor: not-allowed;
+}
+
+.registration-cancel-btn {
+  background-color: white;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.registration-cancel-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.registration-cancel-btn:active {
+  transform: scale(0.98);
 }
 
 @keyframes fadeIn {
@@ -172,7 +204,7 @@
 }
 
 @media (max-width: 1024px) {
-  .registration-modal-content { width: 600px; }
+  .registration-modal-content { width: 700px; }
 }
 
 @media (max-width: 768px) {
@@ -180,9 +212,13 @@
   .registration-form-grid { grid-template-columns: 1fr; }
   .registration-form-group-small,
   .registration-form-group-full { grid-column: span 1; }
+  .registration-form-actions { flex-direction: column; }
+  .registration-submit-btn,
+  .registration-cancel-btn { max-width: 100%; }
 }
 
 @media (max-width: 640px) {
   .registration-modal-content { width: 95%; margin: 16px; padding: 28px 24px; }
-  .registration-submit-btn { padding: 14px 20px; font-size: 13px; }
+  .registration-submit-btn,
+  .registration-cancel-btn { padding: 14px 20px; font-size: 13px; }
 }

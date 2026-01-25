@@ -11,10 +11,11 @@ export const PopUpModal = ({
   onConfirm,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  isLoading = false,
+  isLoading = false
 }) => {
   const getIcon = () => {
-    const iconProps = { size: 40, className: "popup-icon" };
+    const iconProps = { size: 28, className: 'popup-icon' };
+    
     switch (type) {
       case 'success':
         return <CheckCircle {...iconProps} />;

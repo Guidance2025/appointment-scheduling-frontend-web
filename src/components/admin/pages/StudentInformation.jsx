@@ -119,6 +119,52 @@ const StudentInformation = () => {
     setSearchTerm('');
   }, []);
 
+  const getDisplayAge = (student) => {
+    if (student.person.age) {
+      return student.person.age;
+    }
+    
+    if (student.person.birthdate) {
+      try {
+        const birthdate = new Date(student.person.birthdate);
+        const today = new Date();
+        
+        if (!isNaN(birthdate.getTime()) && birthdate <= today) {
+          let calculatedAge = today.getFullYear() - birthdate.getFullYear();
+          const monthDiff = today.getMonth() - birthdate.getMonth();
+          const dayDiff = today.getDate() - birthdate.getDate();
+          
+          if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+            calculatedAge--;
+          }
+          
+          return calculatedAge;
+        }
+      } catch {
+        return 'N/A';
+      }
+    }
+    
+    return 'N/A';
+  };
+
+  const formatBirthdate = (birthdate) => {
+    if (!birthdate) return 'N/A';
+    
+    try {
+      const date = new Date(birthdate);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
   const renderEmptyState = () => {
     if (searchTerm) {
       return (
@@ -146,25 +192,27 @@ const StudentInformation = () => {
     );
   };
 
-  const renderStudentRow = (student) => (
-    <tr key={student.studentNumber} className="appointment-row">
-      <td>{student.studentNumber || 'N/A'}</td>
-      <td>{student.person.firstName || 'N/A'}</td>
-      <td>{student.person.middleName || 'N/A'}</td>
-      <td>{student.person.lastName || 'N/A'}</td>
-      <td>{student.person.age || 'N/A'}</td>
-      <td>{student.person.birthdate || 'N/A'}</td>
-      <td>{student.person.gender || 'N/A'}</td>
-      <td>{student.person.email || 'N/A'}</td>
-      <td>{student.person.address || 'N/A'}</td>
-      <td>{student.person.contactNumber || 'N/A'}</td>
-      <td>{student.section?.organization || 'N/A'}</td>
-      <td>{student.section?.clusterName || 'N/A'}</td>
-      <td>{student.section?.clusterHead || 'N/A'}</td>
-      <td>{student.section?.sectionName || 'N/A'}</td>
-      <td>{student.section?.course || 'N/A'}</td>
-    </tr>
-  );
+  const renderStudentRow = (student) => {
+    return (
+      <tr key={student.studentNumber} className="appointment-row">
+        <td>{student.studentNumber || 'N/A'}</td>
+        <td>{student.person.firstName || 'N/A'}</td>
+        <td>{student.person.middleName || 'N/A'}</td>
+        <td>{student.person.lastName || 'N/A'}</td>
+        <td>{getDisplayAge(student)}</td>
+        <td>{formatBirthdate(student.person.birthdate)}</td>
+        <td>{student.person.gender || 'N/A'}</td>
+        <td>{student.person.email || 'N/A'}</td>
+        <td>{student.person.address || 'N/A'}</td>
+        <td>{student.person.contactNumber || 'N/A'}</td>
+        <td>{student.section?.organization || 'N/A'}</td>
+        <td>{student.section?.clusterName || 'N/A'}</td>
+        <td>{student.section?.clusterHead || 'N/A'}</td>
+        <td>{student.section?.sectionName || 'N/A'}</td>
+        <td>{student.section?.course || 'N/A'}</td>
+      </tr>
+    );
+  };
 
   const { totalPages, startIndex, endIndex, paginatedStudents } = paginationData;
 

@@ -3,6 +3,8 @@ import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
 import PostCard from "./PostCard";
 import Tabs from "../common/Tabs";
+import ConfirmDialog from "../../helper/ConfirmDialog";  
+import "../../css/ConfirmDialog.css";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
 import { POSTS_URL, POST_BY_ID_URL, QUOTE_OF_THE_DAY_URL, LATEST_POSTS_URL,
   DELETE_POST_URL,
@@ -33,13 +35,15 @@ const Dashboard = () => {
   const [newPost, setNewPost] = useState({
     category_name: "",
     post_content: "",
-    section_id: null,  // Changed from section_ids (array) to section_id (single)
+    section_id: null,  
     section_code: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [isGuidanceStaff, setIsGuidanceStaff] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false); 
+  const [postToDelete, setPostToDelete] = useState(null);  
 
   const loadPosts = async () => {
     const data = await fetchLatestPosts();
@@ -64,7 +68,6 @@ const Dashboard = () => {
   const loadCategories = async () => {
     const data = await fetchCategories();
     const normalized = (data || []).map(normalizeCategory);
-    // Deduplicate categories by category_name to prevent duplicate options
     const uniqueCategories = [];
     const seenNames = new Set();
     for (const cat of normalized) {
@@ -108,7 +111,7 @@ const Dashboard = () => {
       setIsGuidanceStaff(isStaff);
     } catch (e) {
       console.error("Check user role failed:", e);
-      setIsGuidanceStaff(true); // Show buttons for testing
+      setIsGuidanceStaff(true); 
     }
   };
 
@@ -127,14 +130,23 @@ const Dashboard = () => {
     init();
   }, []);
 
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm("Delete this post? This cannot be undone.")) return;
+  const handleDeletePost = (postId) => {
+    setPostToDelete(postId); 
+    setIsConfirmOpen(true);  
+  };
+
+  const confirmDelete = async () => {
+    if (!postToDelete) return;
     try {
-      await deletePost(postId);
-      setPosts((prev) => prev.filter((p) => p.post_id !== postId));
+      await deletePost(postToDelete);
+      setPosts((prev) => prev.filter((p) => p.post_id !== postToDelete));
+      setIsConfirmOpen(false);  
+      setPostToDelete(null); 
     } catch (e) {
       console.error("Delete failed:", e);
       alert("Failed to delete post: " + e.message);
+      setIsConfirmOpen(false);  
+      setPostToDelete(null);
     }
   };
 
@@ -161,7 +173,7 @@ const Dashboard = () => {
 
       await createPost({
         categoryName: newPost.category_name.trim(),
-        sectionId: newPost.section_id,  // Changed from sectionIds to sectionId
+        sectionId: newPost.section_id, 
         postContent,
       });
 
@@ -170,7 +182,7 @@ const Dashboard = () => {
       setNewPost({
         category_name: "",
         post_content: "",
-        section_id: null,  // Reset to null
+        section_id: null,  
         section_code: "",
       });
       setIsModalOpen(false);
@@ -194,11 +206,10 @@ const Dashboard = () => {
         <button
           onClick={() => {
             console.log("[Dashboard] Opening CreatePostModal with sections:", sections);
-            // Reset form when opening modal
             setNewPost({
               category_name: "",
               post_content: "",
-              section_id: null,  // Reset to null
+              section_id: null, 
               section_code: "",
             });
             setIsModalOpen(true);
@@ -229,7 +240,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Tabs for Announcements and Events */}
       <Tabs
         tabs={[
           {
@@ -290,7 +300,6 @@ const Dashboard = () => {
         defaultTab={0}
       />
 
-      {/* All Other Posts */}
       <div className="all-posts-section">
         <h2 className="section-title">Latest Posts</h2>
         <div className="posts-container">
@@ -323,6 +332,17 @@ const Dashboard = () => {
         handleCreate={handleCreate}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Post"
+        message="Are you sure you want to delete this post? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="warning"
       />
     </div>
   );

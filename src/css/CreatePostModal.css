@@ -139,29 +139,16 @@ textarea.filter-input:focus {
   box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
 }
 
-.modal-card select {
-  cursor: pointer;
+input.filter-input:disabled,
+select.filter-select:disabled,
+textarea.filter-input:disabled {
+  background: #ffffff;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
-/* Grouped select styling for better readability */
-select optgroup {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-select option {
-  padding: 8px;
-  color: #222222;
-}
-
-select option[disabled] {
-  color: #999999;
-  font-style: italic;
-}
-
-.hint,
-.help-text {
-  color: #999999;
+.hint {
+  color: #6b7280;
   font-size: 12px;
   font-style: italic;
   margin-top: 4px;

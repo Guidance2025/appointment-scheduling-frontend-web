@@ -56,17 +56,17 @@ const ExitInterview = () => {
   const fetchPostedQuestions = async () => {
     try {
       setFetchingQuestions(true);
-      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
       const token = localStorage.getItem("jwtToken");
       
-      if (!guidanceStaffId || !token) {
-        console.log("No guidance staff ID or token found");
+      if (!token) {
+        console.log("No token found");
         setFetchingQuestions(false);
         return;
       }
 
+      // Changed to fetch all exit interview questions, not just by staff ID
       const response = await fetch(
-      `${API_BASE_URL}/exit-interview/retrieve-questions/${guidanceStaffId}`,
+        `${API_BASE_URL}/exit-interview/student/all-questions`,
         {
           method: 'GET',
           headers: {
@@ -178,8 +178,7 @@ const ExitInterview = () => {
       }
 
       const payload = {
-        questionTexts: validQuestions,  
-        categoryName: "EXIT INTERVIEW" 
+        questionTexts: validQuestions
       };
 
       const response = await fetch(
@@ -335,7 +334,7 @@ const ExitInterview = () => {
             onClick={handlePost}
             disabled={loading}
           >
-            {loading ? 'Posting...' : 'Post Questions'}
+            {loading ? 'Posting...' : 'Post Assessment'}
           </button>
         </div>
       </div>
@@ -357,29 +356,29 @@ const ExitInterview = () => {
         </div>
 
         <div className="assessment-filter-bar">
-          <div className="filter-row">
-            <div className="filter-group search-group">
-              <label className="filter-label">Search</label>
-              <div className="filter-input-wrapper">
+          <div className="assessment-filter-row">
+            <div className="assessment-filter-group assessment-search-group">
+              <label className="assessment-filter-label">Search</label>
+              <div className="assessment-filter-input-wrapper">
                 <input
                   type="text"
-                  className="filter-input"
+                  className="assessment-filter-input"
                   placeholder={activeTab === 'questions' ? 'Search by counselor or questions...' : 'Search by question or response...'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button className="clear-filter-icon" onClick={handleClearSearch}>
+                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>
                     ✕
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="filter-group date-group">
-              <label className="filter-label">Date Range</label>
+            <div className="assessment-filter-group assessment-date-group">
+              <label className="assessment-filter-label">Date Range</label>
               <select
-                className="filter-select"
+                className="assessment-filter-select"
                 value={filterDate}
                 onChange={(e) => setFilterDate(e.target.value)}
               >
@@ -388,15 +387,6 @@ const ExitInterview = () => {
                 <option value="week">This Week</option>
                 <option value="month">This Month</option>
               </select>
-            </div>
-
-            <div className="filter-actions">
-              <button className="filter-button secondary" onClick={() => {
-                setSearchTerm('');
-                setFilterDate('all');
-              }}>
-                Reset
-              </button>
             </div>
           </div>
         </div>

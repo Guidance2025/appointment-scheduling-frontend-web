@@ -23,12 +23,11 @@ const ManageAvailability = ({ isOpen, onClose }) => {
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [dayFullyBlocked, setDayFullyBlocked] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  // Month Leave States
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
-  // Bulk selection
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState([]);
 
@@ -91,7 +90,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     }
   };
 
-  // VALIDATION: Check if a specific date is already fully blocked
   const isDateFullyBlocked = (date) => {
     return blockedPeriods.some(block => {
       const blockDate = PHTimeUtils.parseUTCToPH(block.scheduledDate);
@@ -162,6 +160,16 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    
+    // Check if date is in the past
+    const today = PHTimeUtils.getCurrentPHTime();
+    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const selectedDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    if (selectedDateOnly < todayOnly) {
+      showWarning('Past Date', 'Cannot block dates in the past.', 2000);
+      return;
+    }
     
     if (isDateFullyBlocked(date)) {
       showWarning('Already Blocked', 'This date is already blocked.', 2000);
@@ -304,7 +312,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       const notes = block.notes || '';
       const date = blockDate;
 
-      // Month Leave blocks
       if (notes.startsWith('Month Leave:')) {
         const key = `${date.getFullYear()}-${date.getMonth()}`;
         const targetMap = isPast ? pastMonthMap : monthLeaveMap;
@@ -321,7 +328,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
         }
         targetMap.get(key).blocks.push(block);
       } 
-      // Bulk Block blocks
       else if (notes.startsWith('Bulk Block:')) {
         const key = `bulk-${notes}-${isPast}`;
         const targetMap = isPast ? pastBulkMap : bulkBlockMap;
@@ -336,7 +342,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
         }
         targetMap.get(key).blocks.push(block);
       } 
-      // Individual full day blocks
+      
       else {
         if (isPast) {
           grouped.pastBlocks.push(block);
@@ -347,7 +353,15 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     });
 
     grouped.monthLeaves = Array.from(monthLeaveMap.values());
-    grouped.bulkBlocks = Array.from(bulkBlockMap.values());
+    grouped.bulkBlocks = Array.from(bulkBlockMap.values()).map(bulkBlock => {
+      // Sort blocks by date for accurate date range display
+      bulkBlock.blocks.sort((a, b) => {
+        const dateA = PHTimeUtils.parseUTCToPH(a.scheduledDate);
+        const dateB = PHTimeUtils.parseUTCToPH(b.scheduledDate);
+        return dateA - dateB;
+      });
+      return bulkBlock;
+    });
     
     // Add past grouped blocks
     const pastMonthLeaves = Array.from(pastMonthMap.values());
@@ -388,6 +402,23 @@ const ManageAvailability = ({ isOpen, onClose }) => {
           );
           
           await fetchBlockedPeriods();
+          
+          // Check if any deleted block was for the selected date
+          const deletedBlocksForSelectedDate = blocks.some(block => {
+            const blockDate = PHTimeUtils.parseUTCToPH(block.scheduledDate);
+            return blockDate &&
+              blockDate.getFullYear() === selectedDate.getFullYear() &&
+              blockDate.getMonth() === selectedDate.getMonth() &&
+              blockDate.getDate() === selectedDate.getDate();
+          });
+          
+          // If we deleted blocks for the selected date, reset to today
+          if (deletedBlocksForSelectedDate) {
+            const today = PHTimeUtils.getCurrentPHTime();
+            setSelectedDate(today);
+            setDayFullyBlocked(false);
+          }
+          
           if (typeof window.refreshCalendar === "function") {
             window.refreshCalendar();
           }
@@ -427,6 +458,32 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     const nextEnd = add30Minutes(startPickerValue.hour, startPickerValue.minute, startPickerValue.period);
     setEndPickerValue(nextEnd);
   }, [startPickerValue, blockType]);
+
+  useEffect(() => {
+    if (blockType !== 'partial') {
+      setValidationError('');
+      return;
+    }
+
+    const validation = validateTimeRange();
+    if (!validation.isValid) {
+      setValidationError(validation.message);
+    } else {
+      // Check for time overlap
+      const hStart = convertTo24Hour(startPickerValue.hour, startPickerValue.period);
+      const hEnd = convertTo24Hour(endPickerValue.hour, endPickerValue.period);
+      const start = new Date(selectedDate);
+      start.setHours(hStart, parseInt(startPickerValue.minute), 0, 0);
+      const end = new Date(selectedDate);
+      end.setHours(hEnd, parseInt(endPickerValue.minute), 0, 0);
+
+      if (hasTimeOverlap(selectedDate, start, end)) {
+        setValidationError('This time range overlaps with an existing block');
+      } else {
+        setValidationError('');
+      }
+    }
+  }, [startPickerValue, endPickerValue, blockType, selectedDate, blockedPeriods]);
 
   useEffect(() => {
     if (isOpen) {
@@ -524,6 +581,18 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       currentMonth.getFullYear() === today.getFullYear();
   };
 
+  const isPastDate = (day) => {
+    if (!day) return false;
+    const checkDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const today = PHTimeUtils.getCurrentPHTime();
+    
+    // Set time to start of day for accurate comparison
+    checkDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    return checkDate < today;
+  };
+
   const isSelected = (day) => {
     if (!day) return false;
     
@@ -548,6 +617,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       setSelectedDate(selected);
       setStartPickerValue({ hour: "9", minute: "00", period: "AM" });
       setEndPickerValue({ hour: "5", minute: "00", period: "PM" });
+      setValidationError('');
     }
   };
 
@@ -567,14 +637,47 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     const startTotalMinutes = startHour * 60 + startMinutes;
     const endTotalMinutes = endHour * 60 + endMinutes;
 
-    if (endTotalMinutes <= startTotalMinutes) {
+    // Create actual datetime objects for validation
+    const start = new Date(selectedDate);
+    start.setHours(startHour, startMinutes, 0, 0);
+    const end = new Date(selectedDate);
+    end.setHours(endHour, endMinutes, 0, 0);
+
+    const now = new Date();
+    now.setSeconds(0, 0);
+
+    if(dayFullyBlocked) {
+      return {isValid: false , message: "This date is already fully blocked"};
+    }
+
+    if (start < now) {
+      return { isValid: false, message: 'Start time cannot be in the past' };
+    }
+      if (endTotalMinutes <= startTotalMinutes) {
       return { isValid: false, message: 'End time must be after start time' };
+    }
+
+    const durationMinutes = (end - start) / (1000 * 60);
+    // if (durationMinutes > 60) {
+    //   return { isValid: false, message: 'Block duration cannot exceed 1 hour' };
+    // }
+
+    if (startHour < 8 || startHour >= 17) {
+      return { isValid: false, message: 'Start time must be between 8:00 AM and 4:59 PM' };
+    }
+
+    if (endHour > 17 || (endHour === 17 && endMinutes > 0)) {
+      return { isValid: false, message: 'End time must be no later than 5:00 PM' };
+    }
+
+    if (endHour < 8) {
+      return { isValid: false, message: 'End time must be after 8:00 AM' };
     }
 
     return { isValid: true };
   };
 
-  const handleAddBlock = async () => {
+  const handleAddBlock = async (selectedDate) => {
     try {
       if (blockType === 'full' && isDateFullyBlocked(selectedDate)) {
         showError('Already Blocked', 'This date is already fully blocked. Please choose another date.', 4000);
@@ -587,21 +690,8 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       }
 
       if (blockType === 'partial') {
-        const validation = validateTimeRange();
-        if (!validation.isValid) {
-          showError('Invalid Time Range', validation.message);
-          return;
-        }
-
-        const hStart = convertTo24Hour(startPickerValue.hour, startPickerValue.period);
-        const hEnd = convertTo24Hour(endPickerValue.hour, endPickerValue.period);
-        const start = new Date(selectedDate);
-        start.setHours(hStart, parseInt(startPickerValue.minute), 0, 0);
-        const end = new Date(selectedDate);
-        end.setHours(hEnd, parseInt(endPickerValue.minute), 0, 0);
-
-        if (hasTimeOverlap(selectedDate, start, end)) {
-          showError('Time Overlap', 'This time range overlaps with an existing block. Please choose a different time.', 4000);
+        if (validationError) {
+          showError('Invalid Time Range', validationError, 4000);
           return;
         }
       }
@@ -661,6 +751,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       setBlockType('full');
       setStartPickerValue({ hour: "9", minute: "00", period: "AM" });
       setEndPickerValue({ hour: "5", minute: "00", period: "PM" });
+      setValidationError('');
       
       await fetchBlockedPeriods();
       if (typeof window.refreshCalendar === "function") {
@@ -764,6 +855,9 @@ const ManageAvailability = ({ isOpen, onClose }) => {
         try {
           setIsLoading(true);
           
+          // Find the block being deleted to check if it's for the selected date
+          const blockToDelete = blockedPeriods.find(b => b.appointmentId === id);
+          
           const response = await fetch(
             `${API_BASE_URL}/counselor/availability/block/${id}`,
             {
@@ -778,7 +872,38 @@ const ManageAvailability = ({ isOpen, onClose }) => {
           }
 
           showSuccess('Block Deleted!', 'The blocked period has been removed successfully.', 3000);
+          
+          // Refresh blocked periods
           await fetchBlockedPeriods();
+          
+          // Check if the deleted block was for the selected date
+          if (blockToDelete) {
+            const blockDate = PHTimeUtils.parseUTCToPH(blockToDelete.scheduledDate);
+            const wasSelectedDate = blockDate &&
+              blockDate.getFullYear() === selectedDate.getFullYear() &&
+              blockDate.getMonth() === selectedDate.getMonth() &&
+              blockDate.getDate() === selectedDate.getDate();
+            
+            // If we deleted a block for the selected date, check if there are any remaining blocks
+            if (wasSelectedDate) {
+              const updatedBlocks = blockedPeriods.filter(b => b.appointmentId !== id);
+              const selectedDateStillBlocked = updatedBlocks.some(block => {
+                const bDate = PHTimeUtils.parseUTCToPH(block.scheduledDate);
+                return bDate &&
+                  bDate.getFullYear() === selectedDate.getFullYear() &&
+                  bDate.getMonth() === selectedDate.getMonth() &&
+                  bDate.getDate() === selectedDate.getDate();
+              });
+              
+              // If no blocks remain for selected date, reset to today
+              if (!selectedDateStillBlocked) {
+                const today = PHTimeUtils.getCurrentPHTime();
+                setSelectedDate(today);
+                setDayFullyBlocked(false);
+              }
+            }
+          }
+          
           if (typeof window.refreshCalendar === "function") {
             window.refreshCalendar();
           }
@@ -792,9 +917,9 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     });
   };
 
-  const IOSTimePicker = ({ value, onChange }) => {
+  const IOSTimePicker = ({ value, onChange, isStart }) => {
     const hourOptions = ["8", "9", "10", "11", "12", "1", "2", "3", "4", "5"];
-    const minuteOptions = ["00", "30"];
+    const minuteOptions = ["00", "15", "20", "30", "45", "50"];
 
     const increment = (type) => {
       const v = { ...value };
@@ -824,38 +949,112 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       onChange(v);
     };
 
+    const fullDayBlocked = dayFullyBlocked;
+    const blockedRanges = blockedPeriods
+      .filter((s) => {
+        const sDate = PHTimeUtils.parseUTCToPH(s.scheduledDate);
+        if (!sDate) return false;
+        return sDate.getFullYear() === selectedDate.getFullYear() &&
+               sDate.getMonth() === selectedDate.getMonth() &&
+               sDate.getDate() === selectedDate.getDate();
+      })
+      .map((s) => {
+        const startPH = PHTimeUtils.parseUTCToPH(s.scheduledDate);
+        const endPH = s.endDate ? PHTimeUtils.parseUTCToPH(s.endDate) : null;
+
+        if (!startPH) return null;
+
+        if (!endPH) {
+          return "8:00 AM - 5:00 PM (Full Day)";
+        }
+
+        return `${PHTimeUtils.formatTimePH(startPH)} - ${PHTimeUtils.formatTimePH(endPH)}`;
+      })
+      .filter(Boolean);
+
     return (
       <div className="ios-time-picker">
+        {fullDayBlocked && (
+          <div className="full-day-blocked-warning">
+            This entire day is blocked (8:00 AM - 5:00 PM)
+          </div>
+        )}
+        
         <div className="ios-picker-columns">
           <div className="ios-picker-column">
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("hour"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("hour"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronUp size={22} />
             </button>
             <div className="ios-picker-value">{value.hour}</div>
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("hour"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("hour"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronDown size={22} />
             </button>
           </div>
           <div className="ios-picker-separator">:</div>
           <div className="ios-picker-column">
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("minute"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("minute"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronUp size={22} />
             </button>
             <div className="ios-picker-value">{value.minute}</div>
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("minute"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("minute"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronDown size={22} />
             </button>
           </div>
           <div className="ios-picker-column">
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("period"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); increment("period"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronUp size={22} />
             </button>
             <div className="ios-picker-value">{value.period}</div>
-            <button className="ios-picker-arrow" onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("period"); }}>
+            <button 
+              className="ios-picker-arrow" 
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); decrement("period"); }} 
+              onMouseDown={(e) => e.preventDefault()}
+              disabled={fullDayBlocked}
+              type="button"
+            >
               <ChevronDown size={22} />
             </button>
           </div>
         </div>
+
+        {blockedRanges.length > 0 && (
+          <div className="blocked-times-info">
+            <div className="blocked-times-label">Blocked times this day</div>
+            {blockedRanges.map((r, i) => (
+              <div key={i} className="blocked-time-item">{r}</div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -944,12 +1143,13 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                   const appointmentCount = getAppointmentCount(day);
                   const hasAppt = hasAppointment(day);
                   const isBlocked = isDateBlocked(day);
+                  const isPast = isPastDate(day);
                   
                   return (
                     <button
                       key={i}
                       onClick={() => handleDateSelect(day)}
-                      disabled={!day || (selectionMode && (isBlocked || hasAppt))}
+                      disabled={!day || (selectionMode && (isBlocked || hasAppt || isPast))}
                       className={`calendar-day ${isSelected(day) ? 'selected' : ''} ${
                         isToday(day) && !isSelected(day) ? 'today' : ''
                       } ${isBlocked && !isSelected(day) ? 'blocked' : ''} ${
@@ -1032,18 +1232,33 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                       <div className="block-type-selector">
                         <button
                           className={`block-type-btn ${blockType === 'full' ? 'active' : ''}`}
-                          onClick={() => setBlockType('full')}
+                          onClick={() => { setBlockType('full'); setValidationError(''); }}
                         >
                           Full Day
                         </button>
                         <button
                           className={`block-type-btn ${blockType === 'partial' ? 'active' : ''}`}
-                          onClick={() => setBlockType('partial')}
+                          onClick={() => { setBlockType('partial'); setValidationError(''); }}
                         >
                           Time Range
                         </button>
                       </div>
-                    </div>
+                    </div>  
+
+                        {validationError && (
+                          <div className="validation-error" style={{ 
+                            color: '#dc3545', 
+                            fontSize: '15px', 
+                            marginTop: '-8px',
+                            borderRadius: '12px',
+                            padding: '10px',
+                            backgroundColor: '#f8d7da',
+                            borderRadius: '4px',
+                            border: '1px solid #f5c6cb'
+                          }}>
+                            {validationError}
+                          </div>
+                        )}
 
                     {blockType === 'partial' && (
                       <div className="time-inputs">
@@ -1055,11 +1270,11 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                               readOnly
                               value={`${startPickerValue.hour}:${startPickerValue.minute} ${startPickerValue.period}`}
                               onClick={() => !dayFullyBlocked && setShowStartPicker(!showStartPicker)}
-                              className="form-input"
+                              className={`form-input ${validationError ? 'error' : ''}`}
                             />
                             {showStartPicker && (
                               <div className="time-picker-dropdown-ios">
-                                <IOSTimePicker value={startPickerValue} onChange={setStartPickerValue} />
+                                <IOSTimePicker value={startPickerValue} onChange={setStartPickerValue} isStart={true} />
                               </div>
                             )}
                           </div>
@@ -1073,15 +1288,16 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                               readOnly
                               value={`${endPickerValue.hour}:${endPickerValue.minute} ${endPickerValue.period}`}
                               onClick={() => !dayFullyBlocked && setShowEndPicker(!showEndPicker)}
-                              className="form-input"
+                              className={`form-input ${validationError ? 'error' : ''}`}
                             />
                             {showEndPicker && (
                               <div className="time-picker-dropdown-ios">
-                                <IOSTimePicker value={endPickerValue} onChange={setEndPickerValue} />
+                                <IOSTimePicker value={endPickerValue} onChange={setEndPickerValue} isStart={false} />
                               </div>
                             )}
                           </div>
                         </div>
+
                       </div>
                     )}
 
@@ -1095,11 +1311,10 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                         maxLength={200}
                       />
                     </div>
-
                     <button
-                      onClick={handleAddBlock}
+                      onClick={() => handleAddBlock(selectedDate)}
                       className="add-block-btn"
-                      disabled={isLoading || (blockType === 'partial' && dayFullyBlocked)}
+                      disabled={ dayFullyBlocked || hasAppointmentOnDate(selectedDate) || isLoading || (blockType === 'partial' && (dayFullyBlocked || validationError))}
                     >
                       {isLoading ? 'Processing...' : (editingId ? 'Update Block' : 'Add Block')}
                     </button>
@@ -1132,7 +1347,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                     </div>
 
                     <div className="leave-info-box">
-                      <p>📅 This will block all working days (Mon-Fri) in <strong>{monthsShort[selectedMonth - 1]} {selectedYear}</strong></p>
+                      <p> This will block all working days (Mon-Fri) in <strong>{monthsShort[selectedMonth - 1]} {selectedYear}</strong></p>
                       <p className="leave-info-note">Weekends are automatically excluded. Already blocked dates will be skipped.</p>
                     </div>
 
@@ -1202,7 +1417,10 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                                 <div key={`bulk-${idx}`} className="blocked-item">
                                   <div className="blocked-item-info">
                                     <div className="blocked-item-date">
-                                      Multiple Dates ({bulk.blocks.length} days)
+                                      {bulk.blocks.length === 1 
+                                        ? PHTimeUtils.formatShortDatePH(bulk.blocks[0].scheduledDate)
+                                        : `${PHTimeUtils.formatShortDatePH(bulk.blocks[0].scheduledDate)} - ${PHTimeUtils.formatShortDatePH(bulk.blocks[bulk.blocks.length - 1].scheduledDate)}`
+                                      } ({bulk.blocks.length} {bulk.blocks.length === 1 ? 'day' : 'days'})
                                     </div>
                                     <div className="blocked-item-type">
                                       Bulk Block
