@@ -12,14 +12,14 @@ const StudentEntryModal = ({ student, entries, onClose }) => (
       {entries.length > 0 ? (
         <ul className="mood-entries">
           {entries.map((entry) => (
-            <li key={entry.mood_id} className="mood-entry">
-              <span className={`mood-score mood-${entry.mood < 5 ? "low" : "normal"}`}>
-                {entry.mood}/10
+            <li key={entry.id} className="mood-entry">
+              <span className="entry-emotions">
+                {entry.emotions.join(", ")}  {/* Display multiple emotions */}
               </span>
               <span className="entry-date">
-                {new Date(entry.entry_date).toLocaleDateString()}
+                {new Date(entry.entryDate).toLocaleDateString()}
               </span>
-              <span className="entry-notes">{entry.mood_notes}</span>
+              <span className="entry-notes">{entry.note || "No notes"}</span>
             </li>
           ))}
         </ul>
@@ -49,8 +49,8 @@ const MoodTrend = () => {
         const res = await fetch(MOODS_URL);
         const data = await res.json();
         const studentMap = {};
-        (data || []).forEach((mood) => {
-          const student = mood.student;
+        (data || []).forEach((entry) => {
+          const student = entry.student;
           if (!student) return;
           const studentId = student.id;
           if (!studentMap[studentId]) {
@@ -60,20 +60,21 @@ const MoodTrend = () => {
               student_number: student.studentNumber,
               course: student.section?.course,
               cluster_name: student.section?.clusterName,
-              latest_mood: mood.mood,
-              last_entry_date: mood.entryDate,
+              latest_emotions: entry.emotions || [],  // Parse from backend
+              last_entry_date: entry.entryDate,
               entries: [],
             };
           }
-          if (new Date(mood.entryDate) > new Date(studentMap[studentId].last_entry_date)) {
-            studentMap[studentId].latest_mood = mood.mood;
-            studentMap[studentId].last_entry_date = mood.entryDate;
+          // Update latest if newer
+          if (new Date(entry.entryDate) > new Date(studentMap[studentId].last_entry_date)) {
+            studentMap[studentId].latest_emotions = entry.emotions || [];
+            studentMap[studentId].last_entry_date = entry.entryDate;
           }
           studentMap[studentId].entries.push({
-            mood_id: mood.id,
-            mood: mood.mood,
-            entry_date: mood.entryDate,
-            mood_notes: mood.moodNotes,
+            id: entry.id,
+            emotions: entry.emotions || [],
+            entryDate: entry.entryDate,
+            note: entry.moodNotes,
           });
         });
         const processedStudents = Object.values(studentMap);
@@ -88,16 +89,8 @@ const MoodTrend = () => {
     loadStudents();
   }, []);
 
-  const getEmotion = (score) => {
-    if (score >= 9) return "amazing";
-    if (score >= 7) return "happy";
-    if (score >= 5) return "neutral";
-    return "sad";
-  };
-
   const filteredStudents = students.filter((student) => {
-    const emotion = getEmotion(student.latest_mood);
-    const matchesEmotion = !emotionFilter || emotion === emotionFilter;
+    const matchesEmotion = !emotionFilter || student.latest_emotions.includes(emotionFilter);
     const matchesSearch =
       !searchTerm ||
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -126,24 +119,24 @@ const MoodTrend = () => {
 
   return (
     <div className="page-container">
-      <div className="appointments-filter-bar">
-        <div className="appointments-filter-row">
-          <div className="appointments-filter-group appointments-search-group">
-            <label className="appointments-filter-label">
-              <Search size={12} style={{ marginRight: "4px" }} />
+      <div className="advanced-filter-bar">
+        <div className="filter-row">
+          <div className="filter-group search-group">
+            <label className="filter-label">
+              <Search size={12} style={{ display: "inline", marginRight: "4px" }} />
               Search
             </label>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                className="appointments-filter-input"
+                className="filter-input"
                 placeholder="Search by student name or number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               {searchTerm && (
                 <button
-                  className="appointments-clear-filter-icon"
+                  className="clear-filter-icon"
                   onClick={() => setSearchTerm("")}
                   title="Clear search"
                 >
@@ -153,10 +146,10 @@ const MoodTrend = () => {
             </div>
           </div>
 
-          <div className="appointments-filter-group appointments-status-group">
-            <label className="appointments-filter-label">Emotional State</label>
+          <div className="filter-group type-group">
+            <label className="filter-label">Emotional State</label>
             <select
-              className="appointments-filter-select"
+              className="filter-select"
               value={emotionFilter}
               onChange={(e) => setEmotionFilter(e.target.value)}
             >
@@ -167,7 +160,18 @@ const MoodTrend = () => {
               <option value="sad">Sad</option>
               <option value="calm">Calm</option>
               <option value="happy">Happy</option>
+              <option value="excited">Excited</option>
+              <option value="tired">Tired</option>
+              <option value="hopeful">Hopeful</option>
             </select>
+          </div>
+
+          <div className="filter-actions">
+            {hasActiveFilters && (
+              <button className="filter-button secondary" onClick={handleClearFilters}>
+                <X size={16} /> Clear
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -182,13 +186,13 @@ const MoodTrend = () => {
           <div className="empty-message">
             {hasActiveFilters ? (
               <div>
-                <div className="empty-icon">🔍</div>
+                <div className="empty-icon"></div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">No students match your current filters</p>
               </div>
             ) : (
               <div>
-                <div className="empty-icon">📊</div>
+                <div className="empty-icon"></div>
                 <h3 className="empty-title">No students found</h3>
                 <p className="empty-description">There are no mood trend records.</p>
               </div>
@@ -203,18 +207,18 @@ const MoodTrend = () => {
                   <th>Number</th>
                   <th>Course</th>
                   <th>Cluster</th>
-                  <th>Latest Mood</th>
+                  <th>Latest Emotions</th>
                   <th>Last Entry</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.map((student) => {
-                  const emotion = getEmotion(student.latest_mood);
+                  const isAtRisk = student.latest_emotions.some(e => ["angry", "frustrated", "worried", "sad"].includes(e));
                   return (
                     <tr
                       key={student.id}
-                      className={`student-row ${emotion === "sad" ? "at-risk" : ""}`}
+                      className={`student-row ${isAtRisk ? "at-risk" : ""}`}
                       onClick={() => onSelectStudent(student)}
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === "Enter") onSelectStudent(student); }}
@@ -226,13 +230,13 @@ const MoodTrend = () => {
                       <td>{student.course}</td>
                       <td>{student.cluster_name}</td>
                       <td>
-                        <span className={`mood-score mood-${emotion}`}>
-                          {student.latest_mood}/10 ({emotion})
+                        <span className={`mood-emotions ${isAtRisk ? "mood-low" : "mood-normal"}`}>
+                          {student.latest_emotions.join(", ")}
                         </span>
                       </td>
-                      <td>{student.last_entry_date}</td>
+                      <td>{new Date(student.last_entry_date).toLocaleDateString()}</td>
                       <td>
-                        {emotion === "sad" ? (
+                        {isAtRisk ? (
                           <span className="at-risk-indicator" title="At Risk">⚠️ At Risk</span>
                         ) : (
                           "Normal"
