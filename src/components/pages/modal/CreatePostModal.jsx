@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../../css/CreatePostModal.css";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
+import { fetchAllSectionsByStudent } from "../../../service/post";
 
 const CreatePostModal = ({
   newPost,
@@ -12,18 +13,32 @@ const CreatePostModal = ({
   isOpen,
   onClose,
 }) => {
-  const { showSuccess, showError } = usePopUp();
+  const {showSuccess, showError } = usePopUp();
   const [showSectionSelector, setShowSectionSelector] = useState(false);
+  const [availableSections, setAvailableSections] = useState([]);
+  const [loadingSections, setLoadingSections] = useState(false);
 
   useEffect(() => {
     // Show section selector only for Announcements and Events
     if (newPost.category_name === "Announcement" || newPost.category_name === "Events") {
+      fetchSections();
       setShowSectionSelector(true);
     } else {
       setShowSectionSelector(false);
-      setNewPost({ ...newPost, section_id: null });  // Reset section if not applicable
+      setAvailableSections([]);
+      setNewPost(prev => ({ ...prev, section_id: null }));  // Reset section if not applicable
     }
-  }, [newPost.category_name]);
+  }, [newPost.category_name]); // Remove setNewPost from dependencies to avoid infinite loop
+
+  const fetchSections = async () => {
+    setLoadingSections(true);
+    try {
+      const sectionList = await fetchAllSectionsByStudent();
+      setAvailableSections(sectionList);
+    } finally {
+      setLoadingSections(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +73,6 @@ const CreatePostModal = ({
         <form onSubmit={handleSubmit}>
           <h2 className="modal-header">Create New Post</h2>
           <div className="modal-body">
-            {/* Category Selection */}
             <div className="form-group">
               <label htmlFor="category">
                 Category <span className="required">*</span>
@@ -96,21 +110,23 @@ const CreatePostModal = ({
                 <select
                   id="section"
                   value={newPost.section_id || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setNewPost({ ...newPost, section_id: value ? parseInt(value) : null });  // Fixed: Parse to number
-                  }}
+                  onChange={(e) =>
+                    setNewPost({ ...newPost, section_id: e.target.value || null })
+                  }
                   required
+                  disabled={loadingSections}
                 >
-                  <option value="">-- Select Section --</option>
-                  {sections && sections.length > 0 ? (
-                    sections.map((section) => (
-                      <option key={section.id} value={section.id}>
-                        {section.name} ({section.code})
+                  <option value="">
+                    {loadingSections ? "Loading sections..." : "-- Select Section --"}
+                  </option>
+                  {availableSections.length > 0 ? (
+                    availableSections.map((section,index) => (
+                      <option key={section || index} value={section}>
+                        {section}
                       </option>
                     ))
                   ) : (
-                    <option disabled>No sections available</option>
+                    !loadingSections && <option disabled>No sections available</option>
                   )}
                 </select>
                 <small className="help-text">
@@ -119,7 +135,6 @@ const CreatePostModal = ({
               </div>
             )}
 
-            {/* Post Content */}
             <div className="form-group">
               <label htmlFor="content">
                 Content <span className="required">*</span>
@@ -153,7 +168,7 @@ const CreatePostModal = ({
                 <strong>📌 Post Type:</strong> {newPost.category_name}
                 {showSectionSelector && newPost.section_id && (
                   <div>
-                    <strong>👥 Visible to:</strong> {sections.find(s => s.id === newPost.section_id)?.name || "Selected section"}
+                    <strong>👥 Visible to:</strong> {newPost.section_id}
                   </div>
                 )}
               </div>

@@ -10,7 +10,7 @@ export async function clearAllNotification(userId) {
     try {
         const response = await fetch(CLEAR_ALL_NOTIFICATION(userId), {
             method: "PATCH",
-            headers: {
+            headers: { 
                 "Content-Type" : "application/json",
                 "Authorization": "Bearer " + JWT_TOKEN
             },

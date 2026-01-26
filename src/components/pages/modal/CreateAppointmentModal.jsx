@@ -16,6 +16,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
+  const [timeError, setTimeError] = useState(""); // New state for time-related errors
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingStudent, setIsLoadingStudent] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -32,12 +33,19 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const studentNumberTimeoutRef = useRef(null);
   const { showSuccess } = usePopUp();
   const errorRef = useRef(null);
+  const timeErrorRef = useRef(null);
 
   useEffect(() => {
     if (error && errorRef.current) {
       errorRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [error]);
+
+  useEffect(() => {
+    if (timeError && timeErrorRef.current) {
+      timeErrorRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [timeError]);
 
   useEffect(() => {
     return () => {
@@ -91,7 +99,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   useEffect(() => {
     if (scheduledDate && endDate) {
       const validationError = validateDates(scheduledDate, endDate);
-      setError(validationError);
+      setTimeError(validationError);
     }
   }, [scheduledDate, endDate, bookedSlots]);
 
@@ -246,6 +254,28 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     });
   };
 
+  // Helper function to determine if error is time-related
+  const isTimeRelatedError = (errorMsg) => {
+    if (!errorMsg) return false;
+    const timeKeywords = [
+      "time",
+      "past",
+      "after",
+      "before",
+      "duration",
+      "hour",
+      "conflicts",
+      "blocked",
+      "available",
+      "slot",
+      "8:00 AM",
+      "5:00 PM",
+      "4:59 PM"
+    ];
+    const lowerMsg = errorMsg.toLowerCase();
+    return timeKeywords.some(keyword => lowerMsg.includes(keyword));
+  };
+
   const validateDates = (scheduled, end) => {
     if (!scheduled || !end) return "";
 
@@ -314,11 +344,13 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       setEndDate("");
       setBookedSlots([]);
       setError("");
+      setTimeError("");
       return;
     }
 
     setSelectedDate(date);
     setError("");
+    setTimeError("");
 
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -354,6 +386,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     setEndDate("");
     setNotes("");
     setError("");
+    setTimeError("");
     setBookedSlots([]);
   };
 
@@ -370,7 +403,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       return;
     }
 
-    if (!appointmentType) {
+    if (!appointmentType || appointmentType.trim() === "") {
       setError("Please select an appointment type");
       return;
     }
@@ -381,13 +414,13 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
 
     if (isFullDayBlocked()) {
-      setError("This entire day is blocked. Please select another date.");
+      setTimeError("This entire day is blocked. Please select another date.");
       return;
     }
 
     const validationError = validateDates(scheduledDate, endDate);
     if (validationError) {
-      setError(validationError);
+      setTimeError(validationError);
       return;
     }
 
@@ -431,6 +464,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         setNotes("");
         setBookedSlots([]);
         setError("");
+        setTimeError("");
     
         showSuccess("Appointment Created Successfully!", "Please wait for the student's response", 3000);
         isClose();
@@ -446,20 +480,28 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         const txt = await res.text();
         errMessage = txt || errMessage;
       }
-      if (/Student already has an appointment|AppointmentAlreadyExistException|STUDENT ALREADY HAS AN APPOINTMENT/i.test(errMessage)) {
-        setError("Student already has a pending or scheduled appointment.");
-      } else if (/Counselor not available|not available for time|blocked/i.test(errMessage)) {
-        setError("Selected time is not available. Please choose another time.");
-      } else if (/DEVICE TOKEN DOES NOT EXIST/i.test(errMessage)) {
-        setError("Appointment created, but failed to send notification to the student. App not yet installed or logged in.");
-      } else if (/YOU ALREADY HAVE AN APPOINTMENT WITH THIS COUNSELOR FOR THIS DAY/i.test(errMessage)) {
-        setError("Already have an appointment with this counselor for this day. Maximum of one appointment per day.");
-      } else if (res.status === 400) {
-        setError(errMessage || "Bad request. Please check the data and try again.");
-      } else if (res.status === 401 || res.status === 403) {
-        setError("You are not authorized. Please log in again.");
+      
+      // Determine if error is time-related or general
+      if (isTimeRelatedError(errMessage)) {
+        if (/Counselor not available|not available for time|blocked/i.test(errMessage)) {
+          setTimeError("Selected time is not available. Please choose another time.");
+        } else {
+          setTimeError(errMessage);
+        }
       } else {
-        setError(errMessage);
+        if (/Student already has an appointment|AppointmentAlreadyExistException|STUDENT ALREADY HAS AN APPOINTMENT/i.test(errMessage)) {
+          setError("Student already has a pending or scheduled appointment.");
+        } else if (/DEVICE TOKEN DOES NOT EXIST/i.test(errMessage)) {
+          setError("Appointment created, but failed to send notification to the student. App not yet installed or logged in.");
+        } else if (/YOU ALREADY HAVE AN APPOINTMENT WITH THIS COUNSELOR FOR THIS DAY/i.test(errMessage)) {
+          setError("Already have an appointment with this counselor for this day. Maximum of one appointment per day.");
+        } else if (res.status === 400) {
+          setError(errMessage || "Bad request. Please check the data and try again.");
+        } else if (res.status === 401 || res.status === 403) {
+          setError("You are not authorized. Please log in again.");
+        } else {
+          setError(errMessage);
+        }
       }
     } catch (err) {
       console.error("Error during appointment creation:", err);
@@ -533,7 +575,10 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
   const handleAppointmentTypeChange = (e) => {
     setAppointmentType(e.target.value);
-    if (error === "Please select an appointment type") setError("");
+    // Clear error if a valid appointment type is selected
+    if (e.target.value && error === "Please select an appointment type") {
+      setError("");
+    }
   };
 
   const updateActualTime = (pickerValue, isStartTime) => {
@@ -726,9 +771,11 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
                       firstname && 
                       lastname && 
                       appointmentType && 
+                      appointmentType.trim() !== "" &&
                       scheduledDate && 
                       endDate && 
                       !error && 
+                      !timeError &&
                       !isFullDayBlocked();
 
   return (
@@ -799,6 +846,11 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             <option value="Personal Issue">Personal Issue</option>
             <option value="Follow-Up">Follow-Up</option>
           </select>
+          {error && error.includes("appointment type") && (
+            <span style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px", display: "block" }}>
+              Please select an appointment type
+            </span>
+          )}
         </label>
 
         <label>
@@ -842,6 +894,13 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
           )}
         </label>
 
+        {/* Time Error Message - Shows above Start Time field */}
+        {timeError && (
+          <div ref={timeErrorRef} className="create-error-messages" role="alert" aria-live="assertive" style={{ marginTop: 10, marginBottom: 10 }}>
+            {timeError}
+          </div>
+        )}
+
         {scheduledDate && (
           <label>
             Start Time: <span style={{ color: "red" }}>*</span>
@@ -852,10 +911,10 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
                 onClick={() => scheduledDate && !isProcessing && !isLoadingSlots && setShowStartPicker(!showStartPicker)}
                 readOnly
                 placeholder="--:-- --"
-                className={error && (error.includes("time") || error.includes("past") || error.includes("booked") || error.includes("conflicts")) ? "time-input error" : "time-input"}
+                className={timeError ? "time-input error" : "time-input"}
                 disabled={!scheduledDate || isProcessing || isLoadingSlots}
                 aria-required="true"
-                aria-invalid={error && error.includes("time") ? "true" : "false"}
+                aria-invalid={timeError ? "true" : "false"}
               />
               {showStartPicker && scheduledDate && (
                 <div className="create-time-picker-dropdown">
@@ -880,10 +939,10 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
                 onClick={() => !isProcessing && !isLoadingSlots && setShowEndPicker(!showEndPicker)}
                 readOnly
                 placeholder="--:-- --"
-                className={error && (error.includes("End time") || error.includes("after") || error.includes("conflicts")) ? "time-input error" : "time-input"}
+                className={timeError ? "time-input error" : "time-input"}
                 disabled={isProcessing || isLoadingSlots}
                 aria-required="true"
-                aria-invalid={error && error.includes("End time") ? "true" : "false"}
+                aria-invalid={timeError ? "true" : "false"}
               />
               {showEndPicker && (
                 <div className="create-time-picker-dropdown">

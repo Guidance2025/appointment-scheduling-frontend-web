@@ -4,6 +4,7 @@ import {
   DELETE_POST_URL,
   CATEGORIES_URL,
   LATEST_POSTS_URL,
+  FETCH_ALL_SECTIONS_BY_STUDENT,
 } from "../../constants/api";
 
 // Get auth headers with JWT token
@@ -90,31 +91,40 @@ export const fetchQuoteOfTheDay = async () => {
  * @param {string} postData.postContent - Content of the post
  * @param {number} postData.sectionId - Single section ID (for Announcement/Events only)
  */
-export const createPost = async ({ categoryName, sectionId, postContent }) => {
-  const payload = {
-    categoryName: categoryName?.trim(),
-    sectionId: sectionId ? parseInt(sectionId) : null,  // Fixed: Ensure it's a number or null
-    postContent: postContent?.trim(),
-  };
-  
-  console.log("=== POST SERVICE: Creating post ===");
-  console.log("Category:", payload.categoryName);
-  console.log("Section ID:", payload.sectionId);
-  console.log("Post Content length:", payload.postContent.length);
-  console.log("Full payload:", JSON.stringify(payload, null, 2));
-  console.log("Sending to URL:", POSTS_URL);
-  
-  const res = await fetch(POSTS_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-    },
-    body: JSON.stringify(payload),
-  });
-  return toJson(res);
-};
+export const createPost = async (postData) => {
+  try {
+    const token = localStorage.getItem("jwtToken");
+    
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
 
+    console.log("Creating post with data:", postData);
+
+    const response = await fetch("http://localhost:8080/api/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        categoryName: postData.categoryName,
+        postContent: postData.postContent,
+        sectionName: postData.sectionName, 
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to create post: ${response.status} - ${errorText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating post:", error);
+    throw error;
+  }
+};
 /**
  * Delete a post
  */
@@ -178,6 +188,30 @@ export const fetchPostComments = async (postId) => {
     },
   });
   return toJson(res);
+};
+
+export const fetchAllSectionsByStudent = async () => {
+  try {
+    const response = await fetch(FETCH_ALL_SECTIONS_BY_STUDENT, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sections: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('Raw API response:', data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchAllSectionsByStudent:', error);
+    throw error;
+  }
 };
 
 export const normalizePost = (p) => ({
