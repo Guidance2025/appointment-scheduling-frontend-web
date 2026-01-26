@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import "../../../../css/admin/CreateAccountModal.css";
 import { register } from '../../../../service/admin';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import { FormField } from '../../../../helper/validation/FormField';
 import { useFormValidation } from '../../../../helper/validation/hooks/useFormValidation';
 import { usePopUp } from '../../../../helper/message/pop/up/provider/PopUpModalProvider';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) => {
   const [currentRole, setCurrentRole] = useState("GUIDANCE");
@@ -17,6 +19,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     firstname: "",
     lastname: "",
     middlename: "",
+    birthdate: null,  
     gender: "",
     contactNumber: "",
     email: "",
@@ -31,8 +34,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     firstname: "",
     lastname: "",
     middlename: "",
-    birthdate: "",  // Changed from 'age' to 'birthdate'
+    birthdate: null,
     gender: "",
+    contactNumber: "",
     email: "",
     address: "",
     sectionName: "",
@@ -51,6 +55,25 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     password: { required: true, minLength: 6 },
     firstname: { required: true },
     lastname: { required: true },
+    birthdate: {
+      required: true,
+      custom: (value) => {
+        if (!value) return "Birthdate is required";
+        const birthDate = new Date(value);
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const birthYear = birthDate.getFullYear();
+        
+        if (isNaN(birthDate.getTime())) return "Invalid date format";
+        if (birthYear >= currentYear) return `Birthdate must be before ${currentYear}`;
+        if (birthYear < 1924) return "Birthdate must be after 1924";
+        
+        const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
+        if (age < 18 || age > 100) return "Age must be between 18 and 100 years";
+        
+        return null;
+      }
+    },
     gender: { required: true },
     contactNumber: {
       required: true,
@@ -79,19 +102,29 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         
         const birthDate = new Date(value);
         const today = new Date();
+        const currentYear = today.getFullYear();
+        const birthYear = birthDate.getFullYear();
         
         if (isNaN(birthDate.getTime())) return "Invalid date format";
-        
-        if (birthDate > today) return "Birthdate cannot be in the future";
+        if (birthYear >= currentYear) return `Birthdate must be before ${currentYear}`;
+        if (birthYear < 1924) return "Birthdate must be after 1924";
         
         const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-        
         if (age < 10 || age > 100) return "Age must be between 10 and 100 years";
         
         return null;
       }
     },
     gender: { required: true },
+    contactNumber: {
+      required: true,
+      number: true,
+      custom: (value) => {
+        const cleaned = value.replace(/\D/g, "");
+        if (cleaned.length < 7 || cleaned.length > 15) return "Invalid contact number length";
+        return null;
+      },
+    },
     email: { required: true, email: true },
     address: { required: true },
     sectionName: { required: true },
@@ -107,6 +140,14 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     }
   }, [isOpen, activeTab]);
 
+  const formatDateForBackend = (date) => {
+    if (!date) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const buildSubmissionData = () => {
     if (currentRole === "GUIDANCE") {
       return {
@@ -115,6 +156,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             firstName: guidanceForm.formData.firstname.trim(),
             lastName: guidanceForm.formData.lastname.trim(),
             middleName: guidanceForm.formData.middlename.trim(),
+            birthdate: formatDateForBackend(guidanceForm.formData.birthdate),
             gender: guidanceForm.formData.gender,
             contactNumber: guidanceForm.formData.contactNumber.trim(),
             email: guidanceForm.formData.email.trim(),
@@ -135,8 +177,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             firstName: studentForm.formData.firstname.trim(),
             lastName: studentForm.formData.lastname.trim(),
             middleName: studentForm.formData.middlename.trim(),
-            birthdate: studentForm.formData.birthdate,  
+            birthdate: formatDateForBackend(studentForm.formData.birthdate),
             gender: studentForm.formData.gender,
+            contactNumber: studentForm.formData.contactNumber.trim(),
             email: studentForm.formData.email.trim(),
             address: studentForm.formData.address.trim(),
           },
@@ -195,6 +238,25 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     onClose();
   };
 
+  const handleBirthdateChange = (date, formType) => {
+    const form = formType === "GUIDANCE" ? guidanceForm : studentForm;
+    form.handleChange({
+      target: {
+        name: 'birthdate',
+        value: date
+      }
+    });
+  };
+
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  
+  // Max date is December 31 of last year (2025 if current year is 2026)
+  const maxDate = new Date(currentYear - 1, 11, 31);
+  
+  // Min date is January 1, 1924 (100 years ago from 2024)
+  const minDate = new Date(1924, 0, 1);
+
   if (!isOpen) return null;
 
   const renderGuidanceForm = () => (
@@ -204,6 +266,33 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Firstname" name="firstname" value={guidanceForm.formData.firstname} onChange={guidanceForm.handleChange} error={guidanceForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={guidanceForm.formData.lastname} onChange={guidanceForm.handleChange} error={guidanceForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={guidanceForm.formData.middlename} onChange={guidanceForm.handleChange} error={guidanceForm.errors.middlename} options={{ small: true }} maxLength={1} />
+      
+      <div className="form-field-wrapper">
+        <label className="form-label">
+          Birthdate <span className="required-asterisk">*</span>
+        </label>
+        <div className="date-picker-wrapper">
+          <DatePicker
+            selected={guidanceForm.formData.birthdate}
+            onChange={(date) => handleBirthdateChange(date, "GUIDANCE")}
+            dateFormat="MM/dd/yyyy"
+            placeholderText="Select birthdate"
+            maxDate={maxDate}
+            minDate={minDate}
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={100}
+            openToDate={new Date(2015, 0, 1)}
+            className={`date-picker-input ${guidanceForm.errors.birthdate ? 'error' : ''}`}
+            onChangeRaw={(e) => e.preventDefault()}
+          />
+          <Calendar className="calendar-icon" size={18} />
+        </div>
+        {guidanceForm.errors.birthdate && (
+          <span className="error-message">{guidanceForm.errors.birthdate}</span>
+        )}
+      </div>
+
       <FormField label="Gender" name="gender" type="select" value={guidanceForm.formData.gender} onChange={guidanceForm.handleChange} error={guidanceForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Contact Number" name="contactNumber" type="tel" value={guidanceForm.formData.contactNumber} onChange={guidanceForm.handleChange} error={guidanceForm.errors.contactNumber} />
       <FormField label="Email" name="email" type="email" value={guidanceForm.formData.email} onChange={guidanceForm.handleChange} error={guidanceForm.errors.email} options={{ fullWidth: true }} />
@@ -220,8 +309,35 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Firstname" name="firstname" value={studentForm.formData.firstname} onChange={studentForm.handleChange} error={studentForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={studentForm.formData.lastname} onChange={studentForm.handleChange} error={studentForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={studentForm.formData.middlename} onChange={studentForm.handleChange} error={studentForm.errors.middlename} options={{ small: true }} maxLength={1} />
-      <FormField label="Birthdate" name="birthdate" type="date" value={studentForm.formData.birthdate} onChange={studentForm.handleChange} error={studentForm.errors.birthdate} />
+      
+      <div className="form-field-wrapper">
+        <label className="form-label">
+          Birthdate <span className="required-asterisk">*</span>
+        </label>
+        <div className="date-picker-wrapper">
+          <DatePicker
+            selected={studentForm.formData.birthdate}
+            onChange={(date) => handleBirthdateChange(date, "STUDENT")}
+            dateFormat="MM/dd/yyyy"
+            placeholderText="Select birthdate"
+            maxDate={maxDate}
+            minDate={minDate}
+            showYearDropdown
+            scrollableYearDropdown
+            yearDropdownItemNumber={100}
+            openToDate={new Date(2015, 0, 1)}
+            className={`date-picker-input ${studentForm.errors.birthdate ? 'error' : ''}`}
+            onChangeRaw={(e) => e.preventDefault()}
+          />
+          <Calendar className="calendar-icon" size={18} />
+        </div>
+        {studentForm.errors.birthdate && (
+          <span className="error-message">{studentForm.errors.birthdate}</span>
+        )}
+      </div>
+
       <FormField label="Gender" name="gender" type="select" value={studentForm.formData.gender} onChange={studentForm.handleChange} error={studentForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
+      <FormField label="Contact Number" name="contactNumber" type="tel" value={studentForm.formData.contactNumber} onChange={studentForm.handleChange} error={studentForm.errors.contactNumber} />
       <FormField label="Email" name="email" type="email" value={studentForm.formData.email} onChange={studentForm.handleChange} error={studentForm.errors.email} options={{ fullWidth: true }} />
       <FormField label="Address" name="address" value={studentForm.formData.address} onChange={studentForm.handleChange} error={studentForm.errors.address} options={{ fullWidth: true }} />
       <FormField label="Section Name" name="sectionName" value={studentForm.formData.sectionName} onChange={studentForm.handleChange} error={studentForm.errors.sectionName} />
