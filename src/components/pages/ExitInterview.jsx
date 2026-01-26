@@ -334,7 +334,7 @@ const ExitInterview = () => {
             onClick={handlePost}
             disabled={loading}
           >
-            {loading ? 'Posting...' : 'Post Assessment'}
+            {loading ? 'Posting...' : 'Post Exit Interview'}
           </button>
         </div>
       </div>

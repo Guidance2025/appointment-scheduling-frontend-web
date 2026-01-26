@@ -300,29 +300,6 @@ const Dashboard = () => {
         defaultTab={0}
       />
 
-      <div className="all-posts-section">
-        <h2 className="section-title">Latest Posts</h2>
-        <div className="posts-container">
-          {posts && posts.length > 0 ? (
-            posts
-              .filter(p => {
-                const catLower = (p.category_name || p.CATEGORY_NAME || "").toLowerCase();
-                return catLower !== "announcement" && catLower !== "events";
-              })
-              .map((post) => (
-                <PostCard
-                  key={post.post_id}
-                  post={post}
-                  onDelete={handleDeletePost}
-                  isGuidanceStaff={isGuidanceStaff}
-                />
-              ))
-          ) : (
-            !loading && <p className="no-posts-text">No posts yet.</p>
-          )}
-        </div>
-      </div>
-
       <CreatePostModal
         newPost={newPost}
         setNewPost={setNewPost}

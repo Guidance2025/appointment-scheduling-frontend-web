@@ -26,9 +26,9 @@ const CreatePostModal = ({
     } else {
       setShowSectionSelector(false);
       setAvailableSections([]);
-      setNewPost(prev => ({ ...prev, section_id: null }));  // Reset section if not applicable
+      setNewPost(prev => ({ ...prev, section_id: null }));  
     }
-  }, [newPost.category_name]); // Remove setNewPost from dependencies to avoid infinite loop
+  }, [newPost.category_name]); 
 
   const fetchSections = async () => {
     setLoadingSections(true);
@@ -184,7 +184,7 @@ const CreatePostModal = ({
               className="btn-primary" 
               disabled={creating || !newPost.category_name || !newPost.post_content.trim()}
             >
-              {creating ? "Creating..." : "Create Post"}
+              {creating ? "Creating..." : "Post"}
             </button>
           </div>
         </form>
