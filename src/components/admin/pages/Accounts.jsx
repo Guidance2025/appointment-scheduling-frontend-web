@@ -177,7 +177,6 @@ function Accounts() {
                 <th>Join Date</th>
                 <th>Is Active</th>
                 <th>Is Locked</th>
-                <th>Role</th>
               </tr>
             </thead>
             <tbody>
@@ -196,7 +195,6 @@ function Accounts() {
                   </td>
                   <td>{account.isActive ? "Yes" : "No"}</td>
                   <td>{account.isLocked ? "Yes" : "No"}</td>
-                  <td>{account.role || "N/A"}</td>
                 </tr>
               ))}
             </tbody>
@@ -222,7 +220,6 @@ function Accounts() {
                 <th>Join Date</th>
                 <th>Is Active</th>
                 <th>Is Locked</th>
-                <th>Role</th>
               </tr>
             </thead>
             <tbody>
@@ -241,7 +238,6 @@ function Accounts() {
                   </td>
                   <td>{student.isActive ? "Yes" : "No"}</td>
                   <td>{student.isLocked ? "Yes" : "No"}</td>
-                  <td>{student.role || "N/A"}</td>
                 </tr>
               ))}
             </tbody>
