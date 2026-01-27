@@ -18,6 +18,13 @@ const CreatePostModal = ({
   const [availableSections, setAvailableSections] = useState([]);
   const [loadingSections, setLoadingSections] = useState(false);
 
+  const FIXED_CATEGORIES = [
+    { id: 1, name: "Announcement" },
+    { id: 2, name: "Events" },
+    { id: 3, name: "Quote" },
+    { id: 4, name: "Questions" }
+  ];
+
   useEffect(() => {
     // Show section selector only for Announcements and Events
     if (newPost.category_name === "Announcement" || newPost.category_name === "Events") {
@@ -26,9 +33,9 @@ const CreatePostModal = ({
     } else {
       setShowSectionSelector(false);
       setAvailableSections([]);
-      setNewPost(prev => ({ ...prev, section_id: null }));  // Reset section if not applicable
+      setNewPost(prev => ({ ...prev, section_id: null }));  
     }
-  }, [newPost.category_name]); // Remove setNewPost from dependencies to avoid infinite loop
+  }, [newPost.category_name]); 
 
   const fetchSections = async () => {
     setLoadingSections(true);
@@ -86,18 +93,14 @@ const CreatePostModal = ({
                 required
               >
                 <option value="">-- Select Category --</option>
-                {categories && categories.length > 0 ? (
-                  categories.map((cat) => (
-                    <option key={cat.category_id || cat.categoryId} value={cat.category_name || cat.categoryName}>
-                      {cat.category_name || cat.categoryName}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No categories available</option>
-                )}
+                {FIXED_CATEGORIES.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
               <small className="help-text">
-                Select post type: Events, Questions, Quote, or Announcement
+                Select post type: Announcement, Events, Quote, or Questions
               </small>
             </div>
 
@@ -120,7 +123,7 @@ const CreatePostModal = ({
                     {loadingSections ? "Loading sections..." : "-- Select Section --"}
                   </option>
                   {availableSections.length > 0 ? (
-                    availableSections.map((section,index) => (
+                    availableSections.map((section, index) => (
                       <option key={section || index} value={section}>
                         {section}
                       </option>
@@ -152,6 +155,8 @@ const CreatePostModal = ({
                     ? "Enter your question..."
                     : newPost.category_name === "Announcement"
                     ? "Enter announcement details..."
+                    : newPost.category_name === "Events"
+                    ? "Enter event details..."
                     : "Enter post content..."
                 }
                 rows={5}
@@ -162,7 +167,6 @@ const CreatePostModal = ({
               </small>
             </div>
 
-            {/* Category Info */}
             {newPost.category_name && (
               <div className="category-info">
                 <strong>📌 Post Type:</strong> {newPost.category_name}

@@ -251,11 +251,11 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   const today = new Date();
   const currentYear = today.getFullYear();
   
-  // // Max date is December 31 of last year (2025 if current year is 2026)
-  // const maxDate = new Date(currentYear - 1, 11, 31);
+  // Max date is December 31 of last year (2025 if current year is 2026)
+  const maxDate = new Date(currentYear - 1, 11, 31);
   
-  // // Min date is January 1, 1924 (100 years ago from 2024)
-  // const minDate = new Date(1924, 0, 1);
+  // Min date is January 1, 1924 (100 years ago from 2024)
+  const minDate = new Date(1924, 0, 1);
 
   if (!isOpen) return null;
 
@@ -277,8 +277,8 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
             onChange={(date) => handleBirthdateChange(date, "GUIDANCE")}
             dateFormat="MM/dd/yyyy"
             placeholderText="Select birthdate"
-            // maxDate={maxDate}
-            // minDate={minDate}
+            maxDate={maxDate}
+            minDate={minDate}
             showYearDropdown
             scrollableYearDropdown
             yearDropdownItemNumber={100}
