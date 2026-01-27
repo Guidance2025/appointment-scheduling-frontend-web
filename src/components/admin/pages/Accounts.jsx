@@ -5,7 +5,7 @@ import "./../../../css/table.css";
 import { getGuidanceStaffAccounts, getStudentAccounts } from "../../../service/admin";
 import CreateAccountModal from './modal/CreateAccountModal';
 import { Search } from "lucide-react";
-import ActionModal from "./modal/ActionModal";
+import ActionModal from "./modal/ActionModal";  
 
 function Accounts() {
   const [accounts, setAccounts] = useState([]);

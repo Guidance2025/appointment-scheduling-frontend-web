@@ -188,7 +188,7 @@ const CreatePostModal = ({
               className="btn-primary" 
               disabled={creating || !newPost.category_name || !newPost.post_content.trim()}
             >
-              {creating ? "Creating..." : "Create Post"}
+              {creating ? "Creating..." : "Post"}
             </button>
           </div>
         </form>
