@@ -13,8 +13,7 @@ const CreatePostModal = ({
   isOpen,
   onClose,
 }) => {
-  const {showSuccess, showError } = usePopUp();
-  const [showSectionSelector, setShowSectionSelector] = useState(false);
+  const { showSuccess, showError } = usePopUp();
   const [availableSections, setAvailableSections] = useState([]);
   const [loadingSections, setLoadingSections] = useState(false);
 
@@ -22,20 +21,21 @@ const CreatePostModal = ({
     { id: 1, name: "Announcement" },
     { id: 2, name: "Events" },
     { id: 3, name: "Quote" },
-    { id: 4, name: "Questions" }
+    { id: 4, name: "Questions" },
   ];
 
+  const isSectionRequired =
+    newPost.category_name === "Announcement" ||
+    newPost.category_name === "Events";
+
   useEffect(() => {
-    // Show section selector only for Announcements and Events
-    if (newPost.category_name === "Announcement" || newPost.category_name === "Events") {
+    if (isSectionRequired) {
       fetchSections();
-      setShowSectionSelector(true);
     } else {
-      setShowSectionSelector(false);
       setAvailableSections([]);
-      setNewPost(prev => ({ ...prev, section_id: null }));  
+      setNewPost((prev) => ({ ...prev, section_id: null }));
     }
-  }, [newPost.category_name]); 
+  }, [newPost.category_name]);
 
   const fetchSections = async () => {
     setLoadingSections(true);
@@ -49,23 +49,29 @@ const CreatePostModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!newPost.category_name || !newPost.post_content.trim()) {
       showError("Missing Fields", "Please fill in category and content");
       return;
     }
-    
-    // Validate that section is selected for Events and Announcements
-    if ((newPost.category_name === "Events" || newPost.category_name === "Announcement") && 
-        !newPost.section_id) {
+
+    if (isSectionRequired && !newPost.section_id) {
       showError("Missing Section", "Please select a section for this post type");
       return;
     }
-    
+
     try {
       await handleCreate(e);
-      showSuccess("Post Created!", "Your post has been successfully created and published to the feed.", 3000);
+      showSuccess(
+        "Post Created!",
+        "Your post has been successfully created and published to the feed.",
+        3000
+      );
     } catch (err) {
-      showError("Failed to Create Post", err.message || "An unexpected error occurred. Please try again.");
+      showError(
+        "Failed to Create Post",
+        err.message || "An unexpected error occurred. Please try again."
+      );
     }
   };
 
@@ -74,119 +80,105 @@ const CreatePostModal = ({
   return (
     <div className="modal-overlay">
       <div className="modal-card">
-        <button type="button" className="close-btn" onClick={onClose}>
-          ×
-        </button>
-        <form onSubmit={handleSubmit}>
-          <h2 className="modal-header">Create New Post</h2>
-          <div className="modal-body">
-            <div className="form-group">
-              <label htmlFor="category">
-                Category <span className="required">*</span>
-              </label>
-              <select
-                id="category"
-                value={newPost.category_name}
-                onChange={(e) => {
-                  setNewPost({ ...newPost, category_name: e.target.value });
-                }}
-                required
-              >
-                <option value="">-- Select Category --</option>
-                {FIXED_CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              <small className="help-text">
-                Select post type: Announcement, Events, Quote, or Questions
-              </small>
-            </div>
+        <div className="modal-header-row">
+          <h2>Create New Post</h2>
+          <button type="button" className="close-btn" onClick={onClose}>
+            ×
+          </button>
+        </div>
 
-            {/* Section Selection (only for Announcements and Events) */}
-            {showSectionSelector && (
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="modal-body">
+            {/* CATEGORY + TARGET SECTION */}
+            <div className="form-row two-col">
               <div className="form-group">
-                <label htmlFor="section">
-                  Target Section <span className="required">*</span>
+           <label>
+             Category <span className="required">*</span>
+          </label>
+              <select
+                     value={newPost.category_name || ""}
+                      onChange={(e) =>
+                      setNewPost({
+                       ...newPost,
+                        category_name: e.target.value,
+           })
+        }
+                  required
+  >
+               <option value="" disabled hidden>
+                     Select Category
+                      </option>
+                      {FIXED_CATEGORIES.map((cat) => (
+                      <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                       </option>
+            ))}
+         </select>
+              </div>
+
+              <div className="form-group">
+                <label>
+                  Target Section{" "}
+                  {isSectionRequired && <span className="required">*</span>}
                 </label>
                 <select
-                  id="section"
                   value={newPost.section_id || ""}
-                  onChange={(e) =>
-                    setNewPost({ ...newPost, section_id: e.target.value || null })
-                  }
-                  required
-                  disabled={loadingSections}
-                >
-                  <option value="">
-                    {loadingSections ? "Loading sections..." : "-- Select Section --"}
-                  </option>
-                  {availableSections.length > 0 ? (
-                    availableSections.map((section, index) => (
-                      <option key={section || index} value={section}>
-                        {section}
-                      </option>
-                    ))
-                  ) : (
-                    !loadingSections && <option disabled>No sections available</option>
-                  )}
-                </select>
-                <small className="help-text">
-                  Select the section that should receive this post
-                </small>
-              </div>
-            )}
+                onChange={(e) =>
+                setNewPost({
+                ...newPost,
+              section_id: e.target.value || null,
+                   })
+                 }
+              disabled={!isSectionRequired || loadingSections}
+              required={isSectionRequired}
+>
+            <option value="" disabled hidden>
+               Select Section
+              </option>
 
+  {availableSections.map((section, i) => (
+    <option key={i} value={section}>
+      {section}
+    </option>
+  ))}
+</select>
+
+
+                {!isSectionRequired && (
+                  <small className="hint">
+                    Target section is not required for this category
+                  </small>
+                )}
+              </div>
+            </div>
+
+            {/* CONTENT */}
             <div className="form-group">
-              <label htmlFor="content">
+              <label>
                 Content <span className="required">*</span>
               </label>
               <textarea
-                id="content"
+                rows={5}
                 value={newPost.post_content}
                 onChange={(e) =>
-                  setNewPost({ ...newPost, post_content: e.target.value })
+                  setNewPost({
+                    ...newPost,
+                    post_content: e.target.value,
+                  })
                 }
-                placeholder={
-                  newPost.category_name === "Quote"
-                    ? "Enter the quote..."
-                    : newPost.category_name === "Questions"
-                    ? "Enter your question..."
-                    : newPost.category_name === "Announcement"
-                    ? "Enter announcement details..."
-                    : newPost.category_name === "Events"
-                    ? "Enter event details..."
-                    : "Enter post content..."
-                }
-                rows={5}
                 required
               />
-              <small className="help-text">
+              <small>
                 {500 - newPost.post_content.length} characters remaining
               </small>
             </div>
-
-            {newPost.category_name && (
-              <div className="category-info">
-                <strong>📌 Post Type:</strong> {newPost.category_name}
-                {showSectionSelector && newPost.section_id && (
-                  <div>
-                    <strong>👥 Visible to:</strong> {newPost.section_id}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
-          <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="btn-primary" 
-              disabled={creating || !newPost.category_name || !newPost.post_content.trim()}
+          <div className="modal-footer">
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={creating}
             >
               {creating ? "Creating..." : "Post"}
             </button>
