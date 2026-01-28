@@ -263,3 +263,82 @@
     padding: 14px 16px;
   }
 }
+
+/* Emotion bubble layout */
+.emotion-bubble-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Base bubble */
+.emotion-bubble {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Individual emotion colors */
+.emotion-angry {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.emotion-frustrated {
+  background: #ffedd5;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+
+.emotion-worried {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.emotion-sad {
+  background: #e0e7ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+.emotion-calm {
+  background: #ecfeff;
+  color: #14a45c;
+  border-color: #adf0a1;
+}
+
+.emotion-happy {
+  background: #fdf8d0;
+  color: #f1c207;
+  border-color: #f4eaac;
+}
+
+.emotion-excited {
+  background: #fce7f3;
+  color: #a52ed0;
+  border-color: #e092ef;
+}
+
+.emotion-tired {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.emotion-hopeful {
+  background: #d9faff;
+  color: #3ff4f1;
+  border-color: #97edef;
+}
+
+.emotion-default {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #e2e8f0;
+}
