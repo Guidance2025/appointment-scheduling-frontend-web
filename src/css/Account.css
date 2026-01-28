@@ -154,9 +154,8 @@
 }
 
 .create-account-button:hover {
-  background: #f2f2f2;
+  background: #45a049;
   transform: translateY(-1px);
-  color: #45a049;
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
 }
 

@@ -10,8 +10,6 @@
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
   backdrop-filter: blur(2px);
-  overflow-y: auto; 
-  padding: 20px; 
 }
 
 .back {
@@ -38,27 +36,24 @@
 }
 
 .registration-modal-content {
-  background: #f5f5f5;
-  border-radius: 20px;
-  width: 900px; 
+  background: white;
+  border-radius: 16px;
+  width: 750px;
   max-width: 95%;
   min-width: 320px;
-  max-height: 90vh; 
-  overflow-y: auto;
-  padding: 32px 28px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
-              0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  padding: 24px 40px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+              0 10px 10px -5px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.3s ease-out;
   position: relative;
   box-sizing: border-box;
-  flex-shrink: 0;
 }
 
 .registration-modal-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #212529;
-  margin-bottom: 24px;
+  margin-bottom: 14px;
   text-align: center;
 }
 
@@ -96,11 +91,44 @@
   width: 100%;
 }
 
+/* Updated grid layout - 3-column design for compact height */
 .registration-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 20px;
+  margin-bottom: 14px;
+}
+
+/* All direct children default to 1 column */
+.registration-form-grid > * {
+  grid-column: auto;
+}
+
+/* Form field wrapper - base styles */
+.form-field-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Make Address and Position/Cluster fields full width */
+.registration-form-grid > div:has(input[name="address"]) {
+  grid-column: 1 / -1 !important;
+}
+
+.registration-form-grid > div:has(select[name="positionInRc"]) {
+  grid-column: 1 / -1 !important;
+}
+
+.registration-form-grid > div:has(select[name="clusterHead"]) {
+  grid-column: 1 / -1 !important;
+}
+
+.registration-form-grid > div:has(input[name="email"]) {
+  grid-column: span 2 !important;
+}
+
+.form-field-wrapper.full-width {
+  grid-column: 1 / -1;
 }
 
 .registration-form-group {
@@ -113,25 +141,28 @@
 }
 
 .registration-form-group-full {
-  grid-column: span 2;
+  grid-column: 1 / -1;
 }
 
 .registration-form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #222222;
-  margin-bottom: 6px;
+  color: #374151;
+  margin-bottom: 3px;
 }
 
 .registration-form-group input,
 .registration-form-group select {
-  padding: 12px;
-  border: 1px solid #e5e5e5;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-size: 14px;
-  color: #222222;
+  font-size: 15px;
+  color: #1f2937;
   transition: all 0.2s ease;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
 }
 
 .registration-form-group input:focus,
@@ -141,16 +172,120 @@
   box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
 }
 
+.registration-form-group input::placeholder,
+.registration-form-group select::placeholder {
+  color: #9ca3af;
+}
+
+.registration-form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  padding-right: 36px;
+}
+
+/* Date picker styles - make it pop up without shifting layout */
+.date-picker-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.date-picker-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  cursor: pointer;
+}
+
+.date-picker-input:focus {
+  outline: none;
+  border-color: #5cc5a7;
+  box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
+}
+
+.date-picker-input.error {
+  border-color: #dc3545;
+}
+
+/* Make calendar pop up as ABSOLUTE overlay - won't push other elements */
+.react-datepicker-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
+  position: absolute !important;
+}
+
+/* Ensure the popper doesn't create any layout shifts */
+.react-datepicker__tab-loop {
+  position: absolute;
+}
+
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  position: absolute;
+}
+
+.react-datepicker__header {
+  background-color: #5cc5a7;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  padding-top: 12px;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  color: white;
+  font-weight: 600;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #5cc5a7;
+  color: white;
+  font-weight: 600;
+}
+
+.react-datepicker__day:hover {
+  background-color: rgba(92, 197, 167, 0.2);
+  border-radius: 6px;
+}
+
+.react-datepicker__navigation {
+  top: 12px;
+}
+
+.react-datepicker__year-dropdown {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
 .registration-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .registration-submit-btn,
 .registration-cancel-btn {
-  padding: 14px 50px;
+  padding: 10px 50px;
   border: none;
   border-radius: 10px;
   font-size: 16px;
@@ -193,6 +328,70 @@
   transform: scale(0.98);
 }
 
+/* Form field wrapper for consistent styling */
+.form-field-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 3px;
+}
+
+.required-asterisk {
+  color: #dc3545;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-bottom: 4px;
+  display: block;
+}
+
+/* Error state for inputs - multiple selectors to catch all cases */
+.error-message + input,
+.error-message + select,
+.error-message + div input,
+.error-message + div select,
+.error-message ~ input,
+.error-message ~ select,
+.error-message ~ div input,
+.error-message ~ div select {
+  border-color: #dc3545 !important;
+}
+
+/* Target inputs in wrappers that have error messages */
+.form-field-wrapper:has(.error-message) input,
+.form-field-wrapper:has(.error-message) select,
+.registration-form-group:has(.error-message) input,
+.registration-form-group:has(.error-message) select {
+  border-color: #dc3545 !important;
+}
+
+/* Direct error class on inputs */
+.registration-form-group input.error,
+.registration-form-group select.error,
+input.error,
+select.error {
+  border-color: #dc3545 !important;
+}
+
+.date-picker-input.error {
+  border-color: #dc3545 !important;
+}
+
+/* Also catch parent div with error class */
+.error input,
+.error select,
+div.error input,
+div.error select {
+  border-color: #dc3545 !important;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -203,22 +402,40 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-@media (max-width: 1024px) {
-  .registration-modal-content { width: 700px; }
-}
-
 @media (max-width: 768px) {
-  .registration-modal-content { width: 90%; padding: 24px; }
-  .registration-form-grid { grid-template-columns: 1fr; }
+  .registration-modal-content { 
+    width: 90%; 
+    padding: 24px; 
+  }
+  
+  .registration-form-grid { 
+    grid-template-columns: 1fr; 
+  }
+  
   .registration-form-group-small,
-  .registration-form-group-full { grid-column: span 1; }
-  .registration-form-actions { flex-direction: column; }
+  .registration-form-group-full { 
+    grid-column: span 1; 
+  }
+  
+  .registration-form-actions { 
+    flex-direction: column; 
+  }
+  
   .registration-submit-btn,
-  .registration-cancel-btn { max-width: 100%; }
+  .registration-cancel-btn { 
+    width: 100%; 
+  }
 }
 
 @media (max-width: 640px) {
-  .registration-modal-content { width: 95%; margin: 16px; padding: 28px 24px; }
+  .registration-modal-content { 
+    width: 95%; 
+    padding: 28px 24px; 
+  }
+  
   .registration-submit-btn,
-  .registration-cancel-btn { padding: 14px 20px; font-size: 13px; }
+  .registration-cancel-btn { 
+    padding: 14px 20px; 
+    font-size: 13px; 
+  }
 }
