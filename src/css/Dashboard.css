@@ -441,7 +441,7 @@
 
 /* Pinned Posts Card */
 .pinned-card {
-  border-color: #fbbf24;
+  border-color: #16a34a;
   background: #fffbeb;
 }
 
@@ -568,7 +568,7 @@
   }
 
   .quote-of-the-day p {
-    font-size: 14px;
+    font-size: 16px;
   }
 }
 

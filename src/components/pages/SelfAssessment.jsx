@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/SelfAssessment.css";
 import { API_BASE_URL } from '../../../constants/api';
+import { convertLocalToUTCISO, formatFullDateTimePH } from '../../utils/dateTime';
 
 const SelfAssessment = () => {
   const [activeTab, setActiveTab] = useState('questions');
@@ -238,7 +239,8 @@ const SelfAssessment = () => {
     const matchesDate = filterByDateRange(item.dateCreated, filterDate);
     
     return matchesSearch && matchesDate;
-  });
+  })
+  .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
 
   const filteredResponses = responsesData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
@@ -250,7 +252,8 @@ const SelfAssessment = () => {
     const matchesDate = filterByDateRange(item.responseDate, filterDate);
     
     return matchesSearch && matchesDate;
-  });
+  })
+  .sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
 
   return (
     <div className="page-container">
@@ -424,13 +427,7 @@ const SelfAssessment = () => {
                             {item.guidanceStaff?.person?.firstName} {item.guidanceStaff?.person?.lastName}
                           </td>
                           <td className="date-cell">
-                            {new Date(item.dateCreated).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                              {formatFullDateTimePH(item.dateCreated)}
                           </td>
                         </tr>
                       ))

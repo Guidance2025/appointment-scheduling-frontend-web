@@ -21,7 +21,6 @@ const CreatePostModal = ({
     { id: 1, name: "Announcement" },
     { id: 2, name: "Events" },
     { id: 3, name: "Quote" },
-
   ];
 
   const isSectionRequired =
