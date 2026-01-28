@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/SelfAssessment.css";
 import { API_BASE_URL } from '../../../constants/api';
-import { convertLocalToUTCISO, formatFullDateTimePH } from '../../utils/dateTime';
+import { convertLocalToUTCISO, formatFullDateTimePH, parseUTCToPH, isTodayPH, isThisWeekPH, isThisMonthPH } from '../../utils/dateTime';
 
 const SelfAssessment = () => {
   const [activeTab, setActiveTab] = useState('questions');
@@ -30,26 +30,19 @@ const SelfAssessment = () => {
   const filterByDateRange = (dateString, filterType) => {
     if (filterType === 'all') return true;
     
-    const itemDate = new Date(dateString);
-    const now = new Date();
-    
-    now.setHours(0, 0, 0, 0);
-    itemDate.setHours(0, 0, 0, 0);
-    
-    switch (filterType) {
+    const datePH = parseUTCToPH(dateString);
+    if (!datePH) return false;
+
+    switch(filterType) {
       case 'today':
-        return itemDate.getTime() === now.getTime();
-        
+        return isTodayPH(datePH);
+
       case 'week':
-        const weekAgo = new Date(now);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return itemDate >= weekAgo;
-        
+        return isThisWeekPH(datePH);
+
       case 'month':
-        const monthAgo = new Date(now);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return itemDate >= monthAgo;
-        
+        return isThisMonthPH(datePH);
+
       default:
         return true;
     }
