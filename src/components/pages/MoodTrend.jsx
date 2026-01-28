@@ -3,6 +3,19 @@ import { Search } from "lucide-react";
 import "../../css/MoodTrend.css";
 import { MOODS_URL } from "../../../constants/api";
 
+
+const EMOTION_COLORS = {
+  angry: "emotion-angry",
+  frustrated: "emotion-frustrated",
+  worried: "emotion-worried",
+  sad: "emotion-sad",
+  calm: "emotion-calm",
+  happy: "emotion-happy",
+  excited: "emotion-excited",
+  tired: "emotion-tired",
+  hopeful: "emotion-hopeful",
+};
+
 const StudentEntryModal = ({ student, entries, onClose }) => (
   <div className="modal-card">
     <div className="modal-header">
@@ -15,7 +28,17 @@ const StudentEntryModal = ({ student, entries, onClose }) => (
             <li key={entry.id} className="mood-entry">
               <div className="entry-row">
                 <span className="entry-label">Emotions:</span>
-                <span className="entry-emotions">{entry.emotions.join(", ")}</span>
+                <div className="emotion-bubble-group">
+  {entry.emotions.map((emotion) => (
+    <span
+      key={emotion}
+      className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
+    >
+      {emotion}
+    </span>
+  ))}
+</div>
+
               </div>
               <div className="entry-row">
                 <span className="entry-label">Date:</span>
@@ -291,9 +314,21 @@ const MoodTrend = () => {
                       <td className="student-cell">{fullName}</td>
                       <td>{student.section?.sectionName || 'N/A'}</td>
                       <td>
-                        <span className={`mood-emotions ${isAtRisk ? "mood-low" : "mood-normal"}`}>
-                          {entry.emotions?.join(", ") || 'N/A'}
-                        </span>
+                        <div className="emotion-bubble-group">
+  {entry.emotions?.length ? (
+    entry.emotions.map((emotion) => (
+      <span
+        key={emotion}
+        className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
+      >
+        {emotion}
+      </span>
+    ))
+  ) : (
+    <span className="emotion-bubble emotion-default">N/A</span>
+  )}
+</div>
+
                       </td>
                       <td className="notes-cell">{entry.moodNotes || 'No notes'}</td>
                       <td>{new Date(entry.entryDate).toLocaleDateString()}</td>
