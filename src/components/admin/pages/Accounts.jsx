@@ -172,7 +172,6 @@ function Accounts() {
               <tr>
                 <th>FullName</th>
                 <th>Username</th>
-                <th>Password</th>
                 <th>Position</th>
                 <th>Join Date</th>
                 <th>Is Active</th>
@@ -186,7 +185,6 @@ function Accounts() {
                  className="appointment-row">
                   <td>{guidanceFullName(account) || "N/A"}</td>
                   <td>{account.username || "N/A"}</td>
-                  <td>{hidePassword(account.password)}</td>
                   <td>{account.positionInRc || "N/A"}</td>
                   <td>
                     {account.joinDate
@@ -216,7 +214,6 @@ function Accounts() {
                 <th>Student Number</th>
                 <th>Full Name</th>
                 <th>Username</th>
-                <th>Password</th>
                 <th>Join Date</th>
                 <th>Is Active</th>
                 <th>Is Locked</th>
@@ -230,7 +227,6 @@ function Accounts() {
                   <td>{student.studentNumber || "N/A"}</td>
                   <td>{studentFullName(student)}</td>
                   <td>{student.username || "N/A"}</td>
-                  <td>{hidePassword(student.password)}</td>
                   <td>
                     {student.joinDate
                       ? new Date(student.joinDate).toLocaleDateString()

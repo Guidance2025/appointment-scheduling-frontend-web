@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/ExitInterview.css";
 import { API_BASE_URL } from '../../../constants/api';
+import { formatFullDateTimePH } from '../../utils/dateTime';
 
 const ExitInterview = () => {
   const [activeTab, setActiveTab] = useState('questions');
   const [questions, setQuestions] = useState(['']);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('all');
+  // const [dateRange, setDateRange] = useState("All");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -238,7 +240,8 @@ const ExitInterview = () => {
     const matchesDate = filterByDateRange(item.dateCreated, filterDate);
     
     return matchesSearch && matchesDate;
-  });
+  })
+  .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
 
   const filteredResponses = responsesData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
@@ -250,7 +253,8 @@ const ExitInterview = () => {
     const matchesDate = filterByDateRange(item.submittedDate, filterDate);
     
     return matchesSearch && matchesDate;
-  });
+  })
+  .sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
 
   return (
     <div className="page-container">
@@ -424,13 +428,7 @@ const ExitInterview = () => {
                             {item.guidanceStaff?.person?.firstName} {item.guidanceStaff?.person?.lastName}
                           </td>
                           <td className="date-cell">
-                            {new Date(item.dateCreated).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatFullDateTimePH(item.dateCreated)}
                           </td>
                         </tr>
                       ))

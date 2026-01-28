@@ -32,12 +32,7 @@ const Dashboard = () => {
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
   const [categories, setCategories] = useState([]);
   const [sections, setSections] = useState([]);
-  const [newPost, setNewPost] = useState({
-    category_name: "",
-    post_content: "",
-    section_id: null,  
-    section_code: "",
-  });
+  const [newPost, setNewPost] = useState({category_name: "",post_content: "",section_id: null,  section_code: "",});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);

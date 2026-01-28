@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import "../../css/MoodTrend.css";
 import { MOODS_URL } from "../../../constants/api";
@@ -43,48 +43,65 @@ const StudentEntryModal = ({ student, entries, onClose }) => (
 const MoodTrend = () => {
   const [moodEntries, setMoodEntries] = useState([]);
   const [emotionFilter, setEmotionFilter] = useState("All");
+  const [sectionFilter, setSectionFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [entries, setEntries] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadMoodEntries = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("jwtToken");
-        
-        const res = await fetch(MOODS_URL, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
-        });
-
-        if (!res.ok) {
-          console.error("Failed to fetch mood entries. Status:", res.status);
-          setMoodEntries([]);
-          setLoading(false);
-          return;
+  // Extract loadMoodEntries as a useCallback to avoid dependency issues
+  const loadMoodEntries = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("jwtToken");
+      
+      const res = await fetch(MOODS_URL, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` })
         }
-        
-        const data = await res.json();
-        console.log("API Response:", data);
-        
-        const entriesArray = Array.isArray(data) ? data : [];
-        console.log("Processed entries:", entriesArray);
-        setMoodEntries(entriesArray);
-      } catch (e) {
-        console.error("Failed to load mood entries:", e);
+      });
+
+      if (!res.ok) {
+        console.error("Failed to fetch mood entries. Status:", res.status);
         setMoodEntries([]);
-      } finally {
         setLoading(false);
+        return;
       }
-    };
-    loadMoodEntries();
+      
+      const data = await res.json();
+      console.log("API Response:", data);
+      
+      const entriesArray = Array.isArray(data) ? data : [];
+      console.log("Processed entries:", entriesArray);
+      setMoodEntries(entriesArray);
+    } catch (e) {
+      console.error("Failed to load mood entries:", e);
+      setMoodEntries([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Initial load
+    loadMoodEntries();
+
+    // Listen for mood submission events
+    const handleMoodSubmitted = () => {
+      console.log("Mood entry submitted - reloading data...");
+      loadMoodEntries();
+    };
+
+    window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
+    };
+  }, [loadMoodEntries]);
 
   const applyAllFilters = () => {
     let filtered = [...moodEntries];
@@ -93,6 +110,12 @@ const MoodTrend = () => {
     if (emotionFilter !== "All") {
       filtered = filtered.filter(entry => 
         entry.emotions && entry.emotions.includes(emotionFilter)
+      );
+    }
+
+    if (sectionFilter !== "All") {
+      filtered = filtered.filter(entry => 
+        entry.student?.section?.sectionName === sectionFilter
       );
     }
 
@@ -134,7 +157,7 @@ const MoodTrend = () => {
     setEntries([]);
   };
 
-  const hasActiveFilters = searchTerm || emotionFilter !== "All";
+  const hasActiveFilters = searchTerm || emotionFilter !== "All" || sectionFilter !== "All";
 
   return (
     <div className="page-container">
@@ -184,6 +207,23 @@ const MoodTrend = () => {
               <option value="hopeful">Hopeful</option>
             </select>
           </div>
+
+          <div className="appointments-filter-group appointments-status-group">
+            <label className="appointments-filter-label">Section</label>
+            <select
+              className="appointments-filter-select"
+              value={sectionFilter}
+              onChange={(e) => setSectionFilter(e.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="BA">BA</option>
+              <option value="BSA">BSA</option>
+              <option value="THM">THM</option>
+              <option value="ECE">ECE</option>
+              <option value="BIT">BIT</option>
+              <option value="IT">IT</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -197,13 +237,11 @@ const MoodTrend = () => {
           <div className="empty-message">
             {hasActiveFilters ? (
               <div>
-                <div className="empty-icon">🔍</div>
                 <h3 className="empty-title">No entries found</h3>
                 <p className="empty-description">No mood entries match your current filters</p>
               </div>
             ) : (
               <div>
-                <div className="empty-icon">📊</div>
                 <h3 className="empty-title">No mood entries</h3>
                 <p className="empty-description">There are no mood entries yet.</p>
               </div>
