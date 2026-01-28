@@ -15,21 +15,14 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   const { showSuccess, showError } = usePopUp();
   
   const CLUSTER_HEAD_OPTIONS = [
-  "CETE",
-  "ECE",
-  "HM",
-  "TM",
-  "BSA",
-  "ROCS"
+    "Ms Darlene Jane Neva Gener",
+    "Angelo Nueva"
 ];
 
   const POSITION_IN_RC_OPTIONS = [
-  "Director",
-  "Assistant Director",
   "Guidance Counselor",
-  "Psychometrician",
-  "Staff",
-  "Intern"
+  "Guidance Facilitator",
+
 ];
 
   const initialGuidanceData = useMemo(() => ({
@@ -390,7 +383,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   return (
     <div className="registration-modal-overlay">
       <div className="registration-modal-content">
-        <button className='back' onClick={handleClose}><ArrowLeft/></button>
         <h2 className="registration-modal-title">
           Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
         </h2>
