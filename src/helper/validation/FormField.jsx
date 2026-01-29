@@ -10,6 +10,7 @@ export const FormField = ({
   options = {},
   selectOptions = [],
   className = "",
+  loading = false,
   ...props 
 }) => {
   const hasError = !!error;

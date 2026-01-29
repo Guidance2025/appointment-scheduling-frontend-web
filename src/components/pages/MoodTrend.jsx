@@ -1,24 +1,3 @@
-/**
- * MoodTrend Component
- * 
- * Displays mood entries for all students with filtering capabilities
- * 
- * AUTO-RELOAD TRIGGER:
- * After a mood entry is created anywhere in the app, call one of:
- * 
- * Option 1 (Recommended):
- *   import { triggerMoodTrendReload } from '../../helper/moodTrendHelper';
- *   triggerMoodTrendReload();
- * 
- * Option 2 (Direct):
- *   window.dispatchEvent(new Event('moodEntrySubmitted'));
- * 
- * Option 3 (Function call):
- *   window.triggerMoodTrendReload?.();
- * 
- * This will instantly reload the mood trend data without requiring page refresh
- */
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import "../../css/MoodTrend.css";
@@ -163,6 +142,24 @@ const MoodTrend = () => {
     };
 
     // Listen for custom event (when mood entries are created elsewhere)
+    window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
+    };
+  }, [loadMoodEntries]);
+
+  useEffect(() => {
+    // Initial load
+    loadMoodEntries();
+
+    // Listen for mood submission events
+    const handleMoodSubmitted = () => {
+      console.log("Mood entry submitted - reloading data...");
+      loadMoodEntries();
+    };
+
     window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
 
     // Cleanup listener on unmount

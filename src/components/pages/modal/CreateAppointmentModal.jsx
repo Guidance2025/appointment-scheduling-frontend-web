@@ -1,4 +1,4 @@
-import { ArrowLeft, X, ChevronUp, ChevronDown, Calendar } from "lucide-react";
+import { ArrowLeft, X, ChevronUp, ChevronDown } from "lucide-react";
 import "../../../css/CreateAppointmentModal.css";
 import { useState, useRef, useEffect } from "react";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
@@ -16,7 +16,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [timeError, setTimeError] = useState(""); // New state for time-related errors
+  const [timeError, setTimeError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingStudent, setIsLoadingStudent] = useState(false);
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -24,12 +24,14 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const [startPickerValue, setStartPickerValue] = useState({ hour: "8", minute: "00", period: "AM" });
   const [endPickerValue, setEndPickerValue] = useState({ hour: "9", minute: "00", period: "AM" });
 
   const startPickerRef = useRef(null);
   const endPickerRef = useRef(null);
+  const datePickerRef = useRef(null);
   const studentNumberTimeoutRef = useRef(null);
   const { showSuccess } = usePopUp();
   const errorRef = useRef(null);
@@ -102,6 +104,84 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       setTimeError(validationError);
     }
   }, [scheduledDate, endDate, bookedSlots]);
+
+  // NEW: Close time pickers when date picker opens
+  useEffect(() => {
+    if (isDatePickerOpen) {
+      setShowStartPicker(false);
+      setShowEndPicker(false);
+    }
+  }, [isDatePickerOpen]);
+
+  /**
+   * Validates student number format: CT##-####
+   * @param {string} studentNumber - The student number to validate
+   * @returns {string|null} - Error message or null if valid
+   */
+  const validateStudentNumber = (studentNumber) => {
+    if (!studentNumber || studentNumber.trim() === '' || studentNumber === 'CT') {
+      return null; // Will be caught by required field check
+    }
+
+    const trimmed = studentNumber.trim().toUpperCase();
+
+    // Check if it starts with CT
+    if (!trimmed.startsWith('CT')) {
+      return 'Student number must start with "CT"';
+    }
+
+    // Full regex pattern: CT + 2 digits + dash + 4 digits
+    const pattern = /^CT\d{2}-\d{4}$/;
+    
+    if (!pattern.test(trimmed)) {
+      // More specific error messages
+      if (!trimmed.includes('-')) {
+        return 'Student number must include a dash (e.g., CT22-0001)';
+      }
+      
+      const parts = trimmed.split('-');
+      
+      if (parts.length !== 2) {
+        return 'Invalid format. Use CT##-#### (e.g., CT22-0001)';
+      }
+      
+      const prefix = parts[0]; // CT##
+      const suffix = parts[1]; // ####
+      
+      // Check prefix (should be CT + 2 digits)
+      if (prefix.length !== 4) {
+        return 'Year must be 2 digits (e.g., CT22-0001)';
+      }
+      
+      if (!/^CT\d{2}$/.test(prefix)) {
+        return 'Invalid year format. Use CT## (e.g., CT22)';
+      }
+      
+      // Check suffix (should be exactly 4 digits)
+      if (suffix.length !== 4) {
+        return 'Student ID must be exactly 4 digits (e.g., CT22-0001)';
+      }
+      
+      if (!/^\d{4}$/.test(suffix)) {
+        return 'Student ID must contain only numbers (e.g., 0001)';
+      }
+    }
+
+    // Additional validation: Check if year is reasonable
+    const yearPart = trimmed.substring(2, 4);
+    const year = parseInt(yearPart, 10);
+    const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of current year
+    
+    if (year > currentYear + 1) {
+      return `Year cannot be in the future (current year: ${currentYear})`;
+    }
+    
+    if (year < 10) {
+      return 'Year seems too old. Please verify the student number';
+    }
+
+    return null; // Valid
+  };
 
   const fetchAllBlockedDates = async () => {
     const token = localStorage.getItem("jwtToken");
@@ -254,7 +334,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     });
   };
 
-  // Helper function to determine if error is time-related
   const isTimeRelatedError = (errorMsg) => {
     if (!errorMsg) return false;
     const timeKeywords = [
@@ -352,19 +431,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     setError("");
     setTimeError("");
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    const startDate = new Date(year, month - 1, day, 8, 0);
-    const localStartDate = new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    
-    const endDateObj = new Date(year, month - 1, day, 9, 0);
-    const localEndDate = new Date(endDateObj.getTime() - endDateObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-
-    setScheduledDate(localStartDate);
-    setEndDate(localEndDate);
-    
+    // Don't set times automatically - let user pick them with the time pickers
     await fetchBookedSlots(date);
   };
 
@@ -399,7 +466,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
 
     if (!firstname || !lastname) {
-      setError("Student information not found. Please verify the student number.");
+      setError("Student not found");
       return;
     }
 
@@ -418,9 +485,9 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       return;
     }
 
-    const validationError = validateDates(scheduledDate, endDate);
-    if (validationError) {
-      setTimeError(validationError);
+    const validationDateError = validateDates(scheduledDate, endDate);
+    if (validationDateError) {
+      setTimeError(validationDateError);
       return;
     }
 
@@ -481,7 +548,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         errMessage = txt || errMessage;
       }
       
-      // Determine if error is time-related or general
       if (isTimeRelatedError(errMessage)) {
         if (/Counselor not available|not available for time|blocked/i.test(errMessage)) {
           setTimeError("Selected time is not available. Please choose another time.");
@@ -512,15 +578,30 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   };
 
   const handleStudentNumberChange = async (e) => {
-    let inputValue = e.target.value.toUpperCase();
+    let inputValue = e.target.value.toUpperCase().trim();
     
-    if (!inputValue.startsWith('CT')) {
-      inputValue = 'CT' + inputValue;
+    // Remove any existing dashes first
+    inputValue = inputValue.replace(/-/g, '');
+    
+    // Ensure it starts with CT
+    if (inputValue && !inputValue.startsWith('CT')) {
+      if (inputValue.startsWith('C')) {
+        inputValue = 'CT' + inputValue.substring(1);
+      } else if (inputValue.startsWith('T')) {
+        inputValue = 'CT' + inputValue;
+      } else {
+        inputValue = 'CT' + inputValue;
+      }
     }
     
-    if (inputValue.length > 2) {
-      const afterCT = inputValue.slice(2).replace(/[^0-9-]/g, '');
-      inputValue = 'CT' + afterCT;
+    // Auto-format: Add dash after CT##
+    if (inputValue.length > 4) {
+      inputValue = inputValue.substring(0, 4) + '-' + inputValue.substring(4, 8);
+    }
+    
+    // Limit total length to CT##-#### (9 characters including dash)
+    if (inputValue.length > 9) {
+      inputValue = inputValue.substring(0, 9);
     }
     
     setStudentNumber(inputValue);
@@ -553,7 +634,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         if (!res.ok) {
           setFirstname("");
           setLastname("");
-          setError(res.status === 404 ? "Student not found" : "Network Problem. Please Check you internet connection");
+          setError("Student not found");
           return;
         }
 
@@ -566,7 +647,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         console.error("Error fetching student:", err);
         setFirstname("");
         setLastname("");
-        setError("Error fetching student information");
+        setError("Student not found");
       } finally {
         setIsLoadingStudent(false);
       }
@@ -575,7 +656,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
   const handleAppointmentTypeChange = (e) => {
     setAppointmentType(e.target.value);
-    // Clear error if a valid appointment type is selected
     if (e.target.value && error === "Please select an appointment type") {
       setError("");
     }
@@ -589,7 +669,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     if (isStartTime) {
       baseDate = selectedDate || new Date();
     } else {
-      baseDate = scheduledDate ? new Date(scheduledDate) : new Date();
+      baseDate = scheduledDate ? new Date(scheduledDate) : (selectedDate || new Date());
     }
     
     const newDate = new Date(
@@ -606,17 +686,20 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     if (isStartTime) {
       setScheduledDate(localDate);
       
-      const endTime = new Date(newDate);
-      const newEndHour = endTime.getHours() + 1;
-      if (newEndHour > 17) {
-        endTime.setHours(17, 0, 0, 0);
-      } else {
-        endTime.setHours(newEndHour, 0, 0, 0);
+      // Auto-set end time to 1 hour after start time
+      if (!endDate) {
+        const endTime = new Date(newDate);
+        const newEndHour = endTime.getHours() + 1;
+        if (newEndHour > 17) {
+          endTime.setHours(17, 0, 0, 0);
+        } else {
+          endTime.setHours(newEndHour, 0, 0, 0);
+        }
+        const localEnd = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000)
+          .toISOString()
+          .slice(0, 16);
+        setEndDate(localEnd);
       }
-      const localEnd = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000)
-        .toISOString()
-        .slice(0, 16);
-      setEndDate(localEnd);
       
     } else {
       setEndDate(localDate);
@@ -798,36 +881,39 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             type="text"
             value={studentNumber}
             onChange={handleStudentNumberChange}
-            placeholder="CT-XX-XXXX"
             disabled={isProcessing}
             className={error && error.includes("student number") ? "error" : ""}
             aria-required="true"
             aria-invalid={error && error.includes("student number") ? "true" : "false"}
+            maxLength={9}
           />
           {isLoadingStudent && <span style={{ fontSize: "12px", color: "#666" }}>Loading...</span>}
         </label>
 
-        <label>
-          Firstname:
-          <input 
-            type="text" 
-            value={firstname} 
-            readOnly 
-            className={error && error.includes("Student information") ? "error" : ""} 
-            aria-readonly="true"
-          />
-        </label>
+        {/* TWO COLUMN LAYOUT FOR NAMES */}
+        <div className="create-name-row">
+          <label>
+            Firstname:
+            <input 
+              type="text" 
+              value={firstname} 
+              readOnly 
+              className={error && error.includes("Student information") ? "error" : ""} 
+              aria-readonly="true"
+            />
+          </label>
 
-        <label>
-          Lastname:
-          <input 
-            type="text" 
-            value={lastname} 
-            readOnly 
-            className={error && error.includes("Student information") ? "error" : ""} 
-            aria-readonly="true"
-          />
-        </label>
+          <label>
+            Lastname:
+            <input 
+              type="text" 
+              value={lastname} 
+              readOnly 
+              className={error && error.includes("Student information") ? "error" : ""} 
+              aria-readonly="true"
+            />
+          </label>
+        </div>
 
         <label>
           Appointment Type: <span style={{ color: "red" }}>*</span>
@@ -846,77 +932,99 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
             <option value="Personal Issue">Personal Issue</option>
             <option value="Follow-Up">Follow-Up</option>
           </select>
-          {error && error.includes("appointment type") && (
-            <span style={{ fontSize: "12px", color: "#dc2626", marginTop: "4px", display: "block" }}>
-              Please select an appointment type
-            </span>
-          )}
         </label>
 
-        <label>
-          Start Date: <span style={{ color: "red" }}>*</span>
-          <div className="date-picker-wrapper">
-            <DatePicker
-              selected={selectedDate}
-              onChange={handleDateChange}
-              minDate={new Date()}
-              filterDate={filterAvailableDates}
-              dateFormat="MM/dd/yyyy"
-              placeholderText="Select date"
-              disabled={isProcessing || isLoadingSlots}
-              onChangeRaw={(e) => e.preventDefault()}  
-              className={`date-picker-input ${error && error.includes("date") ? "error" : ""}`}
-              calendarClassName="custom-calendar"
-              dayClassName={(date) => {
-                if (isWeekend(date)) return "weekend-day";
-                
-                const year = date.getFullYear();
-                const month = date.getMonth();
-                const day = date.getDate();
-                
-                const isBlocked = fullyBlockedDates.some(blockedDate => {
-                  return year === blockedDate.year && 
-                         month === blockedDate.month && 
-                         day === blockedDate.day;
-                });
-                
-                return isBlocked ? "blocked-day" : undefined;
-              }}
-              aria-required="true"
-              aria-invalid={error && error.includes("date") ? "true" : "false"}
-            />
-            <Calendar className="calendar-icon" size={18} />
-          </div>
-          {isLoadingSlots && (
-            <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
-              Loading availability...
-            </div>
-          )}
-        </label>
-
-        {/* Time Error Message - Shows above Start Time field */}
+        {/* Time Error Message */}
         {timeError && (
-          <div ref={timeErrorRef} className="create-error-messages" role="alert" aria-live="assertive" style={{ marginTop: 10, marginBottom: 10 }}>
+          <div ref={timeErrorRef} className="create-error-messages" role="alert" aria-live="assertive" style={{ marginTop: 0, marginBottom: 12 }}>
             {timeError}
           </div>
         )}
 
-        {scheduledDate && (
+        {/* THREE COLUMN LAYOUT: DATE, START TIME, END TIME */}
+        <div className="create-datetime-row">
+          <label>
+            Start Date: <span style={{ color: "red" }}>*</span>
+            <div className="date-picker-wrapper">
+              <DatePicker
+                ref={datePickerRef}
+                selected={selectedDate}
+                onChange={handleDateChange}
+                onCalendarOpen={() => setIsDatePickerOpen(true)}
+                onCalendarClose={() => setIsDatePickerOpen(false)}
+                minDate={new Date()}
+                filterDate={filterAvailableDates}
+                dateFormat="MM/dd/yyyy"
+                placeholderText="Select date"
+                disabled={isProcessing || isLoadingSlots}
+                onChangeRaw={(e) => e.preventDefault()}  
+                className={`date-picker-input ${error && error.includes("date") ? "error" : ""}`}
+                calendarClassName="custom-calendar"
+                popperPlacement="bottom-start"
+                popperModifiers={[
+                  {
+                    name: 'preventOverflow',
+                    options: {
+                      boundary: 'viewport',
+                      rootBoundary: 'viewport',
+                      altAxis: true,
+                      padding: 8
+                    }
+                  },
+                  {
+                    name: 'flip',
+                    options: {
+                      fallbackPlacements: ['top-start', 'bottom-start']
+                    }
+                  }
+                ]}
+                dayClassName={(date) => {
+                  if (isWeekend(date)) return "weekend-day";
+                  
+                  const year = date.getFullYear();
+                  const month = date.getMonth();
+                  const day = date.getDate();
+                  
+                  const isBlocked = fullyBlockedDates.some(blockedDate => {
+                    return year === blockedDate.year && 
+                           month === blockedDate.month && 
+                           day === blockedDate.day;
+                  });
+                  
+                  return isBlocked ? "blocked-day" : undefined;
+                }}
+                aria-required="true"
+                aria-invalid={error && error.includes("date") ? "true" : "false"}
+              />
+            </div>
+            {isLoadingSlots && (
+              <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
+                Loading availability...
+              </div>
+            )}
+          </label>
+
           <label>
             Start Time: <span style={{ color: "red" }}>*</span>
             <div className={`create-time-picker-wrapper ${showStartPicker ? 'picker-open' : ''}`} ref={startPickerRef}>
               <input
                 type="text"
-                value={formatTime(scheduledDate)}
-                onClick={() => scheduledDate && !isProcessing && !isLoadingSlots && setShowStartPicker(!showStartPicker)}
+                value={scheduledDate ? formatTime(scheduledDate) : ""}
+                onClick={() => {
+                  if (selectedDate && !isProcessing && !isLoadingSlots) {
+                    setShowStartPicker(!showStartPicker);
+                    setShowEndPicker(false);
+                    setIsDatePickerOpen(false);
+                  }
+                }}
                 readOnly
                 placeholder="--:-- --"
                 className={timeError ? "time-input error" : "time-input"}
-                disabled={!scheduledDate || isProcessing || isLoadingSlots}
+                disabled={!selectedDate || isProcessing || isLoadingSlots}
                 aria-required="true"
                 aria-invalid={timeError ? "true" : "false"}
               />
-              {showStartPicker && scheduledDate && (
+              {showStartPicker && selectedDate && !isDatePickerOpen && (
                 <div className="create-time-picker-dropdown">
                   {isLoadingSlots ? (
                     <div style={{ textAlign: "center", padding: "20px", opacity: 0.6 }}>Loading available slots...</div>
@@ -927,24 +1035,28 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
               )}
             </div>
           </label>
-        )}
 
-        {scheduledDate && (
           <label>
             End Time: <span style={{ color: "red" }}>*</span>
             <div className={`create-time-picker-wrapper ${showEndPicker ? 'picker-open' : ''}`} ref={endPickerRef}>
               <input
                 type="text"
-                value={formatTime(endDate)}
-                onClick={() => !isProcessing && !isLoadingSlots && setShowEndPicker(!showEndPicker)}
+                value={endDate ? formatTime(endDate) : ""}
+                onClick={() => {
+                  if (selectedDate && !isProcessing && !isLoadingSlots) {
+                    setShowEndPicker(!showEndPicker);
+                    setShowStartPicker(false);
+                    setIsDatePickerOpen(false);
+                  }
+                }}
                 readOnly
                 placeholder="--:-- --"
                 className={timeError ? "time-input error" : "time-input"}
-                disabled={isProcessing || isLoadingSlots}
+                disabled={!selectedDate || isProcessing || isLoadingSlots}
                 aria-required="true"
                 aria-invalid={timeError ? "true" : "false"}
               />
-              {showEndPicker && (
+              {showEndPicker && selectedDate && !isDatePickerOpen && (
                 <div className="create-time-picker-dropdown">
                   {isLoadingSlots ? (
                     <div style={{ textAlign: "center", padding: "20px", opacity: 0.6 }}>Loading available slots...</div>
@@ -955,7 +1067,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
               )}
             </div>
           </label>
-        )}
+        </div>
 
         <label>
           Notes:

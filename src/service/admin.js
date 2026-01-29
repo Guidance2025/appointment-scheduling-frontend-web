@@ -50,27 +50,61 @@ export async function getAllStudents(){
 }
 
 
-export async function register(dataToSubmit){
+/**
+ * Register a new student or guidance staff account
+ * @param {Object} dataToSubmit - Registration data
+ * @returns {Promise<Object>} Registration response
+ * @throws {Error} If registration fails with error details
+ */
+export async function register(dataToSubmit) {
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
+  
+  if (!JWT_TOKEN) {
+    throw new Error("Authentication token not found");
+  }
+
   try {
-     const JWT_TOKEN = localStorage.getItem("jwtToken");
-    if(!JWT_TOKEN){return error;}
-
-    const response = await fetch(`${REGISTER_ACCOUNT}`,{
-      method : "POST",
-      headers : {
+    const response = await fetch(REGISTER_ACCOUNT, {
+      method: "POST",
+      headers: {
         "Content-Type": "application/json",
-         "Authorization": "Bearer " + JWT_TOKEN,
+        "Authorization": "Bearer " + JWT_TOKEN,
       },
-      body:JSON.stringify(dataToSubmit)
-    })
+      body: JSON.stringify(dataToSubmit)
+    });
 
-    if(response.ok) {
-      return await response.json();
+    // Parse response body first (needed for both success and error)
+    const data = await response.json();
+
+    // Check if response is successful
+    if (response.ok) {
+      return data;
     }
-    console.log("Registration Failed", error)
 
-  } catch{
-    console.log(error);
+    // If not OK, we have an error response from backend
+    // The error data structure from your backend is:
+    // { httpStatus, httpStatusCode, reason, message }
+    const error = new Error(data.message || "Registration failed");
+    error.response = {
+      status: response.status,
+      data: data
+    };
+    throw error;
+
+  } catch (error) {
+    // If error already has response (from above), re-throw it
+    if (error.response) {
+      throw error;
+    }
+    
+    // Otherwise, it's a network error or JSON parse error
+    console.error("Registration network error:", error);
+    const networkError = new Error("Network error during registration");
+    networkError.response = {
+      status: 0,
+      data: { message: error.message }
+    };
+    throw networkError;
   }
 }
 
@@ -238,6 +272,105 @@ export async function UpdateStudentCredentials(studentNumber, newPassword, isLoc
       console.error("Update Student Account Error:", error);
        throw error;
     }
+}
+
+// Add these functions to your admin.js service file
+
+/**
+ * Check if email already exists in the system
+ * @param {string} email - Email to check
+ * @returns {Promise<boolean>} True if email exists, false otherwise
+ */
+export async function checkEmailExists(email) {
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
+  
+  if (!JWT_TOKEN || !email || email.trim() === "") {
+    return false;
   }
 
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/check-email?email=${encodeURIComponent(email.trim())}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + JWT_TOKEN,
+      },
+    });
 
+    if (response.ok) {
+      const data = await response.json();
+      return data.exists || false;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error checking email:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if student number already exists in the system
+ * @param {string} studentNumber - Student number to check
+ * @returns {Promise<boolean>} True if student number exists, false otherwise
+ */
+export async function checkStudentNumberExists(studentNumber) {
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
+  
+  if (!JWT_TOKEN || !studentNumber || studentNumber.trim() === "") {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/check-student-number?studentNumber=${encodeURIComponent(studentNumber.trim())}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + JWT_TOKEN,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.exists || false;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error checking student number:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if username already exists in the system
+ * @param {string} username - Username to check
+ * @returns  True if username exists, false otherwise
+ */
+export async function checkUsernameExists(username) {
+  const JWT_TOKEN = localStorage.getItem("jwtToken");
+  
+  if (!JWT_TOKEN || !username || username.trim() === "") {
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/check-username?username=${encodeURIComponent(username.trim().toLowerCase())}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + JWT_TOKEN,
+      },
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.exists || false;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error checking username:", error);
+    return false;
+  }
+}
