@@ -54,11 +54,6 @@ const CreatePostModal = ({
       return;
     }
 
-    if (isSectionRequired && !newPost.section_id) {
-      showError("Missing Section", "Please select a section for this post type");
-      return;
-    }
-
     try {
       await handleCreate(e);
       showSuccess(
@@ -88,31 +83,30 @@ const CreatePostModal = ({
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="modal-body">
-            {/* CATEGORY + TARGET SECTION */}
             <div className="form-row two-col">
               <div className="form-group">
-           <label>
-             Category <span className="required">*</span>
-          </label>
-              <select
-                     value={newPost.category_name || ""}
-                      onChange={(e) =>
-                      setNewPost({
-                       ...newPost,
-                        category_name: e.target.value,
-           })
-        }
+                <label>
+                  Category <span className="required">*</span>
+                </label>
+                <select
+                  value={newPost.category_name || ""}
+                  onChange={(e) =>
+                    setNewPost({
+                      ...newPost,
+                      category_name: e.target.value,
+                    })
+                  }
                   required
-  >
-               <option value="" disabled hidden>
-                     Select Category
-                      </option>
-                      {FIXED_CATEGORIES.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
+                >
+                  <option value="" disabled hidden>
+                    Select Category
+                  </option>
+                  {FIXED_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
                       {cat.name}
-                       </option>
-            ))}
-         </select>
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -122,36 +116,40 @@ const CreatePostModal = ({
                 </label>
                 <select
                   value={newPost.section_id || ""}
-                onChange={(e) =>
-                setNewPost({
-                ...newPost,
-              section_id: e.target.value || null,
-                   })
-                 }
-              disabled={!isSectionRequired || loadingSections}
-              required={isSectionRequired}
->
-            <option value="" disabled hidden>
-               Select Section
-              </option>
-
-  {availableSections.map((section, i) => (
-    <option key={i} value={section}>
-      {section}
-    </option>
-  ))}
-</select>
-
-
+                  onChange={(e) =>
+                    setNewPost({
+                      ...newPost,
+                      section_id: e.target.value === "all" ? null : e.target.value || null,  // Map "all" to null
+                    })
+                  }
+                  disabled={!isSectionRequired || loadingSections}
+                  required={isSectionRequired}
+                >
+                  <option value="" disabled hidden>
+                    Select Section
+                  </option>
+                  {isSectionRequired && (
+                    <option value="all">All</option>  
+                  )}
+                  {availableSections.map((section, i) => (
+                    <option key={i} value={section}>
+                      {section}
+                    </option>
+                  ))}
+                </select>
                 {!isSectionRequired && (
                   <small className="hint">
                     Target section is not required for this category
                   </small>
                 )}
+                {isSectionRequired && (
+                  <small className="hint">
+                    Choose "All" for global visibility or select a specific section
+                  </small>
+                )}
               </div>
             </div>
 
-            {/* CONTENT */}
             <div className="form-group">
               <label>
                 Content <span className="required">*</span>

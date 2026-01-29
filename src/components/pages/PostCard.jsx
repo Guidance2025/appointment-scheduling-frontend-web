@@ -26,7 +26,6 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
     post.category_name?.toLowerCase() === "events" ||
     post.CATEGORY_NAME?.toLowerCase() === "events";
 
-  // Load comments when post is question type
   useEffect(() => {
     if (isQuestionPost && post.post_id) {
       loadComments();
@@ -152,7 +151,6 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
           ) : null}
         </div>
 
-        {/* Question Post - Show Comment Section */}
         {isQuestionPost && (
           <div className="post-interactions">
             <button

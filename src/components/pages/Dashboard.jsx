@@ -193,7 +193,7 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div className="header-content">
-          <h1>Dashboard</h1>
+          <h1>Welcome</h1>  
           <p className="header-subtitle">
             {isGuidanceStaff ? "Guidance Staff Posts Management" : "Student Updates Feed"}
           </p>
