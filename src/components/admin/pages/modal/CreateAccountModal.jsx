@@ -236,7 +236,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     // Remove any existing dashes first
     value = value.replace(/-/g, '');
     
-    // Ensure it starts with CT
     if (value && !value.startsWith('CT')) {
       if (value.startsWith('C')) {
         value = 'CT' + value.substring(1);
@@ -246,18 +245,14 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         value = 'CT' + value;
       }
     }
-    
-    // Auto-format: Add dash after CT##
     if (value.length > 4) {
       value = value.substring(0, 4) + '-' + value.substring(4, 8);
     }
     
-    // Limit total length to CT##-#### (9 characters including dash)
     if (value.length > 9) {
       value = value.substring(0, 9);
     }
     
-    // Update form with formatted value
     studentForm.handleChange({
       target: {
         name: 'studentNumber',
@@ -333,16 +328,13 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     } catch (error) {
       setIsProcessing(false);
       
-      // Parse error message from backend
       const errorMessage = error?.response?.data?.message || error?.message || 'Unknown error occurred';
       const upperErrorMessage = errorMessage.toUpperCase();
       
-      // Check for specific errors and highlight relevant fields
       if (upperErrorMessage.includes('EMAIL ALREADY EXISTS')) {
         currentForm.setErrors({ ...currentForm.errors, email: 'This email is already registered' });
         setGlobalError('Email already exists. Please use a different email.');
       } else if (upperErrorMessage.includes('USERNAME ALREADY EXISTS')) {
-        // For guidance staff, username conflict typically relates to email
         guidanceForm.setErrors({ ...guidanceForm.errors, email: 'This account already exists' });
         setGlobalError('An account with this information already exists. Please check the email.');
       } else if (upperErrorMessage.includes('STUDENT NUMBER ALREADY EXISTS')) {
@@ -352,7 +344,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         studentForm.setErrors({ ...studentForm.errors, sectionName: 'Error with section information' });
         setGlobalError('There was an issue with the section. Please try again.');
       } else {
-        // Handle cases where multiple errors are returned in the message
         let hasSetError = false;
         let newErrors = { ...currentForm.errors };
         
@@ -394,21 +385,17 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         value: date
       }
     });
-    // Clear global error when user starts fixing issues
     if (globalError) setGlobalError("");
   };
 
   if (!isOpen) return null;
 
-  // Check if form has any errors or empty required fields
   const hasErrors = () => {
     const form = currentRole === "GUIDANCE" ? guidanceForm : studentForm;
     const rules = currentRole === "GUIDANCE" ? guidanceValidationRules : studentValidationRules;
     
-    // Check if there are any validation errors
     const hasValidationErrors = Object.keys(form.errors).some(key => form.errors[key]);
     
-    // Check if any required field is empty
     const requiredFields = Object.keys(rules);
     const hasEmptyFields = requiredFields.some(field => {
       const value = form.formData[field];

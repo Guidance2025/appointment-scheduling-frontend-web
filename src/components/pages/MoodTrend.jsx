@@ -72,6 +72,7 @@ const MoodTrend = () => {
   const [entries, setEntries] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sections, setSections] = useState([]);
 
   // Extract loadMoodEntries as a useCallback to avoid dependency issues
   const loadMoodEntries = useCallback(async () => {
@@ -100,6 +101,15 @@ const MoodTrend = () => {
       const entriesArray = Array.isArray(data) ? data : [];
       console.log("Processed entries:", entriesArray);
       setMoodEntries(entriesArray);
+      
+      // Extract unique sections from the data
+      const uniqueSections = new Set();
+      entriesArray.forEach(entry => {
+        if (entry.student?.section?.sectionName) {
+          uniqueSections.add(entry.student.section.sectionName);
+        }
+      });
+      setSections(Array.from(uniqueSections).sort());
     } catch (e) {
       console.error("Failed to load mood entries:", e);
       setMoodEntries([]);
@@ -107,6 +117,38 @@ const MoodTrend = () => {
       setLoading(false);
     }
   }, []);
+
+  // Expose a global function to trigger mood reload from anywhere in the app
+  // This should be called after a mood entry is successfully created
+  React.useEffect(() => {
+    window.triggerMoodTrendReload = () => {
+      console.log("[MoodTrend] Reloading data via triggerMoodTrendReload...");
+      loadMoodEntries();
+    };
+    
+    return () => {
+      delete window.triggerMoodTrendReload;
+    };
+  }, [loadMoodEntries]);
+
+  useEffect(() => {
+    // Initial load
+    loadMoodEntries();
+
+    // Listen for mood submission events
+    const handleMoodSubmitted = () => {
+      console.log("[MoodTrend] Mood entry submitted - reloading data...");
+      loadMoodEntries();
+    };
+
+    // Listen for custom event (when mood entries are created elsewhere)
+    window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
+
+    // Cleanup listener on unmount
+    return () => {
+      window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
+    };
+  }, [loadMoodEntries]);
 
   useEffect(() => {
     // Initial load
@@ -239,12 +281,11 @@ const MoodTrend = () => {
               onChange={(e) => setSectionFilter(e.target.value)}
             >
               <option value="All">All</option>
-              <option value="BA">BA</option>
-              <option value="BSA">BSA</option>
-              <option value="THM">THM</option>
-              <option value="ECE">ECE</option>
-              <option value="BIT">BIT</option>
-              <option value="IT">IT</option>
+              {sections.map((section) => (
+                <option key={section} value={section}>
+                  {section}
+                </option>
+              ))}
             </select>
           </div>
         </div>
