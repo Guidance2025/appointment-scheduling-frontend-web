@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import schoolLogo from "../../assets/school-logo.png";
 import "../../css/GabayLogin.css";
 import { registerFcmToken } from "../../service/fcm";
 import { login } from "../../service/auth";
 import ForgetPasswordModal from "./modal/login/forget/password/ForgetPasswordModal";
-import { usePopUp } from "../../helper/message/pop/up/provider/PopUpModalProvider";
 
 function GuidanceLogin({ onLoginSuccess }) {
   const navigate = useNavigate();
@@ -16,14 +15,7 @@ function GuidanceLogin({ onLoginSuccess }) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockTimer, setLockTimer] = useState(null);
-  const [remainingTime, setRemainingTime] = useState(null); 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [isPermanentLock, setIsPermanentLock] = useState(false); 
-  
-  const lockTimeoutRef = useRef(null);
-  const countdownIntervalRef = useRef(null);
 
   const ALLOWED_ROLES = {
     ADMIN: "ADMIN_ROLE",
@@ -35,86 +27,10 @@ function GuidanceLogin({ onLoginSuccess }) {
     [ALLOWED_ROLES.GUIDANCE]: "/dashboard/MainPage"
   };
 
-  // FIXED: Check for both temporary and permanent locks on component mount
-  useEffect(() => {
-    const savedLockTime = localStorage.getItem('accountLockTime');
-    const savedPermanentLock = localStorage.getItem('isPermanentLock');
-    
-    // Check for permanent lock first
-    if (savedPermanentLock === 'true') {
-      setIsLocked(true);
-      setIsPermanentLock(true);
-      setLockTimer(null);
-      setError("Your account has been locked by an administrator. Please contact support to unlock your account.");
-      return;
-    }
-    
-    if (savedLockTime) {
-      const lockTime = parseInt(savedLockTime, 10);
-      const now = Date.now();
-      
-      if (lockTime > now) {
-        setIsLocked(true);
-        setLockTimer(lockTime);
-        setIsPermanentLock(false);
-        setError("Your account has been locked due to multiple failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.");
-      } else {
-        localStorage.removeItem('accountLockTime');
-      }
-    }
-  }, []);
-  useEffect(() => {
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
-      countdownIntervalRef.current = null;
-    }
-
-    if (isLocked && lockTimer && !isPermanentLock) {
-      countdownIntervalRef.current = setInterval(() => {
-        const remaining = lockTimer - Date.now();
-        
-        if (remaining <= 0) {
-          setIsLocked(false);
-          setLockTimer(null);
-          setRemainingTime(null);  
-          setError("");
-          localStorage.removeItem('accountLockTime');
-          console.log(" Account automatically unlocked");
-          
-          if (countdownIntervalRef.current) {
-            clearInterval(countdownIntervalRef.current);
-            countdownIntervalRef.current = null;
-          }
-        } else {
-          const minutes = Math.floor(remaining / 60000);
-          const seconds = Math.floor((remaining % 60000) / 1000);
-          setRemainingTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-        }
-      }, 1000);
-    } else {
-      if (isPermanentLock) {
-        setRemainingTime(null);
-      }
-    }
-   
-    return () => {
-      if (lockTimeoutRef.current) {
-        clearTimeout(lockTimeoutRef.current);
-        lockTimeoutRef.current = null;
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-        countdownIntervalRef.current = null;
-      }
-    };
-  }, [isLocked, lockTimer, isPermanentLock]);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (!isLocked || !isPermanentLock) {
-      setError("");
-    }
+    setError("");
   };
 
   const validateForm = () => {
@@ -182,7 +98,7 @@ function GuidanceLogin({ onLoginSuccess }) {
     navigate(route);
   };
 
- const handleLogin = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -191,15 +107,7 @@ function GuidanceLogin({ onLoginSuccess }) {
     setError("");
 
     try {
-      const lockTime = localStorage.getItem('accountLockTime');
-      const permanentLock = localStorage.getItem('isPermanentLock');
       localStorage.clear();
-      if (lockTime) {
-        localStorage.setItem('accountLockTime', lockTime);
-      }
-      if (permanentLock) {
-        localStorage.setItem('isPermanentLock', permanentLock);
-      }
       
       const response = await login(formData.username, formData.password);
       console.log("✅ Login response:", response);
@@ -221,111 +129,45 @@ function GuidanceLogin({ onLoginSuccess }) {
       }
 
       storeUserSession(userId, guidanceStaffId, jwtToken, userRole);
-      
-      // FIXED: Clear all lock-related storage on successful login
-      localStorage.removeItem('accountLockTime');
-      localStorage.removeItem('isPermanentLock');
 
       try {
         await registerFcmToken(userId);
       } catch (fcmError) {
-        console.warn(" Failed to register FCM token:", fcmError);
+        console.warn("⚠️ Failed to register FCM token:", fcmError);
       }
       
       handleRoleBasedRedirect(userRole);
 
     } catch (err) {
-      console.error(" Login failed:", err);
-      console.error(" Error status:", err.status);
-      console.error(" Error message:", err.message);
+      console.error("❌ Login failed:", err);
+      console.error("❌ Error status:", err.status);
+      console.error("❌ Error message:", err.message);
       
       let errorMessage = "Login failed. Please try again.";
-      let accountLocked = false;
-      let isAdminLocked = false;
+      const errorMsg = (err.message || "").toUpperCase();
       
-      if (err.lockType) {
-        if (err.lockType === 'ADMIN_LOCK' || err.lockType === 'DISABLED') {
-          errorMessage = err.message || "Your account has been locked by an administrator. Please contact support to unlock your account.";
-          isAdminLocked = true;
-          accountLocked = true;
-          console.log(" Admin lock detected (structured response)");
-        } else if (err.lockType === 'FAILED_ATTEMPTS') {
-          errorMessage = err.message || "Your account has been locked due to multiple failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.";
-          accountLocked = true;
-          console.log(" Failed-attempt lock detected (structured response)");
-        }
-      } else {
-        // Fallback to string matching if structured response not available
-        const errorMsg = (err.message || "").toUpperCase();
-        
-        // Check for admin lock (permanent lock)
-        if (
-          errorMsg.includes("LOCKED BY ADMINISTRATOR") ||
-          errorMsg.includes("ACCOUNT HAS BEEN LOCKED BY ADMINISTRATOR")
-        ) {
-          errorMessage = "Your account has been locked by an administrator. Please contact support to unlock your account.";
-          isAdminLocked = true;
-          accountLocked = true;
-          console.log(" Admin lock detected");
-        }
-        else if (err.status === 403 || errorMsg.includes("DISABLED") || errorMsg.includes("ACCOUNT HAS BEEN DISABLED")) {
-          errorMessage = "Your account has been disabled. Please contact support.";
-          accountLocked = true;
-          isAdminLocked = true;
-          console.log(" Account disabled detected");
-        }
-        else if (
-          err.status === 423 ||
-          errorMsg.includes("MULTIPLE FAILED LOGIN ATTEMPTS") ||
-          errorMsg.includes("ACCOUNT LOCKED DUE TO MULTIPLE FAILED LOGIN ATTEMPTS") ||
-          errorMsg.includes("TOO MANY") ||
-          errorMsg.includes("MAX LOGIN ATTEMPTS")
-        ) {
-          errorMessage = "Your account has been locked due to multiple failed login attempts. Please wait 3 minutes or use 'Forgot Password' to unlock your account.";
-          accountLocked = true;
-          console.log(" Failed-attempt lock detected");
-        }
-        else if (
-          err.status === 401 || 
-          errorMsg.includes("INCORRECT") || 
-          errorMsg.includes("USERNAME/PASSWORD") ||
-          errorMsg.includes("BAD CREDENTIALS")
-        ) {
-          errorMessage = "Incorrect username or password. Please try again.";
-          console.log(" Invalid credentials");
-        }
-        else if (errorMsg.includes("NETWORK") || errorMsg.includes("FETCH")) {
-          errorMessage = "Network error. Please check your connection.";
-          console.log("❌ Network error");
-        }
-        else if (err.message && err.message.length < 100) {
-          errorMessage = err.message;
-        }
+      if (
+        err.status === 401 || 
+        errorMsg.includes("INCORRECT") || 
+        errorMsg.includes("USERNAME/PASSWORD") ||
+        errorMsg.includes("BAD CREDENTIALS")
+      ) {
+        errorMessage = "Incorrect username or password. Please try again.";
+        console.log("❌ Invalid credentials");
+      }
+      else if (err.status === 403) {
+        errorMessage = "Access denied. Please check your credentials.";
+        console.log("❌ Access forbidden");
+      }
+      else if (errorMsg.includes("NETWORK") || errorMsg.includes("FETCH")) {
+        errorMessage = "Network error. Please check your connection.";
+        console.log("❌ Network error");
+      }
+      else if (err.message && err.message.length < 100) {
+        errorMessage = err.message;
       }
       
       setError(errorMessage);
-      
-      if (accountLocked && !isLocked) {
-        if (isAdminLocked) {
-          // FIXED: Store permanent lock state in localStorage
-          setIsLocked(true);
-          setIsPermanentLock(true);
-          setLockTimer(null);
-          setRemainingTime(null);
-          localStorage.setItem('isPermanentLock', 'true');
-          localStorage.removeItem('accountLockTime');
-          console.log("🔒 Permanent lock activated (admin)");
-        } else {
-          // FIXED: Updated timer to 3 minutes consistently
-          const unlockTime = Date.now() + (3 * 60 * 1000);
-          localStorage.setItem('accountLockTime', unlockTime.toString());
-          localStorage.removeItem('isPermanentLock');
-          setLockTimer(unlockTime);
-          setIsLocked(true);
-          setIsPermanentLock(false);
-          console.log("⏱️ Temporary lock activated. Unlock time:", new Date(unlockTime));
-        }
-      }
       
     } finally {
       setIsLoading(false);
@@ -356,18 +198,11 @@ function GuidanceLogin({ onLoginSuccess }) {
             
             {error && (
               <div 
-                className={`error-message ${
-                  error.toLowerCase().includes('locked') ? 'error-locked' : ''
-                }`}
+                className="error-message"
                 role="alert" 
                 aria-live="polite"
               >
                 {error}
-                {isLocked && remainingTime && !isPermanentLock && (
-                  <div className="lock-timer">
-                    Unlock in: {remainingTime}
-                  </div>
-                )}
               </div>
             )}
 
@@ -383,7 +218,7 @@ function GuidanceLogin({ onLoginSuccess }) {
                   type="text"
                   value={formData.username}
                   onChange={handleInputChange}
-                  disabled={isLoading || isLocked}
+                  disabled={isLoading}
                   autoComplete="username"
                   required
                   aria-required="true"
@@ -402,7 +237,7 @@ function GuidanceLogin({ onLoginSuccess }) {
                   type="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  disabled={isLoading || isLocked}
+                  disabled={isLoading}
                   autoComplete="current-password"
                   required
                   aria-required="true"
@@ -412,18 +247,11 @@ function GuidanceLogin({ onLoginSuccess }) {
 
               <button 
                 type="submit" 
-                disabled={isLoading || isLocked}
+                disabled={isLoading}
                 className="login-button"
                 aria-busy={isLoading}
               >
-                {isLoading 
-                  ? "LOGGING IN..." 
-                  : isLocked 
-                    ? isPermanentLock
-                      ? "ACCOUNT LOCKED"
-                      : `ACCOUNT LOCKED ${remainingTime ? `(${remainingTime})` : ''}`
-                    : "LOGIN"
-                }
+                {isLoading ? "LOGGING IN..." : "LOGIN"}
               </button>
             </form>
 

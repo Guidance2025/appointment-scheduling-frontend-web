@@ -152,12 +152,18 @@ const ProfileModal = ({ isOpen, onClose }) => {
     localStorage.removeItem("guidanceStaffId");
     window.location.href = "/GuidanceLogin";
   };
+const getFullName = () => {
+  if (!profile) return "Loading...";
 
-  const getFullName = () => {
-    if (!profile) return "Loading...";
-    const parts = [profile.firstName, profile.middleName, profile.lastName].filter(Boolean);
-    return parts.join(" ") || "Unknown User";
-  };
+  const capitalize = (str = "") =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
+  const firstName = capitalize(profile.firstName);
+  const lastName = capitalize(profile.lastName);
+
+  const parts = [firstName, profile.middleName, lastName].filter(Boolean);
+  return parts.join(" ") || "Unknown User";
+};
 
   if (!isOpen) return null;
 
