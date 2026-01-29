@@ -8,7 +8,6 @@ const ExitInterview = () => {
   const [questions, setQuestions] = useState(['']);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('all');
-  // const [dateRange, setDateRange] = useState("All");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -16,6 +15,8 @@ const ExitInterview = () => {
   const [fetchingQuestions, setFetchingQuestions] = useState(true);
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
+  const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
+
 
   useEffect(() => {
     fetchPostedQuestions();
@@ -66,7 +67,6 @@ const ExitInterview = () => {
         return;
       }
 
-      // Changed to fetch all exit interview questions, not just by staff ID
       const response = await fetch(
         `${API_BASE_URL}/exit-interview/student/all-questions`,
         {
@@ -228,6 +228,64 @@ const ExitInterview = () => {
 
   const handleClearSearch = () => {
     setSearchTerm('');
+  };
+
+  const openEditModal = (questionId, questionText) => {
+    setEditModal({ isOpen: true, questionId, questionText });
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ isOpen: false, questionId: null, questionText: '' });
+  };
+
+  const handleUpdateQuestion = async () => {
+    if (!editModal.questionText.trim()) {
+      setError('Question text cannot be empty');
+      return;
+    }
+
+    const { questionId, questionText } = editModal;
+    closeEditModal();
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('jwtToken');
+      
+      if (!token) {
+        setError('No authentication token found');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/exit-interview/questions/${questionId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ questionText: questionText.trim() }) 
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to update question' }));  
+        throw new Error(errorData.message || 'Failed to update question');
+      }
+
+      const updatedQuestion = await response.json(); 
+      setSuccess('Question updated successfully!');
+      fetchPostedQuestions();  
+
+      setTimeout(() => {
+        setSuccess('');
+      }, 2000);
+    } catch (err) {
+      console.error('Error updating question:', err);
+      setError(err.message || 'Failed to update question. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const filteredQuestions = questionsData.filter(item => {
@@ -409,12 +467,13 @@ const ExitInterview = () => {
                       <th>Question Text</th>
                       <th>Posted By</th>
                       <th>Date Posted</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredQuestions.length === 0 ? (
                       <tr>
-                        <td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
                           {searchTerm ? 'No questions found matching your search' : 'No questions posted yet'}
                         </td>
                       </tr>
@@ -429,6 +488,16 @@ const ExitInterview = () => {
                           </td>
                           <td className="date-cell">
                             {formatFullDateTimePH(item.dateCreated)}
+                          </td>
+                          <td className="action-cell">
+                            <button
+                              className="update-button"
+                              onClick={() => openEditModal(item.id, item.questionText)}
+                              disabled={loading}
+                              title="Edit question"
+                            >
+                              Update
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -491,8 +560,51 @@ const ExitInterview = () => {
           )}
         </div>
       </div>
+    
+    {editModal.isOpen && (
+    <div className="modal-overlay">
+      <div className="modal-card edit-modal">
+        <div className="modal-header-row">
+          <h2>Edit Question</h2>
+          <button className="close-btn" onClick={closeEditModal}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label htmlFor="edit-question-text">Question Text</label>
+            <textarea
+              id="edit-question-text"
+              className="edit-textarea"
+              value={editModal.questionText}
+              onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
+              rows={6}
+              placeholder="Enter your question here..."
+            />
+            {editModal.questionText && !editModal.questionText.trim() && (
+              <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>  
+            )}
+          </div>
+        </div>
+        <div className="modal-footer">
+          <button 
+            className="btn-cancel" 
+            onClick={closeEditModal}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button 
+            className="btn-save" 
+            onClick={handleUpdateQuestion}
+            disabled={loading || !editModal.questionText.trim()}  
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+    )}
     </div>
   );
-};
+}
 
 export default ExitInterview;

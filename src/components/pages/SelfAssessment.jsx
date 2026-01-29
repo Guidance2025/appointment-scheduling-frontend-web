@@ -16,6 +16,7 @@ const SelfAssessment = () => {
   const [fetchingQuestions, setFetchingQuestions] = useState(true);
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
+  const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
 
   useEffect(() => {
     fetchPostedQuestions();
@@ -222,6 +223,82 @@ const SelfAssessment = () => {
     setSearchTerm('');
   };
 
+  const openEditModal = (questionId, questionText) => {
+    setEditModal({ isOpen: true, questionId, questionText });
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ isOpen: false, questionId: null, questionText: '' });
+  };
+
+  const handleUpdateQuestion = async () => {
+    if (!editModal.questionText.trim()) {
+      setError('Question text cannot be empty');
+      return;
+    }
+
+    const { questionId, questionText } = editModal;
+
+    try {
+      setLoading(true);
+      setError('');
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setError('No authentication token found');
+        setLoading(false);
+        return;
+      }
+
+      // perform request and log for debugging
+      console.log('Updating self-assessment question', { questionId, questionText: questionText.trim() });
+
+      const response = await fetch(
+        `${API_BASE_URL}/self-assessment/questions/${questionId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ questionText: questionText.trim() })
+        }
+      );
+
+      if (!response.ok) {
+        // try to read JSON first, otherwise fallback to text
+        let message = 'Failed to update question';
+        try {
+          const errJson = await response.json();
+          message = errJson.message || JSON.stringify(errJson) || message;
+        } catch (e) {
+          try {
+            const errText = await response.text();
+            message = errText || message;
+          } catch (e2) {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
+
+      const updatedQuestion = await response.json().catch(() => null);
+      console.log('Update response', updatedQuestion);
+      setSuccess('Question updated successfully!');
+      // refresh the list and close modal only after success
+      await fetchPostedQuestions();
+      closeEditModal();
+
+      setTimeout(() => {
+        setSuccess('');
+      }, 2000);
+    } catch (err) {
+      console.error('Error updating question:', err);
+      setError(err.message || 'Failed to update question. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredQuestions = questionsData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     const staffName = `${item.guidanceStaff?.person?.firstName || ''} ${item.guidanceStaff?.person?.lastName || ''}`.toLowerCase();
@@ -401,12 +478,13 @@ const SelfAssessment = () => {
                       <th>Question Text</th>
                       <th>Posted By</th>
                       <th>Date Posted</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredQuestions.length === 0 ? (
                       <tr>
-                        <td colSpan="3" style={{ textAlign: 'center', padding: '40px' }}>
+                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
                           {searchTerm ? 'No questions found matching your search' : 'No questions posted yet'}
                         </td>
                       </tr>
@@ -421,6 +499,16 @@ const SelfAssessment = () => {
                           </td>
                           <td className="date-cell">
                               {formatFullDateTimePH(item.dateCreated)}
+                          </td>
+                          <td className="action-cell">
+                            <button
+                              className="update-button"
+                              onClick={() => openEditModal(item.id, item.questionText)}
+                              disabled={loading}
+                              title="Edit question"
+                            >
+                              Update
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -483,6 +571,49 @@ const SelfAssessment = () => {
           )}
         </div>
       </div>
+
+      {editModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card edit-modal">
+            <div className="modal-header-row">
+              <h2>Edit Question</h2>
+              <button className="close-btn" onClick={closeEditModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="edit-question-text">Question Text</label>
+                <textarea
+                  id="edit-question-text"
+                  className="edit-textarea"
+                  value={editModal.questionText}
+                  onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
+                  rows={6}
+                  placeholder="Enter your question here..."
+                />
+                {editModal.questionText && !editModal.questionText.trim() && (
+                  <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={closeEditModal}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handleUpdateQuestion}
+                disabled={loading || !editModal.questionText.trim()}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
