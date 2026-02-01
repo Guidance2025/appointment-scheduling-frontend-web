@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "../../../../css/admin/UpdateModal.css";
 import { UpdateGuidanceStaffCredentials, UpdateStudentCredentials } from "../../../../service/admin";
 import { usePopUp } from "../../../../helper/message/pop/up/provider/PopUpModalProvider";
+import "../../../../css/button/button.css";
 
 const UpdateModal = ({ 
     isOpen, 
@@ -36,38 +37,85 @@ const UpdateModal = ({
         try {
             setIsLoading(true);
 
-            if (selectedUserType === "studentNumber") {
-                await UpdateStudentCredentials(studentNumber, newPassword, isLocked);
-                     showSuccess("Student account updated successfully!", "Changes saved successfully.", 3000);
-                  onClose();
+            console.log("Update initiated:", {
+                selectedUserType,
+                studentNumber,
+                employeeNumber,
+                hasPassword: !!newPassword,
+                isLocked,
+                email,
+                isLockedStaff
+            });
 
+            if (selectedUserType === "studentNumber") {
+                console.log("Updating student credentials...");
+                await UpdateStudentCredentials(studentNumber, newPassword, isLocked);
+                showSuccess("Student account updated successfully!", "Changes saved successfully.", 3000);
+            } else if (selectedUserType === "guidanceStaffId") {
+                console.log("Updating guidance staff credentials...");
+                
+                // Determine what to send based on what changed
+                const emailChanged = email.trim() !== "" && email !== initialEmail && email.includes("@");
+                const lockChanged = isLockedStaff !== initialIsLocked;
+                
+                // Send email only if it was changed and is valid, otherwise send null
+                const emailToSend = emailChanged ? email.trim() : null;
+                
+                console.log("Sending update:", {
+                    email: emailToSend,
+                    isLocked: isLockedStaff,
+                    emailChanged,
+                    lockChanged
+                });
+                
+                await UpdateGuidanceStaffCredentials(employeeNumber, emailToSend, isLockedStaff);
+                showSuccess("Guidance staff account updated successfully!", "Changes saved successfully.", 3000);
             } else {
-                await UpdateGuidanceStaffCredentials(employeeNumber, email, isLockedStaff);
-               showSuccess("Guidance staff account updated successfully!", "Changes saved successfully.", 3000);
-                onClose();
+                throw new Error(`Invalid user type: ${selectedUserType}`);
             }
 
+            // Reset form state after successful update
             setIsLoading(false);
             setNewPassword("");
             setShowPassword(false);
 
-            onClose();
+            // Call success callback and close modal
             if (onUpdateSuccess) onUpdateSuccess();
+            onClose();
 
         } catch (error) {
             console.error("Update Account Error:", error);
-            showError("Failed to update account."," Something went wrong",3000);
+            console.error("Error details:", {
+                selectedUserType,
+                studentNumber,
+                employeeNumber,
+                email,
+                errorMessage: error.message
+            });
+            showError("Failed to update account.", error.message || "Something went wrong", 3000);
             setIsLoading(false);
         }
-
-         if (onUpdateSuccess) onUpdateSuccess();
-                onClose(); 
     };
 
     const handleClose = () => {
         setNewPassword("");
         setShowPassword(false);
         onClose();
+    };
+
+    // Check if anything has changed
+    const hasChanges = () => {
+        if (selectedUserType === "studentNumber") {
+            // Student: Enable if password is filled OR lock status changed
+            return newPassword.trim() !== "" || isLocked !== initialIsLocked;
+        } else {
+            // Guidance: Enable if email changed OR lock status changed
+            const emailChanged = email.trim() !== "" && email !== initialEmail && email.includes("@");
+            const lockChanged = isLockedStaff !== initialIsLocked;
+            
+            // Enable if either email changed (with valid email) OR lock status changed
+            return emailChanged || lockChanged;
+        }
     };
 
     if (!isOpen) return null;
@@ -155,14 +203,14 @@ const UpdateModal = ({
 
                     <div className="update-button-group">
                         <button
-                            className="update-btn update-btn-confirm"
+                            className="update-btn update-btn-confirm btn-color-primary "
                             onClick={handleUpdate}
-                            disabled={isLoading} 
+                            disabled={isLoading || !hasChanges()}
                         >
                             {isLoading ? "Updating..." : "Yes"}
                         </button>
                         <button
-                            className="update-btn update-btn-cancel"
+                            className="update-btn update-btn-cancel btn-color-secondary"
                             onClick={handleClose}
                             disabled={isLoading}
                         >

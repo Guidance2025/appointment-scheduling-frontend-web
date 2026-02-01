@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import "./../../css/Calendar.css";
+import "./../../css/button/button.css";
 import ManageAvailability from './modal/ManageAvailability';
 import { useState } from 'react';
 
@@ -65,7 +66,7 @@ export default function CalendarHeader({
           isOpen={showManageAvailability} 
         />
 
-        <button className="create-button" onClick={() => setShowModal(true)}>
+        <button className="create-button btn-color-primary" onClick={() => setShowModal(true)}>
           <Plus size={20} /> Create
         </button>
         

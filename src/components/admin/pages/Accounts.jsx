@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./../../../css/Account.css";
 import "./../../../css/Pagination.css";
 import "./../../../css/table.css";
+import "../../../css/button/button.css";
 import { getGuidanceStaffAccounts, getStudentAccounts } from "../../../service/admin";
 import CreateAccountModal from './modal/CreateAccountModal';
 import { Search } from "lucide-react";
@@ -301,10 +302,10 @@ function Accounts() {
       <div className="appointments-header">
         <div className="tab-container">
           <button 
-            className="guidance-button"
+            className="guidance-button " 
             onClick={() => handleTabChange("guidance")}
             style={{ 
-              backgroundColor: activeTab === "guidance" ? '#4CAF50' : '#e7e7e7', 
+              backgroundColor: activeTab === "guidance" ? '#10b981' : '#e7e7e7', 
               color: activeTab === "guidance" ? 'white' : 'black',
               fontWeight: activeTab === "guidance" ? 'bold' : 'normal',
             }}
@@ -313,10 +314,10 @@ function Accounts() {
           </button>
 
           <button 
-            className="student-button"
+            className="student-button "
             onClick={() => handleTabChange("student")}
             style={{ 
-              backgroundColor: activeTab === "student" ? '#4CAF50' : '#e7e7e7', 
+              backgroundColor: activeTab === "student" ? '#10b981' : '#e7e7e7', 
               color: activeTab === "student" ? 'white' : 'black',
               fontWeight: activeTab === "student" ? 'bold' : 'normal'
             }}
@@ -350,7 +351,7 @@ function Accounts() {
 
           <div className="right-controls">
             <button 
-              className="create-account-button"
+              className="create-account-button btn-color-primary"
               onClick={() => setIsModalOpen(true)}
             >
               New Account

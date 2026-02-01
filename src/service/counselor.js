@@ -141,6 +141,8 @@ export async function markNotificationAsRead(userId) {
   }
 }
 
+
+
 export async function getProfileByEmployeeNumber(employeeNumber){
   const JWT_TOKEN = localStorage.getItem("jwtToken");
 
@@ -214,6 +216,32 @@ export async function updateCounselorProfile(guidanceStaffId, profileData) {
   } catch (error) {
     console.error("Error name:", error.name);
     console.error("Error message:", error.message);
+    throw error;
+  }
+}
+
+
+const searchStudentNumber  = async (studentNumber) => {
+  try {
+    const JWT_TOKEN = localStorage.getItem("jwtToken");
+    
+    if (!JWT_TOKEN) {
+      throw new Error("JWT Token Not Found");
+    }
+    const response = await fetch(`${API_BASE_URL}/student/search/${studentNumber}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + JWT_TOKEN  
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) { 
+    console.error("Error Searching Student By Student Number:", error);
     throw error;
   }
 }

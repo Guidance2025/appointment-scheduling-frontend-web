@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/SelfAssessment.css";
 import { API_BASE_URL } from '../../../constants/api';
+import "../../css/button/button.css";
 import { convertLocalToUTCISO, formatFullDateTimePH, parseUTCToPH, isTodayPH, isThisWeekPH, isThisMonthPH } from '../../utils/dateTime';
 
 const SelfAssessment = () => {
@@ -403,7 +404,7 @@ const SelfAssessment = () => {
             Clear
           </button>
           <button 
-            className="action-btn action-btn-post" 
+            className="action-btn action-btn-post btn-color-primary" 
             onClick={handlePost}
             disabled={loading}
           >
