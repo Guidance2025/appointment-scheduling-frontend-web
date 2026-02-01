@@ -20,7 +20,6 @@ export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF = (guidanceStaffId) => (`${API
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF_STATUS = (guidanceStaffId) => (`${API_BASE_URL}/counselor/appointment/${guidanceStaffId}`);
 export const GET_NOTIFICATION_BY_USER = (userId) => (`${API_BASE_URL}/notification/${userId}`);
 export const GET_PROFILE_BY_EMPLOYEENUMBER = (employeeNumber) => (`${API_BASE_URL}/counselor-profile/${employeeNumber}`);
-
 //POST
 export const POSTS_URL = `${API_BASE_URL}/api/posts`;
 export const QUOTE_OF_THE_DAY_URL = `${API_BASE_URL}/api/posts/quote-of-the-day`;

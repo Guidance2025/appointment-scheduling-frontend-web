@@ -31,8 +31,7 @@ const AdminProfileModal = ({isOpen}) => {
 
       const firstname = profile.firstname.charAt(0).toUpperCase() + profile.firstname.slice(1);
       const lastname = profile.lastname.charAt(0).toUpperCase() + profile.lastname.slice(1);
-
-        return `${firstname} ${lastname}`.trim() || "User";
+      return `${firstname} ${lastname}`.trim() || "User";
   }
 
   useEffect(() => {

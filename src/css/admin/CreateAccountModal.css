@@ -103,12 +103,12 @@
 }
 
 .registration-tab:hover {
-  color: #5cc5a7;
+  color: #10b981;
 }
 
 .registration-tab.active {
-  color: #5cc5a7;
-  border-bottom-color: #5cc5a7;
+  color: #10b981;
+  border-bottom-color: #10b981;
 }
 
 .registration-form {
@@ -128,27 +128,47 @@
   grid-column: auto;
 }
 
-/* Form field wrapper - base styles */
-.form-field-wrapper {
-  display: flex;
-  flex-direction: column;
+/* =================================
+   GUIDANCE FORM SPECIFIC RULES
+   ================================= */
+
+/* Guidance: Email spans 2 columns (Position in RC appears beside it) */
+.registration-form-grid.guidance-form > div:has(input[name="email"]) {
+  grid-column: span 2 !important;
 }
 
-/* Make Address and Position/Cluster fields full width */
-.registration-form-grid > div:has(input[name="address"]) {
+/* Guidance: Position in Rogationist takes 1 column (beside Email) */
+.registration-form-grid.guidance-form > div:has(select[name="positionInRc"]) {
+  grid-column: span 1 !important;
+}
+
+/* Guidance: Address takes full width */
+.registration-form-grid.guidance-form > div:has(input[name="address"]) {
   grid-column: 1 / -1 !important;
 }
 
-.registration-form-grid > div:has(select[name="positionInRc"]) {
-  grid-column: 1 / -1 !important;
+/* =================================
+   STUDENT FORM SPECIFIC RULES
+   ================================= */
+
+/* Student: Email spans 2 columns */
+.registration-form-grid.student-form > div:has(input[name="email"]) {
+  grid-column: span 2 !important;
 }
 
+/* Student: Section Name takes 1 column (beside Email) */
+.registration-form-grid.student-form > div:has(input[name="sectionName"]) {
+  grid-column: span 1 !important;
+}
+
+/* Student: Address takes 2 columns */
+.registration-form-grid.student-form > div:has(input[name="address"]) {
+  grid-column: span 2 !important;
+}
+
+/* Cluster Head takes full width */
 .registration-form-grid > div:has(select[name="clusterHead"]) {
   grid-column: 1 / -1 !important;
-}
-
-.registration-form-grid > div:has(input[name="email"]) {
-  grid-column: span 2 !important;
 }
 
 .form-field-wrapper.full-width {
@@ -192,8 +212,8 @@
 .registration-form-group input:focus,
 .registration-form-group select:focus {
   outline: none;
-  border-color: #5cc5a7;
-  box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .registration-form-group input::placeholder,
@@ -233,8 +253,8 @@
 
 .date-picker-input:focus {
   outline: none;
-  border-color: #5cc5a7;
-  box-shadow: 0 0 0 3px rgba(92, 197, 167, 0.1);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
 .date-picker-input.error {
@@ -266,7 +286,7 @@
 }
 
 .react-datepicker__header {
-  background-color: #5cc5a7;
+  background-color: #10b981;
   border-bottom: none;
   border-radius: 12px 12px 0 0;
   padding-top: 12px;
@@ -280,13 +300,13 @@
 
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
-  background-color: #5cc5a7;
+  background-color: #10b981;
   color: white;
   font-weight: 600;
 }
 
 .react-datepicker__day:hover {
-  background-color: rgba(92, 197, 167, 0.2);
+  background-color: rgba(16, 185, 129, 0.2);
   border-radius: 6px;
 }
 
@@ -319,37 +339,18 @@
   min-width: 100px;
 }
 
-.registration-submit-btn {
-  background-color: #5cc5a7;
-  color: white;
-}
-
-.registration-submit-btn:hover {
-  background-color: #4ab394;
-}
-
-.registration-submit-btn:active {
-  transform: scale(0.98);
+.registration-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(16, 185, 129, 0.3);
 }
 
 .registration-submit-btn:disabled {
-  background-color: #b3e0d4;
-  cursor: not-allowed;
-}
-
-.registration-cancel-btn {
-  background-color: white;
-  color: #6c757d;
-  border: 1px solid #dee2e6;
+  transform: none;
+  box-shadow: none;
 }
 
 .registration-cancel-btn:hover {
-  background-color: #f8f9fa;
-  border-color: #adb5bd;
-}
-
-.registration-cancel-btn:active {
-  transform: scale(0.98);
+  transform: translateY(-1px);
 }
 
 /* Form field wrapper for consistent styling */

@@ -1,5 +1,6 @@
 import { ArrowLeft, X, ChevronUp, ChevronDown } from "lucide-react";
 import "../../../css/CreateAppointmentModal.css";
+import "../../../css/button/button.css";
 import { useState, useRef, useEffect } from "react";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
 import DatePicker from "react-datepicker";
@@ -26,13 +27,22 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  const [startPickerValue, setStartPickerValue] = useState({ hour: "8", minute: "00", period: "AM" });
-  const [endPickerValue, setEndPickerValue] = useState({ hour: "9", minute: "00", period: "AM" });
+  // Autocomplete states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedAutocompleteIndex, setSelectedAutocompleteIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [startPickerValue, setStartPickerValue] = useState({ hour: "9", minute: "00", period: "AM" });
+  const [endPickerValue, setEndPickerValue] = useState({ hour: "10", minute: "00", period: "AM" });
 
   const startPickerRef = useRef(null);
   const endPickerRef = useRef(null);
   const datePickerRef = useRef(null);
   const studentNumberTimeoutRef = useRef(null);
+  const autocompleteRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
   const { showSuccess } = usePopUp();
   const errorRef = useRef(null);
   const timeErrorRef = useRef(null);
@@ -54,6 +64,9 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       if (studentNumberTimeoutRef.current) {
         clearTimeout(studentNumberTimeoutRef.current);
       }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -64,6 +77,9 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       }
       if (endPickerRef.current && !endPickerRef.current.contains(event.target)) {
         setShowEndPicker(false);
+      }
+      if (autocompleteRef.current && !autocompleteRef.current.contains(event.target)) {
+        setShowAutocomplete(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -105,7 +121,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
   }, [scheduledDate, endDate, bookedSlots]);
 
-  // NEW: Close time pickers when date picker opens
   useEffect(() => {
     if (isDatePickerOpen) {
       setShowStartPicker(false);
@@ -113,75 +128,57 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
   }, [isDatePickerOpen]);
 
-  /**
-   * Validates student number format: CT##-####
-   * @param {string} studentNumber - The student number to validate
-   * @returns {string|null} - Error message or null if valid
-   */
-  const validateStudentNumber = (studentNumber) => {
-    if (!studentNumber || studentNumber.trim() === '' || studentNumber === 'CT') {
-      return null; // Will be caught by required field check
+  // Autocomplete search effect
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
 
-    const trimmed = studentNumber.trim().toUpperCase();
-
-    // Check if it starts with CT
-    if (!trimmed.startsWith('CT')) {
-      return 'Student number must start with "CT"';
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setShowAutocomplete(false);
+      setIsSearching(false);
+      return;
     }
 
-    // Full regex pattern: CT + 2 digits + dash + 4 digits
-    const pattern = /^CT\d{2}-\d{4}$/;
+    setIsSearching(true);
     
-    if (!pattern.test(trimmed)) {
-      // More specific error messages
-      if (!trimmed.includes('-')) {
-        return 'Student number must include a dash (e.g., CT22-0001)';
+    searchTimeoutRef.current = setTimeout(async () => {
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        setIsSearching(false);
+        return;
       }
-      
-      const parts = trimmed.split('-');
-      
-      if (parts.length !== 2) {
-        return 'Invalid format. Use CT##-#### (e.g., CT22-0001)';
-      }
-      
-      const prefix = parts[0]; // CT##
-      const suffix = parts[1]; // ####
-      
-      // Check prefix (should be CT + 2 digits)
-      if (prefix.length !== 4) {
-        return 'Year must be 2 digits (e.g., CT22-0001)';
-      }
-      
-      if (!/^CT\d{2}$/.test(prefix)) {
-        return 'Invalid year format. Use CT## (e.g., CT22)';
-      }
-      
-      // Check suffix (should be exactly 4 digits)
-      if (suffix.length !== 4) {
-        return 'Student ID must be exactly 4 digits (e.g., CT22-0001)';
-      }
-      
-      if (!/^\d{4}$/.test(suffix)) {
-        return 'Student ID must contain only numbers (e.g., 0001)';
-      }
-    }
 
-    // Additional validation: Check if year is reasonable
-    const yearPart = trimmed.substring(2, 4);
-    const year = parseInt(yearPart, 10);
-    const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of current year
-    
-    if (year > currentYear + 1) {
-      return `Year cannot be in the future (current year: ${currentYear})`;
-    }
-    
-    if (year < 10) {
-      return 'Year seems too old. Please verify the student number';
-    }
+      try {
+        const response = await fetch(
+          `http://localhost:8080/student/search/${encodeURIComponent(searchQuery)}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-    return null; // Valid
-  };
+        if (response.ok) {
+          const data = await response.json();
+          setSearchResults(data || []);
+          setShowAutocomplete(data && data.length > 0);
+        } else {
+          setSearchResults([]);
+          setShowAutocomplete(false);
+        }
+      } catch (err) {
+        console.error("Error searching students:", err);
+        setSearchResults([]);
+        setShowAutocomplete(false);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  }, [searchQuery]);
 
   const fetchAllBlockedDates = async () => {
     const token = localStorage.getItem("jwtToken");
@@ -366,9 +363,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     if (scheduledDateTime < now) return "Start time cannot be in the past";
     if (endDateTime <= scheduledDateTime) return "End time must be after start time";
 
-    const durationMinutes = (endDateTime - scheduledDateTime) / (1000 * 60);
-    if (durationMinutes > 60) return "Appointment duration cannot exceed 1 hour";
-
     const startHour = scheduledDateTime.getHours();
     const endHour = endDateTime.getHours();
     const endMinute = endDateTime.getMinutes();
@@ -431,7 +425,39 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     setError("");
     setTimeError("");
 
-    // Don't set times automatically - let user pick them with the time pickers
+    const startTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      9,
+      0,
+      0,
+      0
+    );
+    
+    const endTime = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      10,
+      0,
+      0,
+      0
+    );
+
+    const localStartDate = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+    
+    const localEndDate = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
+
+    setScheduledDate(localStartDate);
+    setEndDate(localEndDate);
+    setStartPickerValue({ hour: "9", minute: "00", period: "AM" });
+    setEndPickerValue({ hour: "10", minute: "00", period: "AM" });
+
     await fetchBookedSlots(date);
   };
 
@@ -445,6 +471,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const handleBackButton = () => {
     isClose();
     setStudentNumber("CT");
+    setSearchQuery("");
     setFirstname("");
     setLastname("");
     setAppointmentType("");
@@ -455,6 +482,47 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     setError("");
     setTimeError("");
     setBookedSlots([]);
+    setSearchResults([]);
+    setShowAutocomplete(false);
+  };
+
+  const handleSelectStudent = (student) => {
+    setStudentNumber(student.studentNumber);
+    setSearchQuery(student.studentNumber);
+    setFirstname(student.person?.firstName || student.person?.firstname || "");
+    setLastname(student.person?.lastName || student.person?.lastname || "");
+    setShowAutocomplete(false);
+    setSelectedAutocompleteIndex(-1);
+    setError("");
+  };
+
+  const handleAutocompleteKeyDown = (e) => {
+    if (!showAutocomplete || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedAutocompleteIndex(prev => 
+          prev < searchResults.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedAutocompleteIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedAutocompleteIndex >= 0 && searchResults[selectedAutocompleteIndex]) {
+          handleSelectStudent(searchResults[selectedAutocompleteIndex]);
+        }
+        break;
+      case 'Escape':
+        setShowAutocomplete(false);
+        setSelectedAutocompleteIndex(-1);
+        break;
+      default:
+        break;
+    }
   };
 
   const sendNotification = async () => {
@@ -522,6 +590,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       
       if (res.ok) {
         setStudentNumber("CT");
+        setSearchQuery("");
         setFirstname("");
         setLastname("");
         setAppointmentType("");
@@ -532,6 +601,8 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
         setBookedSlots([]);
         setError("");
         setTimeError("");
+        setSearchResults([]);
+        setShowAutocomplete(false);
     
         showSuccess("Appointment Created Successfully!", "Please wait for the student's response", 3000);
         isClose();
@@ -577,81 +648,17 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
   };
 
-  const handleStudentNumberChange = async (e) => {
-    let inputValue = e.target.value.toUpperCase().trim();
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setStudentNumber(value.toUpperCase());
     
-    // Remove any existing dashes first
-    inputValue = inputValue.replace(/-/g, '');
-    
-    // Ensure it starts with CT
-    if (inputValue && !inputValue.startsWith('CT')) {
-      if (inputValue.startsWith('C')) {
-        inputValue = 'CT' + inputValue.substring(1);
-      } else if (inputValue.startsWith('T')) {
-        inputValue = 'CT' + inputValue;
-      } else {
-        inputValue = 'CT' + inputValue;
-      }
-    }
-    
-    // Auto-format: Add dash after CT##
-    if (inputValue.length > 4) {
-      inputValue = inputValue.substring(0, 4) + '-' + inputValue.substring(4, 8);
-    }
-    
-    // Limit total length to CT##-#### (9 characters including dash)
-    if (inputValue.length > 9) {
-      inputValue = inputValue.substring(0, 9);
-    }
-    
-    setStudentNumber(inputValue);
-
-    if (studentNumberTimeoutRef.current) {
-      clearTimeout(studentNumberTimeoutRef.current);
-    }
-
-    if (inputValue === 'CT' || inputValue.length <= 2) {
+    // Clear student info when typing
+    if (value.length < 2) {
       setFirstname("");
       setLastname("");
       setError("");
-      return;
     }
-
-    studentNumberTimeoutRef.current = setTimeout(async () => {
-      const token = localStorage.getItem("jwtToken");
-      if (!token) {
-        setError("Authentication token not found. Please log in again.");
-        return;
-      }
-
-      setIsLoadingStudent(true);
-      try {
-        const res = await fetch(`http://localhost:8080/student/findBy/${encodeURIComponent(inputValue)}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-          setFirstname("");
-          setLastname("");
-          setError("Student not found");
-          return;
-        }
-
-        const txt = await res.text();
-        const data = txt ? JSON.parse(txt) : {};
-        setFirstname(data.firstname || data.firstName || "");
-        setLastname(data.lastName || data.lastname || data.last_name || "");
-        setError("");
-      } catch (err) {
-        console.error("Error fetching student:", err);
-        setFirstname("");
-        setLastname("");
-        setError("Student not found");
-      } finally {
-        setIsLoadingStudent(false);
-      }
-    }, 500);
   };
 
   const handleAppointmentTypeChange = (e) => {
@@ -686,7 +693,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     if (isStartTime) {
       setScheduledDate(localDate);
       
-      // Auto-set end time to 1 hour after start time
       if (!endDate) {
         const endTime = new Date(newDate);
         const newEndHour = endTime.getHours() + 1;
@@ -877,20 +883,113 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
         <label>
           Student Number: <span style={{ color: "red" }}>*</span>
-          <input
-            type="text"
-            value={studentNumber}
-            onChange={handleStudentNumberChange}
-            disabled={isProcessing}
-            className={error && error.includes("student number") ? "error" : ""}
-            aria-required="true"
-            aria-invalid={error && error.includes("student number") ? "true" : "false"}
-            maxLength={9}
-          />
-          {isLoadingStudent && <span style={{ fontSize: "12px", color: "#666" }}>Loading...</span>}
+          <div style={{ position: 'relative' }} ref={autocompleteRef}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchInputChange}
+              onKeyDown={handleAutocompleteKeyDown}
+              onFocus={() => {
+                if (searchResults.length > 0 && searchQuery.length >= 2) {
+                  setShowAutocomplete(true);
+                }
+              }}
+              disabled={isProcessing}
+              placeholder="Type to search (e.g., CT22-0000)"
+              className={error && error.includes("student number") ? "error" : ""}
+              aria-required="true"
+              aria-invalid={error && error.includes("student number") ? "true" : "false"}
+              style={{ width: '100%' }}
+            />
+            
+            {/* Loading indicator for search */}
+            {isSearching && (
+              <div style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                Searching...
+              </div>
+            )}
+
+            {showAutocomplete && searchResults.length > 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                left: 0,
+                right: 0,
+                backgroundColor: 'white',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                maxHeight: '300px',
+                overflowY: 'auto',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                zIndex: 1000
+              }}>
+                {searchResults.map((student, index) => (
+                  <div
+                    key={student.id}
+                    onClick={() => handleSelectStudent(student)}
+                    onMouseEnter={() => setSelectedAutocompleteIndex(index)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      backgroundColor: selectedAutocompleteIndex === index ? '#f0f0f0' : 'white',
+                      borderBottom: index < searchResults.length - 1 ? '1px solid #eee' : 'none',
+                      transition: 'background-color 0.15s ease'
+                    }}
+                  >
+                    <div style={{
+                      fontWeight: '600',
+                      fontSize: '14px',
+                      color: '#333',
+                      marginBottom: '4px'
+                    }}>
+                      {student.studentNumber}
+                    </div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: '#666',
+                      marginBottom: '2px'
+                    }}>
+                      {student.person?.firstName || student.person?.firstname} {student.person?.middleName || ''} {student.person?.lastName || student.person?.lastname}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#999'
+                    }}>
+                      {student.person?.email} • {student.section?.organization || 'N/A'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {!isSearching && searchQuery.length >= 2 && searchResults.length === 0 && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                left: 0,
+                right: 0,
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffc107',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                fontSize: '13px',
+                color: '#856404',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                zIndex: 1000
+              }}>
+                No students found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
         </label>
 
-        {/* TWO COLUMN LAYOUT FOR NAMES */}
         <div className="create-name-row">
           <label>
             Firstname:
@@ -934,14 +1033,12 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
           </select>
         </label>
 
-        {/* Time Error Message */}
         {timeError && (
           <div ref={timeErrorRef} className="create-error-messages" role="alert" aria-live="assertive" style={{ marginTop: 0, marginBottom: 12 }}>
             {timeError}
           </div>
         )}
 
-        {/* THREE COLUMN LAYOUT: DATE, START TIME, END TIME */}
         <div className="create-datetime-row">
           <label>
             Start Date: <span style={{ color: "red" }}>*</span>
@@ -1086,15 +1183,15 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
           <button
             type="button"
             onClick={handleBackButton}
-            className="button button-secondary"
-            disabled={isProcessing || isLoadingStudent}
+            className="button btn-color-secondary"
+            disabled={isProcessing || isSearching}
           >
             Cancel
           </button>
           <button
-            className="button button-primary"
+            className="button btn-color-primary"
             onClick={sendNotification}
-            disabled={!isFormValid || isProcessing || isLoadingStudent}
+            disabled={!isFormValid || isProcessing || isSearching}
             aria-label={isProcessing ? "Creating appointment" : "Set appointment"}
           >
             {isProcessing ? "Creating..." : "Set Appointment"}

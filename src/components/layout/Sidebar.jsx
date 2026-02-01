@@ -22,7 +22,7 @@ const Sidebar = ({ onNavigate, currentPage }) => {
     { name: 'Exit Interview', icon: FolderOpen, component: 'ExitInterview' },
     { name: 'Mood Management', icon: UserSquare2, component: 'MoodTrend' },
     { name: 'Self-Assessment', icon: ShieldHalfIcon, component: 'SelfAssesment' },
-  ];
+  ]; 
 
   const handleItemClick = (item) => {
     setActiveItem(item.name);
@@ -31,7 +31,6 @@ const Sidebar = ({ onNavigate, currentPage }) => {
     if (onNavigate) {
       onNavigate(item.component);
     }
-
     setTimeout(() => {
       setClickedItem('');
     }, 300);
