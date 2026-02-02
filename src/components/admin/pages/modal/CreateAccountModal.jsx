@@ -27,8 +27,12 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   ];
 
   const SECTION_NAME_OPTIONS = [
-     "BSIT-101",
-     "BSIT-101",
+     "BSA",
+     "BA",
+     "BIT",
+     "ECE",
+     "IT",
+     "THM"
   ];
 
   
