@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import "../../css/Dashboard.css";
 import CreatePostModal from "./modal/CreatePostModal";
 import PostCard from "./PostCard";
-import Tabs from "../common/Tabs";
 import ConfirmDialog from "../../helper/ConfirmDialog";  
 import "../../css/ConfirmDialog.css";
 import { normalizePost, normalizeCategory } from "../../utils/normalize";
@@ -41,6 +40,7 @@ const Dashboard = () => {
   const [isGuidanceStaff, setIsGuidanceStaff] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false); 
   const [postToDelete, setPostToDelete] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
   
   // Analytics data
   const [selfAssessmentCount, setSelfAssessmentCount] = useState(0);
@@ -302,7 +302,17 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Analytics Cards Row */}
+      {quoteOfTheDay && (
+        <div className="quote-of-the-day">
+          <h3>Quote of the Day</h3>
+          <p>{quoteOfTheDay.post_content}</p>
+          {quoteOfTheDay.section_name && (
+            <small>— {quoteOfTheDay.section_name}</small>
+          )}
+        </div>
+      )}
+
+      {/* Analytics Cards Row - 3 Column Layout */}
       <div className="analytics-cards-row">
         <div className="analytics-stat-card analytics-primary">
           <div className="analytics-stat-icon">📝</div>
@@ -330,7 +340,10 @@ const Dashboard = () => {
             <p className="analytics-stat-change">Student submissions</p>
           </div>
         </div>
+      </div>
 
+      {/* Mood Distribution - Separate Full Width Card */}
+      <div className="analytics-cards-row" style={{ gridTemplateColumns: '1fr' }}>
         <div className="analytics-stat-card analytics-mood">
           <div className="analytics-mood-container">
             <div className="analytics-mood-breakdown-mini">
@@ -342,83 +355,100 @@ const Dashboard = () => {
             </div>
             <h3 className="analytics-mood-title">Mood Distribution</h3>
             <div className="analytics-mood-stats">
-              <span className="analytics-mood-stat"><span className="analytics-dot analytics-happy-dot"></span>{moodDistribution.happy}% Happy</span>
-              <span className="analytics-mood-stat"><span className="analytics-dot analytics-neutral-dot"></span>{moodDistribution.neutral}% Neutral</span>
-              <span className="analytics-mood-stat"><span className="analytics-dot analytics-sad-dot"></span>{moodDistribution.sad}% Sad</span>
+              <span className="analytics-mood-stat">
+                <span className="analytics-dot analytics-happy-dot"></span>
+                {moodDistribution.happy}% Happy
+              </span>
+              <span className="analytics-mood-stat">
+                <span className="analytics-dot analytics-neutral-dot"></span>
+                {moodDistribution.neutral}% Neutral
+              </span>
+              <span className="analytics-mood-stat">
+                <span className="analytics-dot analytics-sad-dot"></span>
+                {moodDistribution.sad}% Sad
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {quoteOfTheDay && (
-        <div className="quote-of-the-day">
-          <h3>Quote of the Day</h3>
-          <p>{quoteOfTheDay.post_content}</p>
-          {quoteOfTheDay.section_name && (
-            <small>— {quoteOfTheDay.section_name}</small>
+      {/* Tabs Section */}
+      <div className="tabs-section">
+        <div className="tabs-header-container">
+          <div className="tabs-navigation">
+            <button
+              className={`tab-item ${activeTab === 0 ? 'active' : ''}`}
+              onClick={() => setActiveTab(0)}
+            >
+               Announcements
+            </button>
+            <button
+              className={`tab-item ${activeTab === 1 ? 'active' : ''}`}
+              onClick={() => setActiveTab(1)}
+            >
+               Events
+            </button>
+          </div>
+        </div>
+        
+        <div className="tab-content-container">
+          {activeTab === 0 && (
+            <div className="posts-container">
+              {posts && posts.some(p => 
+                (p.category_name?.toLowerCase() === "announcement" || 
+                 p.CATEGORY_NAME?.toLowerCase() === "announcement")
+              ) ? (
+                posts
+                  .filter(p => 
+                    p.category_name?.toLowerCase() === "announcement" || 
+                    p.CATEGORY_NAME?.toLowerCase() === "announcement"
+                  )
+                  .map((post) => (
+                    <PostCard
+                      key={post.post_id}
+                      post={post}
+                      onDelete={handleDeletePost}
+                      isGuidanceStaff={isGuidanceStaff}
+                    />
+                  ))
+              ) : (
+                <p className="no-posts-text">
+                  <span className="no-posts-icon">📢</span>
+                  No announcements yet.
+                </p>
+              )}
+            </div>
+          )}
+
+          {activeTab === 1 && (
+            <div className="posts-container">
+              {posts && posts.some(p => 
+                (p.category_name?.toLowerCase() === "events" || 
+                 p.CATEGORY_NAME?.toLowerCase() === "events")
+              ) ? (
+                posts
+                  .filter(p => 
+                    p.category_name?.toLowerCase() === "events" || 
+                    p.CATEGORY_NAME?.toLowerCase() === "events"
+                  )
+                  .map((post) => (
+                    <PostCard
+                      key={post.post_id}
+                      post={post}
+                      onDelete={handleDeletePost}
+                      isGuidanceStaff={isGuidanceStaff}
+                    />
+                  ))
+              ) : (
+                <p className="no-posts-text">
+                  <span className="no-posts-icon">📅</span>
+                  No events yet.
+                </p>
+              )}
+            </div>
           )}
         </div>
-      )}
-
-      <Tabs
-        tabs={[
-          {
-            label: "Announcements",
-            content: (
-              <div className="posts-container">
-                {posts && posts.some(p => 
-                  (p.category_name?.toLowerCase() === "announcement" || 
-                   p.CATEGORY_NAME?.toLowerCase() === "announcement")
-                ) ? (
-                  posts
-                    .filter(p => 
-                      p.category_name?.toLowerCase() === "announcement" || 
-                      p.CATEGORY_NAME?.toLowerCase() === "announcement"
-                    )
-                    .map((post) => (
-                      <PostCard
-                        key={post.post_id}
-                        post={post}
-                        onDelete={handleDeletePost}
-                        isGuidanceStaff={isGuidanceStaff}
-                      />
-                    ))
-                ) : (
-                  <p className="no-posts-text">No announcements yet.</p>
-                )}
-              </div>
-            ),
-          },
-          {
-            label: "Events",
-            content: (
-              <div className="posts-container">
-                {posts && posts.some(p => 
-                  (p.category_name?.toLowerCase() === "events" || 
-                   p.CATEGORY_NAME?.toLowerCase() === "events")
-                ) ? (
-                  posts
-                    .filter(p => 
-                      p.category_name?.toLowerCase() === "events" || 
-                      p.CATEGORY_NAME?.toLowerCase() === "events"
-                    )
-                    .map((post) => (
-                      <PostCard
-                        key={post.post_id}
-                        post={post}
-                        onDelete={handleDeletePost}
-                        isGuidanceStaff={isGuidanceStaff}
-                      />
-                    ))
-                ) : (
-                  <p className="no-posts-text">No events yet.</p>
-                )}
-              </div>
-            ),
-          },
-        ]}
-        defaultTab={0}
-      />
+      </div>
 
       <CreatePostModal
         newPost={newPost}
