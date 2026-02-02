@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Download } from 'lucide-react';
 import "../../css/ExitInterview.css";
 import "../../css/button/button.css";
 import { API_BASE_URL } from '../../../constants/api';
@@ -289,6 +290,121 @@ const ExitInterview = () => {
     }
   };
 
+  const exportStudentResponse = async (studentId, studentName) => {
+    try {
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!token) {
+        alert('Authentication required');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/exit-interview/student-response`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch student responses');
+      }
+
+      const allResponses = await response.json();
+      
+      // Filter responses for this specific student
+      const studentResponses = allResponses.filter(r => 
+        r.student?.id === studentId && r.responseText && r.responseText.trim() !== ''
+      ).sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+
+      if (studentResponses.length === 0) {
+        alert('No responses found for this student');
+        return;
+      }
+
+      // Generate Excel HTML
+      const htmlContent = `
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Exit Interview Responses - ${studentName}</title>
+            <style>
+              table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; font-weight: bold; }
+              .header { background-color: #16a34a; color: white; }
+            </style>
+          </head>
+          <body>
+            <h2>Exit Interview Response Report</h2>
+            <table>
+              <tr class="header"><td colspan="4"><strong>Student Information</strong></td></tr>
+              <tr>
+                <td><strong>Name:</strong></td>
+                <td>${studentName}</td>
+                <td><strong>Student Number:</strong></td>
+                <td>${studentResponses[0]?.student?.studentNumber || 'N/A'}</td>
+              </tr>
+              <tr>
+                <td><strong>Export Date:</strong></td>
+                <td>${new Date().toLocaleDateString()}</td>
+                <td><strong>Total Responses:</strong></td>
+                <td>${studentResponses.length}</td>
+              </tr>
+              <tr><td colspan="4">&nbsp;</td></tr>
+              <tr class="header">
+                <th>Response #</th>
+                <th>Question</th>
+                <th>Response</th>
+                <th>Date Submitted</th>
+              </tr>
+              ${studentResponses.map((response, index) => `
+                <tr>
+                  <td>${studentResponses.length - index}</td>
+                  <td>${response.question?.questionText || 'N/A'}</td>
+                  <td>${response.responseText}</td>
+                  <td>${new Date(response.submittedDate).toLocaleDateString('en-US', { 
+                    month: 'short', 
+                    day: 'numeric', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}</td>
+                </tr>
+              `).join('')}
+            </table>
+            <p><em>Generated on ${new Date().toLocaleString()}</em></p>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = `${studentName.replace(/\s+/g, '_')}_Exit_Interview_${currentDate}.xls`;
+      link.setAttribute('download', fileName);
+      
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+      
+      console.log(`Excel file exported: ${fileName}`);
+    } catch (error) {
+      console.error('Error exporting student response:', error);
+      alert('Failed to export Excel file. Please try again.');
+    }
+  };
+
   const filteredQuestions = questionsData.filter(item => {
     const searchLower = searchTerm.toLowerCase();
     const staffName = `${item.guidanceStaff?.person?.firstName || ''} ${item.guidanceStaff?.person?.lastName || ''}`.toLowerCase();
@@ -319,7 +435,7 @@ const ExitInterview = () => {
     <div className="page-container">
       <div className="assessment-form-card">
         <h2 className="form-title">Create Exit Interview Questions</h2>
-        <p className="form-description">Add questions for graduating students (Maximum 5 questions)</p>
+        <p className="form-description">Add Questions (Maximum 5 questions)</p>
         
         {error && (
           <div style={{
@@ -517,42 +633,61 @@ const ExitInterview = () => {
                 <table className="appointments-table">
                   <thead>
                     <tr>
+                      <th>Student Name</th>
                       <th>Question</th>
                       <th>Response</th>
                       <th>Response Date</th>
                       <th>Posted By</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredResponses.length === 0 ? (
                       <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
+                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
                           {searchTerm ? 'No responses found matching your search' : 'No student responses yet'}
                         </td>
                       </tr>
                     ) : (
-                      filteredResponses.map((item) => (
-                        <tr key={item.id} className="appointment-row">
-                          <td className="questions-cell" style={{ maxWidth: '250px' }}>
-                            {item.question?.questionText}
-                          </td>
-                          <td className="response-cell" style={{ maxWidth: '300px' }}>
-                            {item.responseText}
-                          </td>
-                          <td className="date-cell">
-                            {new Date(item.submittedDate).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </td>
-                          <td className="counselor-cell">
-                            {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
-                          </td>
-                        </tr>
-                      ))
+                      filteredResponses.map((item) => {
+                        const studentName = `${item.student?.person?.firstName || ''} ${item.student?.person?.middleName || ''} ${item.student?.person?.lastName || ''}`.trim();
+                        
+                        return (
+                          <tr key={item.id} className="appointment-row">
+                            <td className="student-cell">
+                              {studentName}
+                            </td>
+                            <td className="questions-cell" style={{ maxWidth: '250px' }}>
+                              {item.question?.questionText}
+                            </td>
+                            <td className="response-cell" style={{ maxWidth: '300px' }}>
+                              {item.responseText}
+                            </td>
+                            <td className="date-cell">
+                              {new Date(item.submittedDate).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric', 
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="counselor-cell">
+                              {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
+                            </td>
+                            <td className="action-cell">
+                              <button
+                                className="export-button"
+                                onClick={() => exportStudentResponse(item.student?.id, studentName)}
+                                title="Export student responses"
+                              >
+                                <Download size={14} style={{ marginRight: '4px' }} />
+                                Export
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
