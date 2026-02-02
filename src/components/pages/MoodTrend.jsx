@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
 import "../../css/MoodTrend.css";
 import { MOODS_URL } from "../../../constants/api";
-
 
 const EMOTION_COLORS = {
   angry: "emotion-angry",
@@ -16,52 +15,209 @@ const EMOTION_COLORS = {
   hopeful: "emotion-hopeful",
 };
 
-const StudentEntryModal = ({ student, entries, onClose }) => (
-  <div className="modal-card">
-    <div className="modal-header">
-      <h4>Mood Entries for {student?.name}</h4>
-    </div>
-    <div className="modal-body">
-      {entries.length > 0 ? (
-        <ul className="mood-entries">
-          {entries.map((entry) => (
-            <li key={entry.id} className="mood-entry">
-              <div className="entry-row">
-                <span className="entry-label">Emotions:</span>
-                <div className="emotion-bubble-group">
-  {entry.emotions.map((emotion) => (
-    <span
-      key={emotion}
-      className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
-    >
-      {emotion}
-    </span>
-  ))}
-</div>
+const StudentEntryModal = ({ student, entries, onClose }) => {
+  const exportToCSV = () => {
+    try {
+     
+      const csvData = entries.map((entry, index) => ({
+        'Entry #': index + 1,
+        'Date': new Date(entry.entryDate).toLocaleDateString(),
+        'Emotions': entry.emotions.join('; '), 
+        'Notes': (entry.note || 'No notes').replace(/"/g, '""'), 
+        'Risk Level': entry.emotions?.some(e => ["angry", "frustrated", "worried", "sad"].includes(e)) ? 'At Risk' : 'Normal'
+      }));
 
-              </div>
-              <div className="entry-row">
-                <span className="entry-label">Date:</span>
-                <span className="entry-date">
-                  {new Date(entry.entryDate).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="entry-row">
-                <span className="entry-label">Notes:</span>
-                <span className="entry-notes">{entry.note || "No notes"}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p>No mood entries found.</p>
-      )}
+    
+      const headers = ['Entry #', 'Date', 'Emotions', 'Notes', 'Risk Level'];
+      
+      const csvContent = [
+        `Student Information,${student.name},Student Number,${student.studentNumber || 'N/A'}`,
+        `Export Date,${new Date().toLocaleDateString()},Total Entries,${entries.length}`,
+        '', 
+        
+        headers.join(','),
+        
+        ...csvData.map(row => 
+          headers.map(header => {
+            const value = row[header];
+            if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+              return `"${value}"`;
+            }
+            return value;
+          }).join(',')
+        )
+      ].join('\n');
+
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = `${student.name.replace(/\s+/g, '_')}_Mood_History_${currentDate}.csv`;
+      link.setAttribute('download', fileName);
+      
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+      
+      console.log(`CSV file exported: ${fileName}`);
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
+      alert('Failed to export CSV file. Please try again.');
+    }
+  };
+
+  const exportToExcelHTML = () => {
+    try {
+      
+      const htmlContent = `
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Mood History - ${student.name}</title>
+            <style>
+              table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; font-weight: bold; }
+              .header { background-color: #4A9782; color: white; }
+              .at-risk { background-color: #fee2e2; }
+              .normal { background-color: #d1fae5; }
+            </style>
+          </head>
+          <body>
+            <h2>Mood History Report</h2>
+            <table>
+              <tr class="header"><td colspan="5"><strong>Student Information</strong></td></tr>
+              <tr><td><strong>Name:</strong></td><td>${student.name}</td><td><strong>Student Number:</strong></td><td>${student.studentNumber || 'N/A'}</td><td></td></tr>
+              <tr><td><strong>Export Date:</strong></td><td>${new Date().toLocaleDateString()}</td><td><strong>Total Entries:</strong></td><td>${entries.length}</td><td></td></tr>
+              <tr><td colspan="5">&nbsp;</td></tr>
+              <tr class="header">
+                <th>Entry #</th>
+                <th>Date</th>
+                <th>Emotions</th>
+                <th>Notes</th>
+                <th>Risk Level</th>
+              </tr>
+              ${entries
+                .sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate))
+                .map((entry, index) => {
+                  const riskLevel = entry.emotions?.some(e => ["angry", "frustrated", "worried", "sad"].includes(e)) ? 'At Risk' : 'Normal';
+                  const rowClass = riskLevel === 'At Risk' ? 'at-risk' : 'normal';
+                  return `
+                    <tr class="${rowClass}">
+                      <td>${entries.length - index}</td>
+                      <td>${new Date(entry.entryDate).toLocaleDateString()}</td>
+                      <td>${entry.emotions.join(', ')}</td>
+                      <td>${entry.note || 'No notes'}</td>
+                      <td>${riskLevel}</td>
+                    </tr>
+                  `;
+                }).join('')}
+            </table>
+            <p><em>Generated on ${new Date().toLocaleString()}</em></p>
+          </body>
+        </html>
+      `;
+
+
+      const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      const currentDate = new Date().toISOString().split('T')[0];
+      const fileName = `${student.name.replace(/\s+/g, '_')}_Mood_History_${currentDate}.xls`;
+      link.setAttribute('download', fileName);
+      
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+      
+      console.log(`Excel HTML file exported: ${fileName}`);
+    } catch (error) {
+      console.error('Error exporting to Excel HTML:', error);
+      alert('Failed to export Excel file. Please try again.');
+    }
+  };
+
+  return (
+    <div className="modal-card">
+      <div className="modal-header">
+        <h4>Mood Entries for {student?.name}</h4>
+      </div>
+      <div className="modal-body">
+        {entries.length > 0 ? (
+          <>
+            <div className="mood-summary">
+              <p className="summary-text">
+                <strong>Total Entries:</strong> {entries.length} | 
+                <strong> Date Range:</strong> {
+                  entries.length > 0 ? 
+                  `${new Date(Math.min(...entries.map(e => new Date(e.entryDate)))).toLocaleDateString()} - ${new Date(Math.max(...entries.map(e => new Date(e.entryDate)))).toLocaleDateString()}` 
+                  : 'N/A'
+                }
+              </p>
+            </div>
+            <ul className="mood-entries">
+              {entries
+                .sort((a, b) => new Date(b.entryDate) - new Date(a.entryDate))
+                .map((entry, index) => (
+                <li key={entry.id} className="mood-entry">
+                  <div className="entry-header">
+                    <span className="entry-number">Entry #{entries.length - index}</span>
+                    <span className="entry-date">
+                      {new Date(entry.entryDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="entry-row">
+                    <span className="entry-label">Emotions:</span>
+                    <div className="emotion-bubble-group">
+                      {entry.emotions.map((emotion) => (
+                        <span
+                          key={emotion}
+                          className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
+                        >
+                          {emotion}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="entry-row">
+                    <span className="entry-label">Notes:</span>
+                    <span className="entry-notes">{entry.note || "No notes"}</span>
+                  </div>
+                  {entry.emotions?.some(e => ["angry", "frustrated", "worried", "sad"].includes(e)) && (
+                    <div className="risk-indicator">
+                      ⚠️ At Risk
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : (
+          <p>No mood entries found.</p>
+        )}
+      </div>
+      <div className="modal-actions">
+        <button className="filter-button export-button excel" onClick={exportToExcelHTML}>
+          <Download size={14} style={{ marginRight: "6px" }} />
+          Export Excel
+        </button>
+        <button className="filter-button secondary" onClick={onClose}>Close</button>
+      </div>
     </div>
-    <div className="modal-actions">
-      <button className="filter-button secondary" onClick={onClose}>Close</button>
-    </div>
-  </div>
-);
+  );
+};
 
 const MoodTrend = () => {
   const [moodEntries, setMoodEntries] = useState([]);
@@ -142,21 +298,6 @@ const MoodTrend = () => {
     };
   }, [loadMoodEntries]);
 
-  useEffect(() => {
-    loadMoodEntries();
-
-    const handleMoodSubmitted = () => {
-      console.log("Mood entry submitted - reloading data...");
-      loadMoodEntries();
-    };
-
-    window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
-
-    return () => {
-      window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
-    };
-  }, [loadMoodEntries]);
-
   const applyAllFilters = () => {
     let filtered = [...moodEntries];
 
@@ -189,8 +330,6 @@ const MoodTrend = () => {
   };
 
   const filteredEntries = applyAllFilters();
-
-  console.log("Filtered entries count:", filteredEntries.length);
 
   const onSelectStudent = (student, allEntries) => {
     const studentFullName = `${student.person?.firstName || ''} ${student.person?.middleName || ''} ${student.person?.lastName || ''}`.trim();
@@ -343,20 +482,19 @@ const MoodTrend = () => {
                       <td>{student.section?.sectionName || 'N/A'}</td>
                       <td>
                         <div className="emotion-bubble-group">
-  {entry.emotions?.length ? (
-    entry.emotions.map((emotion) => (
-      <span
-        key={emotion}
-        className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
-      >
-        {emotion}
-      </span>
-    ))
-  ) : (
-    <span className="emotion-bubble emotion-default">N/A</span>
-  )}
-</div>
-
+                          {entry.emotions?.length ? (
+                            entry.emotions.map((emotion) => (
+                              <span
+                                key={emotion}
+                                className={`emotion-bubble ${EMOTION_COLORS[emotion] || "emotion-default"}`}
+                              >
+                                {emotion}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="emotion-bubble emotion-default">N/A</span>
+                          )}
+                        </div>
                       </td>
                       <td className="notes-cell">{entry.moodNotes || 'No notes'}</td>
                       <td>{new Date(entry.entryDate).toLocaleDateString()}</td>
