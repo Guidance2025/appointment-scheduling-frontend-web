@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import "../../../../css/admin/CreateAccountModal.css";
+import "../../../../css/button/button.css";
 import { register } from '../../../../service/admin';
 import { ArrowLeft } from 'lucide-react';
 import { FormField } from '../../../../helper/validation/FormField';
@@ -25,11 +26,12 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     "Guidance Facilitator",
   ];
 
-  /**
-   * Validates student number format: CT##-####
-   * @param {string} studentNumber - The student number to validate
-   * @returns {string|null} - Error message or null if valid
-   */
+  const SECTION_NAME_OPTIONS = [
+     "BSIT-101",
+     "BSIT-101",
+  ];
+
+  
   const validateStudentNumber = (studentNumber) => {
     if (!studentNumber || studentNumber.trim() === '') {
       return 'Student number is required';
@@ -69,7 +71,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         return 'Invalid year format. Use CT## (e.g., CT22)';
       }
       
-      // Check suffix (should be exactly 4 digits)
       if (suffix.length !== 4) {
         return 'Student ID must be exactly 4 digits (e.g., CT22-0001)';
       }
@@ -79,10 +80,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       }
     }
 
-    // Additional validation: Check if year is reasonable
     const yearPart = trimmed.substring(2, 4);
     const year = parseInt(yearPart, 10);
-    const currentYear = new Date().getFullYear() % 100; // Get last 2 digits of current year
+    const currentYear = new Date().getFullYear() % 100; 
     
     if (year > currentYear + 1) {
       return `Year cannot be in the future (current year: ${currentYear})`;
@@ -92,7 +92,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       return 'Year seems too old. Please verify the student number';
     }
 
-    return null; // Valid
+    return null;
   };
 
   const initialGuidanceData = useMemo(() => ({
@@ -142,7 +142,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         if (birthYear < 1924) return "Birthdate must be after 1924";
         
         const age = Math.floor((today - birthDate) / (365.25 * 24 * 60 * 60 * 1000));
-        if (age < 18 || age > 100) return "Age must be between 18 and 100 years";
+        if (age < 18 || age > 100) return "Age must be above 18";
         
         return null;
       }
@@ -226,14 +226,10 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     return `${year}-${month}-${day}`;
   };
 
-  /**
-   * Format student number input as user types
-   * Automatically adds dash after CT## and ensures uppercase
-   */
+
   const handleStudentNumberChange = (e) => {
     let value = e.target.value.toUpperCase().trim();
     
-    // Remove any existing dashes first
     value = value.replace(/-/g, '');
     
     if (value && !value.startsWith('CT')) {
@@ -406,7 +402,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   };
 
   const renderGuidanceForm = () => (
-    <div className="registration-form-grid">
+    <div className="registration-form-grid guidance-form">
       <FormField label="Firstname" name="firstname" value={guidanceForm.formData.firstname || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.firstname} />
       <FormField label="Lastname" name="lastname" value={guidanceForm.formData.lastname || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.lastname} />
       <FormField label="MI" name="middlename" value={guidanceForm.formData.middlename || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.middlename} options={{ small: true }} maxLength={1} />
@@ -437,8 +433,10 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
 
       <FormField label="Gender" name="gender" type="select" value={guidanceForm.formData.gender || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Contact Number" name="contactNumber" type="tel" value={guidanceForm.formData.contactNumber || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.contactNumber} />
-      <FormField label="Email" name="email" type="email" value={guidanceForm.formData.email || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.email} />
-      <FormField label="Address" name="address" value={guidanceForm.formData.address || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.address} options={{ fullWidth: true }} />
+      <FormField label="Email" name="email" type="email" 
+      value={guidanceForm.formData.email || ""} 
+      onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} 
+      error={guidanceForm.errors.email} />
       <FormField
           label="Position in Rogationist"
           name="positionInRc"
@@ -446,14 +444,14 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
           value={guidanceForm.formData.positionInRc || ""}
           onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }}
           error={guidanceForm.errors.positionInRc}
-          options={{ fullWidth: true }}
           selectOptions={POSITION_IN_RC_OPTIONS}
         />
+      <FormField label="Address" name="address" value={guidanceForm.formData.address || ""} onChange={(e) => { guidanceForm.handleChange(e); if (globalError) setGlobalError(""); }} error={guidanceForm.errors.address} />
     </div>
   );
 
   const renderStudentForm = () => (
-    <div className="registration-form-grid">
+    <div className="registration-form-grid student-form">
       <FormField 
         label="Student Number" 
         name="studentNumber" 
@@ -493,8 +491,16 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Gender" name="gender" type="select" value={studentForm.formData.gender || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Contact Number" name="contactNumber" type="tel" value={studentForm.formData.contactNumber || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.contactNumber} />
       <FormField label="Email" name="email" type="email" value={studentForm.formData.email || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.email} />
-      <FormField label="Address" name="address" value={studentForm.formData.address || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.address} options={{ fullWidth: true }} />
-      <FormField label="Section Name" name="sectionName" value={studentForm.formData.sectionName || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.sectionName} />
+      <FormField 
+        label="Section Name" 
+        name="sectionName" 
+        type="select"
+        value={studentForm.formData.sectionName || ""} 
+        onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} 
+        error={studentForm.errors.sectionName}
+        selectOptions={SECTION_NAME_OPTIONS}
+      />
+      <FormField label="Address" name="address" value={studentForm.formData.address || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.address} />
       <FormField
         label="Cluster Head"
         name="clusterHead"
@@ -511,7 +517,7 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   return (
     <div className="registration-modal-overlay">
       <div className="registration-modal-content">
-        <h2 className="registration-modal-title">
+        <h2 className="registration-modal-title  " >
           Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
         </h2>
         
@@ -524,11 +530,19 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         <div className="registration-form">
           {currentRole === "GUIDANCE" ? renderGuidanceForm() : renderStudentForm()}
           <div className="registration-form-actions">
-            <button onClick={handleClose} className="registration-cancel-btn" type="button">
+            <button 
+              onClick={handleClose} 
+              className="registration-cancel-btn btn-color-secondary" 
+              type="button"
+            >
               Cancel
             </button>
-            <button onClick={handleSubmit} className="registration-submit-btn" disabled={isProcessing || hasErrors()}>
-              {isProcessing ? "Processing ..." : "Register"}
+            <button 
+              onClick={handleSubmit} 
+              className="registration-submit-btn btn-color-primary" 
+              disabled={isProcessing || hasErrors()}
+            >
+              {isProcessing ? <span className="btn-state-loading"></span> : "Register"}
             </button>
           </div>
         </div>

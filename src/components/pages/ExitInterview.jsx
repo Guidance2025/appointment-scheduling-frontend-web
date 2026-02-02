@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "../../css/ExitInterview.css";
+import "../../css/button/button.css";
 import { API_BASE_URL } from '../../../constants/api';
 import { formatFullDateTimePH } from '../../utils/dateTime';
 
@@ -392,7 +393,7 @@ const ExitInterview = () => {
             Clear
           </button>
           <button 
-            className="action-btn action-btn-post" 
+            className="action-btn action-btn-post btn-color-primary" 
             onClick={handlePost}
             disabled={loading}
           >

@@ -2,6 +2,7 @@ import { useState } from "react";
 import "./../../../../css/ActionModal.css"
 import { deleteGuidanceStaffAccount, deleteStudentAccount } from "../../../../service/admin";
 import UpdateModal from "./UpdateModal";
+import "../../../../css/button/button.css";
 import { X } from "lucide-react";
 import { usePopUp } from "../../../../helper/message/pop/up/provider/PopUpModalProvider";
 import ConfirmDialog from "../../../../helper/ConfirmDialog";
@@ -86,14 +87,14 @@ const ActionModal = ({ isOpen, onClose, selectedUserType, studentNumber,
                     
                     <div className="modal-footer">
                         <button 
-                            className="btn btn-delete" 
+                            className="btn btn-delete btn-color-danger" 
                             disabled={selectedUserData?.isLocked}
                             onClick={handleDeleteClick}
                         > 
                             {selectedUserData?.isLocked ? "Locked" : "Delete"}
                         </button>
                         <button 
-                            className="btn btn-update" 
+                            className="btn btn-update btn-color-primary" 
                             onClick={() => setShowUpdateModal(true)}
                         >
                             Update

@@ -417,11 +417,18 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
     if (isMarkingRead) return;
     const unreadCount = notifications.filter((n) => !n.isRead).length;
     if (unreadCount === 0) return;
+    
     try {
       setIsMarkingRead(true);
       await markNotificationAsRead(userIdRef.current);
-      loadNotifications();
+      
+      // Immediately filter out read notifications from the UI
+      setNotifications(prevNotifications => 
+        prevNotifications.filter(n => n.isRead)
+      );
+      
       fetchUnread();
+      showSuccess("Notifications cleared", "All notifications marked as read", 2000);
     } catch {
       setError("Failed to mark notifications as read");
     } finally {
@@ -455,20 +462,22 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
 
   if (!isOpen) return null;
   
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // Filter to show only UNREAD notifications
+  const unreadNotifications = notifications.filter((n) => !n.isRead);
+  const unreadCount = unreadNotifications.length;
 
-  const latestRescheduleIds = getLatestRescheduleNotifications(notifications);
-  const latestAppointmentIds = getLatestAppointmentRequests(notifications);
+  const latestRescheduleIds = getLatestRescheduleNotifications(unreadNotifications);
+  const latestAppointmentIds = getLatestAppointmentRequests(unreadNotifications);
 
   const now = new Date();
   const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   
-  const newNotifications = notifications.filter(notif => {
+  const newNotifications = unreadNotifications.filter(notif => {
     const notifTime = PHTimeUtils.parseUTCToPH(notif.createdAt);
     return notifTime && notifTime >= last24Hours;
   });
   
-  const earlierNotifications = notifications.filter(notif => {
+  const earlierNotifications = unreadNotifications.filter(notif => {
     const notifTime = PHTimeUtils.parseUTCToPH(notif.createdAt);
     return notifTime && notifTime < last24Hours;
   });
@@ -491,8 +500,10 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
       <div className="notification-modal-content">
         {isLoading ? (
           <div className="notification-loading">Loading notifications...</div>
-        ) : notifications.length === 0 ? (
-          <p className="no-notifications">No new notifications</p>
+        ) : unreadNotifications.length === 0 ? (
+          <div className="no-notifications-container">
+            <p className="no-notifications">All caught up!</p>
+          </div>
         ) : (
           <>
             {newNotifications.length > 0 && (
@@ -507,7 +518,7 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
                       className={getClass(notif)}
                       onClick={() => handleNotificationClick(notif)}
                     >
-                      {!notif.isRead && <div className="notification-unread-dot"></div>}
+                      <div className="notification-unread-dot"></div>
                       <div className="notification-item-content">
                         <p className="notification-type">{getLabel(notif.actionType)}</p>
                         <p className="notification-message">{notif.message || "New notification"}</p>
@@ -584,7 +595,7 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
                       className={getClass(notif)}
                       onClick={() => handleNotificationClick(notif)}
                     >
-                      {!notif.isRead && <div className="notification-unread-dot"></div>}
+                      <div className="notification-unread-dot"></div>
                       <div className="notification-item-content">
                         <p className="notification-type">{getLabel(notif.actionType)}</p>
                         <p className="notification-message">{notif.message || "New notification"}</p>

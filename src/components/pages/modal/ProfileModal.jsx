@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../../../css/ProfileModal.css";
 import "../../../css/Navbar.css";
+import "../../../css/button/button.css";
 import { getProfileByEmployeeNumber, updateCounselorProfile } from "../../../service/counselor";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
 
@@ -240,10 +241,10 @@ const getFullName = () => {
                   </>
                 ) : (
                   <>
-                    <button className="edit-profile" onClick={() => setIsEditing(true)}>
+                    <button className="edit-profile btn-color-primary" onClick={() => setIsEditing(true)}>
                       Edit Profile
                     </button>
-                    <button className="logout" onClick={handleLogout} disabled={isEditing}>
+                    <button className="logout " onClick={handleLogout} disabled={isEditing}>
                       Log Out
                     </button>
                   </>

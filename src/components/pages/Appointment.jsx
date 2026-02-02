@@ -28,8 +28,7 @@ function Appointments() {
       const filteredData = Array.isArray(fetchedData) 
         ? fetchedData.filter(appointment => {
             const isBlocked = appointment.appointmentType?.toUpperCase() === 'AVAILABILITY_BLOCK' || 
-                             appointment.status?.toUpperCase() === 'BLOCKED' || 
-                             appointment.status?.toUpperCase() === 'EXPIRED';
+                             appointment.status?.toUpperCase() === 'BLOCKED';
             return !isBlocked; 
           })
         : [];
