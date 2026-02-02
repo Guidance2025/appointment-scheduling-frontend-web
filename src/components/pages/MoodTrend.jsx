@@ -74,7 +74,6 @@ const MoodTrend = () => {
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState([]);
 
-  // Extract loadMoodEntries as a useCallback to avoid dependency issues
   const loadMoodEntries = useCallback(async () => {
     setLoading(true);
     try {
@@ -102,7 +101,6 @@ const MoodTrend = () => {
       console.log("Processed entries:", entriesArray);
       setMoodEntries(entriesArray);
       
-      // Extract unique sections from the data
       const uniqueSections = new Set();
       entriesArray.forEach(entry => {
         if (entry.student?.section?.sectionName) {
@@ -118,8 +116,6 @@ const MoodTrend = () => {
     }
   }, []);
 
-  // Expose a global function to trigger mood reload from anywhere in the app
-  // This should be called after a mood entry is successfully created
   React.useEffect(() => {
     window.triggerMoodTrendReload = () => {
       console.log("[MoodTrend] Reloading data via triggerMoodTrendReload...");
@@ -132,29 +128,23 @@ const MoodTrend = () => {
   }, [loadMoodEntries]);
 
   useEffect(() => {
-    // Initial load
     loadMoodEntries();
 
-    // Listen for mood submission events
     const handleMoodSubmitted = () => {
       console.log("[MoodTrend] Mood entry submitted - reloading data...");
       loadMoodEntries();
     };
 
-    // Listen for custom event (when mood entries are created elsewhere)
     window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
 
-    // Cleanup listener on unmount
     return () => {
       window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
     };
   }, [loadMoodEntries]);
 
   useEffect(() => {
-    // Initial load
     loadMoodEntries();
 
-    // Listen for mood submission events
     const handleMoodSubmitted = () => {
       console.log("Mood entry submitted - reloading data...");
       loadMoodEntries();
@@ -162,7 +152,6 @@ const MoodTrend = () => {
 
     window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
 
-    // Cleanup listener on unmount
     return () => {
       window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
     };
@@ -171,7 +160,6 @@ const MoodTrend = () => {
   const applyAllFilters = () => {
     let filtered = [...moodEntries];
 
-    // Emotion filter
     if (emotionFilter !== "All") {
       filtered = filtered.filter(entry => 
         entry.emotions && entry.emotions.includes(emotionFilter)
@@ -184,7 +172,6 @@ const MoodTrend = () => {
       );
     }
 
-    // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(entry => {

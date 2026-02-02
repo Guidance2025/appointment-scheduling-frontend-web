@@ -318,7 +318,7 @@ const ExitInterview = () => {
     <div className="page-container">
       <div className="assessment-form-card">
         <h2 className="form-title">Create Exit Interview Questions</h2>
-        <p className="form-description">Add questions for graduating students (Maximum 5 questions)</p>
+        <p className="form-description">Add Questions (Maximum 5 questions)</p>
         
         {error && (
           <div style={{
