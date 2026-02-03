@@ -3,7 +3,8 @@ import { Download } from 'lucide-react';
 import "../../css/ExitInterview.css";
 import "../../css/button/button.css";
 import { API_BASE_URL } from '../../../constants/api';
-import { formatFullDateTimePH } from '../../utils/dateTime';
+import { formatFullDateTimePH, isTodayPH, isThisWeekPH, isThisMonthPH } from '../../utils/dateTime';
+import { usePopUp } from '../../helper/message/pop/up/provider/PopUpModalProvider';
 
 const ExitInterview = () => {
   const [activeTab, setActiveTab] = useState('questions');
@@ -18,8 +19,7 @@ const ExitInterview = () => {
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
   const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
-
-
+  const { showSuccess } = usePopUp();
   useEffect(() => {
     fetchPostedQuestions();
   }, []);
@@ -32,27 +32,15 @@ const ExitInterview = () => {
 
   const filterByDateRange = (dateString, filterType) => {
     if (filterType === 'all') return true;
-    
-    const itemDate = new Date(dateString);
-    const now = new Date();
-    
-    now.setHours(0, 0, 0, 0);
-    itemDate.setHours(0, 0, 0, 0);
-    
+    if (!dateString) return false;
+
     switch (filterType) {
       case 'today':
-        return itemDate.getTime() === now.getTime();
-        
+        return isTodayPH(dateString);
       case 'week':
-        const weekAgo = new Date(now);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return itemDate >= weekAgo;
-        
+        return isThisWeekPH(dateString);
       case 'month':
-        const monthAgo = new Date(now);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return itemDate >= monthAgo;
-        
+        return isThisMonthPH(dateString);
       default:
         return true;
     }
@@ -204,7 +192,7 @@ const ExitInterview = () => {
 
       const data = await response.json();
       console.log('Questions posted successfully:', data);
-      
+      showSuccess('Questions posted successfully!', '', 2000);
       setQuestions(['']);
       setSuccess(`Successfully posted ${data.length} question(s)!`);
       fetchPostedQuestions();
@@ -316,7 +304,6 @@ const ExitInterview = () => {
 
       const allResponses = await response.json();
       
-      // Filter responses for this specific student
       const studentResponses = allResponses.filter(r => 
         r.student?.id === studentId && r.responseText && r.responseText.trim() !== ''
       ).sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
@@ -326,7 +313,6 @@ const ExitInterview = () => {
         return;
       }
 
-      // Generate Excel HTML
       const htmlContent = `
         <html>
           <head>
@@ -351,7 +337,7 @@ const ExitInterview = () => {
               </tr>
               <tr>
                 <td><strong>Export Date:</strong></td>
-                <td>${new Date().toLocaleDateString()}</td>
+                <td>${formatFullDateTimePH(new Date().toISOString())}</td>
                 <td><strong>Total Responses:</strong></td>
                 <td>${studentResponses.length}</td>
               </tr>
@@ -360,24 +346,18 @@ const ExitInterview = () => {
                 <th>Response #</th>
                 <th>Question</th>
                 <th>Response</th>
-                <th>Date Submitted</th>
+                <th>Submitted Date</th>
               </tr>
               ${studentResponses.map((response, index) => `
                 <tr>
                   <td>${studentResponses.length - index}</td>
                   <td>${response.question?.questionText || 'N/A'}</td>
                   <td>${response.responseText}</td>
-                  <td>${new Date(response.submittedDate).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric', 
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}</td>
+                  <td>${formatFullDateTimePH(response.submittedDate)}</td>
                 </tr>
               `).join('')}
             </table>
-            <p><em>Generated on ${new Date().toLocaleString()}</em></p>
+            <p><em>Generated on ${formatFullDateTimePH(new Date().toISOString())}</em></p>
           </body>
         </html>
       `;
@@ -429,7 +409,7 @@ const ExitInterview = () => {
     
     return matchesSearch && matchesDate;
   })
-  .sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
+  .sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
 
   return (
     <div className="page-container">
@@ -636,7 +616,7 @@ const ExitInterview = () => {
                       <th>Student Name</th>
                       <th>Question</th>
                       <th>Response</th>
-                      <th>Response Date</th>
+                      <th>Submitted Date</th>
                       <th>Posted By</th>
                       <th>Action</th>
                     </tr>
@@ -664,13 +644,7 @@ const ExitInterview = () => {
                               {item.responseText}
                             </td>
                             <td className="date-cell">
-                              {new Date(item.submittedDate).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric', 
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                              {formatFullDateTimePH(item.submittedDate)}
                             </td>
                             <td className="counselor-cell">
                               {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
