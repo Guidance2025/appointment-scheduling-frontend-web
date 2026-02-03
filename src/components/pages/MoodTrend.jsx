@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, Download } from "lucide-react";
+import { Search, Download, RefreshCw } from "lucide-react";
 import "../../css/MoodTrend.css";
 import { MOODS_URL } from "../../../constants/api";
 
@@ -229,9 +229,16 @@ const MoodTrend = () => {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState(null);
 
-  const loadMoodEntries = useCallback(async () => {
-    setLoading(true);
+  const loadMoodEntries = useCallback(async (showRefreshIndicator = false) => {
+    if (showRefreshIndicator) {
+      setIsRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
       const token = localStorage.getItem("jwtToken");
       
@@ -246,7 +253,6 @@ const MoodTrend = () => {
       if (!res.ok) {
         console.error("Failed to fetch mood entries. Status:", res.status);
         setMoodEntries([]);
-        setLoading(false);
         return;
       }
       
@@ -254,11 +260,18 @@ const MoodTrend = () => {
       console.log("API Response:", data);
       
       const entriesArray = Array.isArray(data) ? data : [];
-      console.log("Processed entries:", entriesArray);
-      setMoodEntries(entriesArray);
+      
+      // Sort by entry date - newest first
+      const sortedEntries = entriesArray.sort((a, b) => 
+        new Date(b.entryDate) - new Date(a.entryDate)
+      );
+      
+      console.log("Processed entries (sorted newest first):", sortedEntries);
+      setMoodEntries(sortedEntries);
+      setLastRefresh(new Date());
       
       const uniqueSections = new Set();
-      entriesArray.forEach(entry => {
+      sortedEntries.forEach(entry => {
         if (entry.student?.section?.sectionName) {
           uniqueSections.add(entry.student.section.sectionName);
         }
@@ -269,13 +282,14 @@ const MoodTrend = () => {
       setMoodEntries([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
   React.useEffect(() => {
     window.triggerMoodTrendReload = () => {
       console.log("[MoodTrend] Reloading data via triggerMoodTrendReload...");
-      loadMoodEntries();
+      loadMoodEntries(false);
     };
     
     return () => {
@@ -284,19 +298,31 @@ const MoodTrend = () => {
   }, [loadMoodEntries]);
 
   useEffect(() => {
-    loadMoodEntries();
+    // Initial load
+    loadMoodEntries(false);
+
+    // Set up automatic polling every 30 seconds
+    const pollInterval = setInterval(() => {
+      console.log("[MoodTrend] Auto-refreshing mood entries...");
+      loadMoodEntries(true); // Use refresh indicator for auto-refresh
+    }, 30000); // 30 seconds
 
     const handleMoodSubmitted = () => {
       console.log("[MoodTrend] Mood entry submitted - reloading data...");
-      loadMoodEntries();
+      loadMoodEntries(false);
     };
 
     window.addEventListener('moodEntrySubmitted', handleMoodSubmitted);
 
     return () => {
+      clearInterval(pollInterval);
       window.removeEventListener('moodEntrySubmitted', handleMoodSubmitted);
     };
   }, [loadMoodEntries]);
+
+  const handleManualRefresh = () => {
+    loadMoodEntries(true);
+  };
 
   const applyAllFilters = () => {
     let filtered = [...moodEntries];
@@ -415,6 +441,22 @@ const MoodTrend = () => {
             </select>
           </div>
         </div>
+        {lastRefresh && (
+          <div className="last-refresh-indicator">
+            <span className="refresh-time-text">
+              Last updated: {lastRefresh.toLocaleTimeString()} • Auto-refreshes every 30s
+            </span>
+            <button
+              className="refresh-button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              title={lastRefresh ? `Last refreshed: ${lastRefresh.toLocaleTimeString()}` : 'Refresh data'}
+            >
+              <RefreshCw size={14} className={isRefreshing ? 'spinning' : ''} />
+              <span>Refresh</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="appointments-content">

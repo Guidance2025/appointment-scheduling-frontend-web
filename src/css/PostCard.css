@@ -21,7 +21,7 @@
 }
 
 .post-card.post-question {
-  border-left-color: #2196f3;
+  border-left-color: #10b981;
   background: linear-gradient(135deg, rgba(33, 150, 243, 0.03) 0%, white 100%);
 }
 
@@ -142,7 +142,7 @@
 }
 
 .btn-comment {
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
   padding: 12px 18px;
@@ -156,7 +156,7 @@
 }
 
 .btn-comment:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
   transform: translateY(-2px);
 }
@@ -206,7 +206,7 @@
   padding: 14px;
   border-radius: 8px;
   margin-bottom: 10px;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #10b981;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
 }

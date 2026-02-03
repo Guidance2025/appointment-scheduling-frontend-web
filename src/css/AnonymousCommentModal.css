@@ -53,7 +53,7 @@
   align-items: center;
   padding: 28px;
   border-bottom: 2px solid #e2e8f0;
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
   border-radius: 14px 14px 0 0;
 }
 
@@ -93,7 +93,7 @@
 
 .anonymous-notice {
   background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
-  border-left: 4px solid #0284c7;
+  border-left: 4px solid #34d399;
   padding: 14px;
   border-radius: 8px;
   margin: 0 0 24px 0;
@@ -132,7 +132,7 @@
 
 .form-group textarea:focus {
   outline: none;
-  border-color: #2196f3;
+  border-color: #34d399;
   box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
 }
 
@@ -181,18 +181,6 @@
 .btn-secondary:hover:not(:disabled) {
   background-color: #f1f5f9;
   border-color: #94a3b8;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-  box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
-  transform: translateY(-2px);
 }
 
 .btn-primary:disabled,

@@ -18,11 +18,9 @@
   .modal-card {
     background: #ffffff;
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     max-width: 560px;
     width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
     position: relative;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
     animation: modal-pop 0.25s ease;
@@ -48,8 +46,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 2px solid #f1f5f9;
   }
 
@@ -86,7 +84,7 @@
   }
 
   .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     display: flex;
     flex-direction: column;
   }
@@ -99,7 +97,7 @@
     font-size: 13px;
     font-weight: 600;
     color: #374151;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     display: block;
   }
 
@@ -112,7 +110,7 @@
   .modal-card select,
   .modal-card textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 2px solid #e5e7eb;
     border-radius: 8px;
     font-size: 14px;
@@ -152,7 +150,7 @@
   }
 
   .modal-card textarea {
-    min-height: 120px;
+    min-height: 80px;
     resize: vertical;
     line-height: 1.6;
   }
@@ -179,16 +177,16 @@
   .form-row.two-col {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
   .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: 20px;
-    padding-top: 20px;
+    margin-top: 16px;
+    padding-top: 16px;
     border-top: 2px solid #f1f5f9;
   }
 
@@ -250,6 +248,58 @@
     cursor: not-allowed;
   }
 
+  /* Section Selection Styles */
+  .section-select-all {
+    padding: 6px 10px;
+    background: #f9fafb;
+    border-radius: 6px;
+    margin-bottom: 6px;
+  }
+
+  .section-checkbox-container {
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 4px;
+    background: #ffffff;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    padding: 4px 6px;
+    margin-bottom: 1px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  .checkbox-label:hover {
+    background: #f3f4f6;
+  }
+
+  .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    cursor: pointer;
+    accent-color: #34d399;
+  }
+
+  .checkbox-label input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .loading-text {
+    text-align: center;
+    padding: 20px;
+    color: #6b7280;
+    font-size: 14px;
+  }
+
   /* Character counter */
   .modal-card small {
     font-size: 11px;
@@ -297,23 +347,4 @@
       margin-bottom: 16px;
       padding-bottom: 12px;
     }
-  }
-
-  /* Scrollbar styling */
-  .modal-card::-webkit-scrollbar {
-    width: 8px;
-  }
-
-  .modal-card::-webkit-scrollbar-track {
-    background: #f3f4f6;
-    border-radius: 4px;
-  }
-
-  .modal-card::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 4px;
-  }
-
-  .modal-card::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
   }
