@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Search, Download, RefreshCw } from "lucide-react";
 import "../../css/MoodTrend.css";
 import { MOODS_URL } from "../../../constants/api";
+import { formatFullDateTimePH } from "../../utils/dateTime";
 
 const EMOTION_COLORS = {
   angry: "emotion-angry",
@@ -175,7 +176,7 @@ const StudentEntryModal = ({ student, entries, onClose }) => {
                   <div className="entry-header">
                     <span className="entry-number">Entry #{entries.length - index}</span>
                     <span className="entry-date">
-                      {new Date(entry.entryDate).toLocaleDateString()}
+                      {formatFullDateTimePH(entry.entryDate)}
                     </span>
                   </div>
                   <div className="entry-row">
@@ -195,11 +196,6 @@ const StudentEntryModal = ({ student, entries, onClose }) => {
                     <span className="entry-label">Notes:</span>
                     <span className="entry-notes">{entry.note || "No notes"}</span>
                   </div>
-                  {entry.emotions?.some(e => ["angry", "frustrated", "worried", "sad"].includes(e)) && (
-                    <div className="risk-indicator">
-                      ⚠️ At Risk
-                    </div>
-                  )}
                 </li>
               ))}
             </ul>
@@ -261,7 +257,6 @@ const MoodTrend = () => {
       
       const entriesArray = Array.isArray(data) ? data : [];
       
-      // Sort by entry date - newest first
       const sortedEntries = entriesArray.sort((a, b) => 
         new Date(b.entryDate) - new Date(a.entryDate)
       );
@@ -298,10 +293,8 @@ const MoodTrend = () => {
   }, [loadMoodEntries]);
 
   useEffect(() => {
-    // Initial load
     loadMoodEntries(false);
 
-    // Set up automatic polling every 30 seconds
     const pollInterval = setInterval(() => {
       console.log("[MoodTrend] Auto-refreshing mood entries...");
       loadMoodEntries(true); // Use refresh indicator for auto-refresh
@@ -539,7 +532,7 @@ const MoodTrend = () => {
                         </div>
                       </td>
                       <td className="notes-cell">{entry.moodNotes || 'No notes'}</td>
-                      <td>{new Date(entry.entryDate).toLocaleDateString()}</td>
+                      <td>{formatFullDateTimePH(entry.entryDate)}</td>
                     </tr>
                   );
                 })}

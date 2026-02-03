@@ -422,13 +422,11 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
       setIsMarkingRead(true);
       await markNotificationAsRead(userIdRef.current);
       
-      // Immediately filter out read notifications from the UI
       setNotifications(prevNotifications => 
         prevNotifications.filter(n => n.isRead)
       );
       
       fetchUnread();
-      showSuccess("Notifications cleared", "All notifications marked as read", 2000);
     } catch {
       setError("Failed to mark notifications as read");
     } finally {
