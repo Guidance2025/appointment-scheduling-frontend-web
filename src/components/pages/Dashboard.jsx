@@ -42,7 +42,6 @@ const Dashboard = () => {
   const [postToDelete, setPostToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   
-  // Analytics data
   const [selfAssessmentCount, setSelfAssessmentCount] = useState(0);
   const [exitInterviewCount, setExitInterviewCount] = useState(0);
   const [moodTrendCount, setMoodTrendCount] = useState(0);
@@ -86,7 +85,7 @@ const Dashboard = () => {
   const loadSections = async () => {
     try {
       const token = localStorage.getItem("jwtToken");
-      const res = await fetch("http://localhost:8080/api/sections", {
+      const res = await fetch("http://localhost:8080/api/posts/students/section", {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
@@ -107,13 +106,11 @@ const Dashboard = () => {
     }
   };
 
-  // Load analytics data
   const loadAnalytics = async () => {
     const token = localStorage.getItem("jwtToken");
     if (!token) return;
 
     try {
-      // Fetch Self-Assessment responses
       const selfAssessmentRes = await fetch(`${API_BASE_URL}/self-assessment/student-response`, {
         headers: {
           'Content-Type': 'application/json',
@@ -126,7 +123,6 @@ const Dashboard = () => {
         setSelfAssessmentCount(answeredCount);
       }
 
-      // Fetch Exit Interview responses
       const exitInterviewRes = await fetch(`${API_BASE_URL}/exit-interview/student-response`, {
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +135,6 @@ const Dashboard = () => {
         setExitInterviewCount(answeredCount);
       }
 
-      // Fetch Mood Trend entries
       const moodRes = await fetch(MOODS_URL, {
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +146,6 @@ const Dashboard = () => {
         const moodEntries = Array.isArray(moodData) ? moodData : [];
         setMoodTrendCount(moodEntries.length);
 
-        // Calculate mood distribution
         let happy = 0, neutral = 0, sad = 0;
         moodEntries.forEach(entry => {
           const emotions = entry.emotions || [];

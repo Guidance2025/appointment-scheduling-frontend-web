@@ -89,7 +89,7 @@ export const fetchQuoteOfTheDay = async () => {
  * @param {Object} postData - Post data object
  * @param {string} postData.categoryName - Category of the post
  * @param {string} postData.postContent - Content of the post
- * @param {number} postData.sectionId - Single section ID (for Announcement/Events only)
+ * @param {Array<string>} postData.sectionNames - Array of section names to target (empty = all sections)
  */
 export const createPost = async (postData) => {
   try {
@@ -101,17 +101,26 @@ export const createPost = async (postData) => {
 
     console.log("Creating post with data:", postData);
 
+    // Build the request body
+    const requestBody = {
+      categoryName: postData.categoryName,
+      postContent: postData.postContent,
+    };
+
+    // Add sectionNames if provided (empty array means "all sections")
+    if (postData.sectionNames !== undefined) {
+      requestBody.sectionNames = postData.sectionNames;
+    }
+
+    console.log("Request body:", requestBody);
+
     const response = await fetch("http://localhost:8080/api/posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        categoryName: postData.categoryName,
-        postContent: postData.postContent,
-        sectionName: postData.sectionName, 
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -125,6 +134,7 @@ export const createPost = async (postData) => {
     throw error;
   }
 };
+
 /**
  * Delete a post
  */
@@ -190,6 +200,9 @@ export const fetchPostComments = async (postId) => {
   return toJson(res);
 };
 
+/**
+ * Fetch all sections available (returns section names as strings)
+ */
 export const fetchAllSectionsByStudent = async () => {
   try {
     const response = await fetch(FETCH_ALL_SECTIONS_BY_STUDENT, {
@@ -214,6 +227,37 @@ export const fetchAllSectionsByStudent = async () => {
   }
 };
 
+/**
+ * Fetch posts targeted to a specific section
+ * @param {string} sectionName - Name of the section (e.g., "BSCS-1A")
+ * @param {number} limit - Maximum number of posts to return
+ * @returns {Promise} Array of posts with student count
+ */
+export const fetchPostsBySection = async (sectionName, limit = 20) => {
+  try {
+    const response = await fetch(`http://localhost:8080/api/posts/section/${encodeURIComponent(sectionName)}?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to fetch posts by section: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`Posts for section ${sectionName}:`, data);
+    
+    return data;
+  } catch (error) {
+    console.error('Error in fetchPostsBySection:', error);
+    throw error;
+  }
+};
+
 export const normalizePost = (p) => ({
   post_id: p.POST_ID ?? p.post_id ?? p.postId,
   post_content: p.POST_CONTENT ?? p.post_content ?? p.postContent,
@@ -221,7 +265,9 @@ export const normalizePost = (p) => ({
   category_name: p.CATEGORY_NAME ?? p.category_name ?? p.categoryName,
   section_name: p.SECTION_NAME ?? p.section_name ?? p.sectionName,
   organization: p.ORGANIZATION ?? p.organization,
-  posted_by: p.POSTED_BY ?? p.posted_by ?? p.postedBy
+  posted_by: p.POSTED_BY ?? p.posted_by ?? p.postedBy,
+  student_count: p.STUDENT_COUNT ?? p.student_count ?? p.studentCount,
+  target_section: p.TARGET_SECTION ?? p.target_section ?? p.targetSection
 });
 
 export const normalizeCategory = (c) => ({
