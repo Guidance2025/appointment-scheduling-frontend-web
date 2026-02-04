@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "../../../css/ViewStudentInformationModal.css";
 import { formatAppointmentDateTime } from "../../../utils/dateTime";
+import { API_BASE_URL } from "../../../../constants/api";
 
 const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
   const JWT_TOKEN = localStorage.getItem("jwtToken");
@@ -14,7 +15,7 @@ const ViewStudentInfoModal = ({ appointmentId, isOpen, isClose }) => {
         setLoading(true);
         try {
           const response = await fetch(
-            `http://localhost:8080/counselor/${appointmentId}`,
+            `${API_BASE_URL}/counselor/${appointmentId}`,
             {
               method: "GET",
               headers: {

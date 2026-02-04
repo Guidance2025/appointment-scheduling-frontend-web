@@ -6,6 +6,7 @@ import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProv
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import * as PHTimeUtils from '../../../utils/dateTime';
+import { API_BASE_URL } from "../../../../constants/api";
 
 const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [studentNumber, setStudentNumber] = useState("CT");
@@ -152,7 +153,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
       try {
         const response = await fetch(
-          `http://localhost:8080/student/search/${encodeURIComponent(searchQuery)}`,
+          `${API_BASE_URL}/student/search/${encodeURIComponent(searchQuery)}`,
           {
             method: "GET",
             headers: {
@@ -190,7 +191,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/counselor/availability/blocks/${guidanceStaffId}`, {
+      const response = await fetch(`${API_BASE_URL}/counselor/availability/blocks/${guidanceStaffId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -249,7 +250,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
       const day = String(date.getDate()).padStart(2, '0');
       const dateParam = `${year}-${month}-${day}`;
 
-      const res = await fetch(`http://localhost:8080/counselor/booked-slots?date=${encodeURIComponent(dateParam)}`, {
+      const res = await fetch(`${API_BASE_URL}/counselor/booked-slots?date=${encodeURIComponent(dateParam)}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -575,7 +576,7 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
 
     setIsProcessing(true);
     try {
-      const res = await fetch("http://localhost:8080/counselor/create-appointment", {
+      const res = await fetch(`${API_BASE_URL}/counselor/create-appointment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

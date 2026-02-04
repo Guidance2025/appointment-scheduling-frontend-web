@@ -50,14 +50,13 @@
 }
 
 .registration-modal-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #212529;
-  margin-bottom: 14px;
+  margin-bottom: 30px;
   text-align: center;
 }
 
-/* Global error message - styled like appointments error */
 .registration-error-message {
   color: #dc2626;
   background-color: #fee2e2;
@@ -156,19 +155,102 @@
   grid-column: span 2 !important;
 }
 
-/* Student: Section Name takes 1 column (beside Email) */
-.registration-form-grid.student-form > div:has(input[name="sectionName"]) {
+/* Section prefix field takes 1 column */
+.registration-form-grid.student-form .section-prefix-field {
   grid-column: span 1 !important;
 }
 
-/* Student: Address takes 2 columns */
-.registration-form-grid.student-form > div:has(input[name="address"]) {
-  grid-column: span 2 !important;
+/* Section number field takes 1 column */
+.registration-form-grid.student-form .section-number-field {
+  grid-column: span 1 !important;
 }
 
-/* Cluster Head takes full width */
-.registration-form-grid > div:has(select[name="clusterHead"]) {
+/* Cluster Head takes 1 column (3rd column in same row as Section) */
+.registration-form-grid.student-form > div:has(select[name="clusterHead"]) {
+  grid-column: span 1 !important;
+}
+
+/* Student: Address takes full width (3 columns) - appears on its own row */
+.registration-form-grid.student-form > div:has(input[name="address"]) {
   grid-column: 1 / -1 !important;
+}
+
+/* Auto-generated section takes full width */
+.auto-generated-section {
+  grid-column: 1 / -1 !important;
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+  border: 2px solid #91caff;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 8px;
+  animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.auto-generated-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.auto-gen-icon {
+  font-size: 20px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.auto-gen-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1677ff;
+}
+
+.auto-generated-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.auto-gen-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1677ff;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auto-gen-field input {
+  width: 100%;
+  padding: 8px 10px;
+  background: white;
+  border: 1px solid #91caff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0958d9;
+  cursor: not-allowed;
+  text-align: center;
 }
 
 .form-field-wrapper.full-width {
@@ -231,7 +313,40 @@
   padding-right: 36px;
 }
 
-/* Date picker styles - make it pop up without shifting layout */
+/* Section dropdown styling */
+.section-dropdown {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  padding-right: 36px;
+}
+
+.section-dropdown:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.section-dropdown:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Date picker styles */
 .date-picker-wrapper {
   position: relative;
   z-index: 1;
@@ -261,7 +376,6 @@
   border-color: #dc3545;
 }
 
-/* Make calendar pop up as ABSOLUTE overlay - won't push other elements */
 .react-datepicker-wrapper {
   width: 100%;
   position: relative;
@@ -272,7 +386,6 @@
   position: absolute !important;
 }
 
-/* Ensure the popper doesn't create any layout shifts */
 .react-datepicker__tab-loop {
   position: absolute;
 }
@@ -377,7 +490,7 @@
   display: block;
 }
 
-/* Error state for inputs - multiple selectors to catch all cases */
+/* Error state for inputs */
 .error-message + input,
 .error-message + select,
 .error-message + div input,
@@ -389,7 +502,6 @@
   border-color: #dc3545 !important;
 }
 
-/* Target inputs in wrappers that have error messages */
 .form-field-wrapper:has(.error-message) input,
 .form-field-wrapper:has(.error-message) select,
 .registration-form-group:has(.error-message) input,
@@ -397,7 +509,6 @@
   border-color: #dc3545 !important;
 }
 
-/* Direct error class on inputs */
 .registration-form-group input.error,
 .registration-form-group select.error,
 input.error,
@@ -405,11 +516,14 @@ select.error {
   border-color: #dc3545 !important;
 }
 
+.section-dropdown.error {
+  border-color: #dc3545 !important;
+}
+
 .date-picker-input.error {
   border-color: #dc3545 !important;
 }
 
-/* Also catch parent div with error class */
 .error input,
 .error select,
 div.error input,
@@ -437,6 +551,10 @@ div.error select {
     grid-template-columns: 1fr; 
   }
   
+  .auto-generated-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
   .registration-form-group-small,
   .registration-form-group-full { 
     grid-column: span 1; 
@@ -456,6 +574,10 @@ div.error select {
   .registration-modal-content { 
     width: 95%; 
     padding: 28px 24px; 
+  }
+  
+  .auto-generated-grid {
+    grid-template-columns: 1fr;
   }
   
   .registration-submit-btn,

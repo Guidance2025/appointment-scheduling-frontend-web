@@ -86,7 +86,7 @@ const Dashboard = () => {
   const loadSections = async () => {
     try {
       const token = localStorage.getItem("jwtToken");
-      const res = await fetch("http://localhost:8080/api/sections", {
+      const res = await fetch(`${API_BASE_URL}/api/sections`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {

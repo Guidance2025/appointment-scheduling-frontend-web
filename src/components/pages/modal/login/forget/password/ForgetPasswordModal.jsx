@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "../../../../../../css/ForgetPassword.css";
+import { API_BASE_URL } from "../../../../../../../constants/api";
 
-const API_BASE_URL = "http://localhost:8080";
 
 function ForgetPasswordModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
@@ -95,7 +95,7 @@ function ForgetPasswordModal({ isOpen, onClose }) {
             errorMessage = errorData.message || errorMessage;
           }
         } catch (parseError) {
-          // If JSON parsing fails, try to get text
+    
           try {
             const textError = await response.text();
             if (textError) {

@@ -460,7 +460,6 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
 
   if (!isOpen) return null;
   
-  // Filter to show only UNREAD notifications
   const unreadNotifications = notifications.filter((n) => !n.isRead);
   const unreadCount = unreadNotifications.length;
 
