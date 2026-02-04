@@ -88,8 +88,7 @@
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 20px;
+  transition: background-color 0.2s;  
 }
 
 .btn-primary:hover {

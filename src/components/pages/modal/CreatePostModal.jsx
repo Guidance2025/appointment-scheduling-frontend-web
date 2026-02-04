@@ -102,7 +102,6 @@ const CreatePostModal = ({
         "Your post has been successfully created and published to the feed.",
         3000
       );
-      // Reset selections after successful creation
       setSelectedSections([]);
       setSelectAll(false);
     } catch (err) {

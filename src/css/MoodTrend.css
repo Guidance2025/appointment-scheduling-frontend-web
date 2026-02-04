@@ -419,11 +419,11 @@
 }
 
 .last-refresh-indicator .refresh-time-text::before {
-  content: "🔄 ";
+  content: " ";
   margin-right: 4px;
 }
 
-/* New entry animation */
+
 @keyframes slideInFromTop {
   from {
     opacity: 0;
