@@ -250,7 +250,6 @@ const SelfAssessment = () => {
         return;
       }
 
-      // perform request and log for debugging
       console.log('Updating self-assessment question', { questionId, questionText: questionText.trim() });
 
       const response = await fetch(
@@ -266,7 +265,6 @@ const SelfAssessment = () => {
       );
 
       if (!response.ok) {
-        // try to read JSON first, otherwise fallback to text
         let message = 'Failed to update question';
         try {
           const errJson = await response.json();
@@ -276,7 +274,6 @@ const SelfAssessment = () => {
             const errText = await response.text();
             message = errText || message;
           } catch (e2) {
-            // ignore
           }
         }
         throw new Error(message);
@@ -285,7 +282,6 @@ const SelfAssessment = () => {
       const updatedQuestion = await response.json().catch(() => null);
       console.log('Update response', updatedQuestion);
       setSuccess('Question updated successfully!');
-      // refresh the list and close modal only after success
       await fetchPostedQuestions();
       closeEditModal();
 
@@ -551,13 +547,7 @@ const SelfAssessment = () => {
                             {item.responseText}
                           </td>
                           <td className="date-cell">
-                            {new Date(item.responseDate).toLocaleDateString('en-US', { 
-                              month: 'short', 
-                              day: 'numeric', 
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatFullDateTimePH(item.responseDate)}
                           </td>
                           <td className="counselor-cell">
                             {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}

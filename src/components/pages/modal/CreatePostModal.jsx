@@ -112,14 +112,21 @@ const CreatePostModal = ({
     }
   };
 
+  const handleCancel = () => {
+    // Reset selections when canceling
+    setSelectedSections([]);
+    setSelectAll(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="create-post-modal-card">
         <div className="modal-header-row">
           <h2>Create New Post</h2>
-          <button type="button" className="close-btn" onClick={onClose}>
+          <button type="button" className="close-btn" onClick={handleCancel}>
             ×
           </button>
         </div>
@@ -222,6 +229,14 @@ const CreatePostModal = ({
           </div>
 
           <div className="modal-footer">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleCancel}
+              disabled={creating}
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               className="btn-primary"
