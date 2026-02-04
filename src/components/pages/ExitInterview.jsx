@@ -326,7 +326,7 @@ const ExitInterview = () => {
         return;
       }
 
-      // Generate Excel HTML
+  
       const htmlContent = `
         <html>
           <head>
