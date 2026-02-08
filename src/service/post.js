@@ -5,6 +5,7 @@ import {
   CATEGORIES_URL,
   LATEST_POSTS_URL,
   FETCH_ALL_SECTIONS_BY_STUDENT,
+  API_BASE_URL,
 } from "../../constants/api";
 
 // Get auth headers with JWT token
@@ -114,7 +115,7 @@ export const createPost = async (postData) => {
 
     console.log("Request body:", requestBody);
 
-    const response = await fetch("http://localhost:8080/api/posts", {
+    const response = await fetch(`${API_BASE_URL}/api/posts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
