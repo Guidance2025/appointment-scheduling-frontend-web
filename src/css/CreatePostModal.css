@@ -288,6 +288,23 @@ textarea.filter-input:disabled {
   margin-top: 32px;
 }
 
+/* HIGH SPECIFICITY BUTTON STYLES */
+.modal-overlay .create-post-modal-card .modal-footer .btn-primary,
+.modal-overlay .create-post-modal-card .modal-footer .btn-secondary {
+  padding: 12px 24px !important;
+  border-radius: 10px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  height: 48px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  min-width: 120px !important;
+}
 
 
 .filter-button,

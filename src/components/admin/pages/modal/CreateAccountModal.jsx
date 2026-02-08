@@ -16,6 +16,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
   const [globalError, setGlobalError] = useState("");
   const { showSuccess } = usePopUp();
   
+  const [sectionPrefix, setSectionPrefix] = useState("");
+  const [sectionNumber, setSectionNumber] = useState("");
+  
   const CLUSTER_HEAD_OPTIONS = [
     "Ms Darlene Jane Neva Gener",
     "Angelo Nueva"
@@ -26,15 +29,38 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     "Guidance Facilitator",
   ];
 
-  const SECTION_NAME_OPTIONS = [
-     "BSA",
-     "BA",
-     "BIT",
-     "ECE",
-     "IT",
-     "THM"
+  const SECTION_PREFIX_OPTIONS = [
+    "BSA",
+    "BA",
+    "BIT",
+    "ECE",
+    "IT",
+    "HM",
+    "TM",
+    "EDUC"
   ];
 
+  const SECTION_NUMBER_OPTIONS = [
+    "101",
+    "201",
+    "301",
+    "401",
+    "501",
+    "601",
+    "701",
+    "801"
+  ];
+
+  const SECTION_MAPPINGS = {
+    'BSA': { organization: 'JPIA', cluster: 'CBAM', course: 'BSA' },
+    'BA': { organization: 'MERCX', cluster: 'CBAM', course: 'BA' },
+    'HM': { organization: 'THM SOCIETY', cluster: 'CBAM', course: 'BSHM' },
+    'TM': { organization: 'THM SOCIETY', cluster: 'CBAM', course: 'BSTM' },
+    'EDUC': { organization: 'YEC', cluster: 'CETE', course: 'EDUC' },
+    'BIT': { organization: 'RCAITS', cluster: 'CETE', course: 'BIT' },
+    'IT': { organization: 'ROCS', cluster: 'CETE', course: 'BSIT' },
+    'ECE': { organization: 'ELITES', cluster: 'CETE', course: 'BSECE' }
+  };
   
   const validateStudentNumber = (studentNumber) => {
     if (!studentNumber || studentNumber.trim() === '') {
@@ -43,16 +69,13 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
 
     const trimmed = studentNumber.trim().toUpperCase();
 
-    // Check if it starts with CT
     if (!trimmed.startsWith('CT')) {
       return 'Student number must start with "CT"';
     }
 
-    // Full regex pattern: CT + 2 digits + dash + 4 digits
     const pattern = /^CT\d{2}-\d{4}$/;
     
     if (!pattern.test(trimmed)) {
-      // More specific error messages
       if (!trimmed.includes('-')) {
         return 'Student number must include a dash (e.g., CT22-0001)';
       }
@@ -63,10 +86,9 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         return 'Invalid format. Use CT##-#### (e.g., CT22-0001)';
       }
       
-      const prefix = parts[0]; // CT##
-      const suffix = parts[1]; // ####
+      const prefix = parts[0];
+      const suffix = parts[1];
       
-      // Check prefix (should be CT + 2 digits)
       if (prefix.length !== 4) {
         return 'Year must be 2 digits (e.g., CT22-0001)';
       }
@@ -122,7 +144,10 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     email: "",
     address: "",
     sectionName: "",
-    clusterHead: ""
+    clusterHead: "",
+    organization: "",
+    clusterName: "",
+    course: ""
   }), [formKey]);
 
   const guidanceForm = useFormValidation(initialGuidanceData);
@@ -216,11 +241,52 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       }
       setFormKey(prev => prev + 1);
       setGlobalError("");
+      setSectionPrefix("");
+      setSectionNumber("");
       
       guidanceForm.resetForm();
       studentForm.resetForm();
     }
   }, [isOpen, activeTab]);
+
+  // Auto-generate section name and related fields when prefix or number changes
+  useEffect(() => {
+    if (sectionPrefix && sectionNumber) {
+      const combinedSection = `${sectionPrefix}-${sectionNumber}`;
+      const mapping = SECTION_MAPPINGS[sectionPrefix] || {
+        organization: 'ROCS',
+        cluster: 'CETE',
+        course: sectionPrefix
+      };
+
+      // Update multiple fields at once using handleChange
+      studentForm.handleChange({
+        target: { name: 'sectionName', value: combinedSection }
+      });
+      studentForm.handleChange({
+        target: { name: 'organization', value: mapping.organization }
+      });
+      studentForm.handleChange({
+        target: { name: 'clusterName', value: mapping.cluster }
+      });
+      studentForm.handleChange({
+        target: { name: 'course', value: mapping.course }
+      });
+    } else {
+      studentForm.handleChange({
+        target: { name: 'sectionName', value: "" }
+      });
+      studentForm.handleChange({
+        target: { name: 'organization', value: "" }
+      });
+      studentForm.handleChange({
+        target: { name: 'clusterName', value: "" }
+      });
+      studentForm.handleChange({
+        target: { name: 'course', value: "" }
+      });
+    }
+  }, [sectionPrefix, sectionNumber]);
 
   const formatDateForBackend = (date) => {
     if (!date) return "";
@@ -229,7 +295,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-
 
   const handleStudentNumberChange = (e) => {
     let value = e.target.value.toUpperCase().trim();
@@ -296,7 +361,10 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
           },
           section: {
             sectionName: studentForm.formData.sectionName.trim(),
-            clusterHead: studentForm.formData.clusterHead.trim()
+            clusterHead: studentForm.formData.clusterHead.trim(),
+            organization: studentForm.formData.organization.trim(),
+            clusterName: studentForm.formData.clusterName.trim(),
+            course: studentForm.formData.course.trim()
           }
         }
       };
@@ -341,7 +409,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         studentForm.setErrors({ ...studentForm.errors, studentNumber: 'This student number is already registered' });
         setGlobalError('Student number already exists. Please use a different student number.');
       } else if (upperErrorMessage.includes('SECTION')) {
-        studentForm.setErrors({ ...studentForm.errors, sectionName: 'Error with section information' });
         setGlobalError('There was an issue with the section. Please try again.');
       } else {
         let hasSetError = false;
@@ -373,6 +440,8 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     guidanceForm.resetForm();
     studentForm.resetForm();
     setGlobalError("");
+    setSectionPrefix("");
+    setSectionNumber("");
     setCurrentRole(activeTab === "guidance" ? "GUIDANCE" : "STUDENT");
     onClose();
   };
@@ -495,16 +564,55 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
       <FormField label="Gender" name="gender" type="select" value={studentForm.formData.gender || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.gender} options={{ small: true }} selectOptions={["Male", "Female"]} />
       <FormField label="Contact Number" name="contactNumber" type="tel" value={studentForm.formData.contactNumber || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.contactNumber} />
       <FormField label="Email" name="email" type="email" value={studentForm.formData.email || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.email} />
-      <FormField 
-        label="Section Name" 
-        name="sectionName" 
-        type="select"
-        value={studentForm.formData.sectionName || ""} 
-        onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} 
-        error={studentForm.errors.sectionName}
-        selectOptions={SECTION_NAME_OPTIONS}
-      />
-      <FormField label="Address" name="address" value={studentForm.formData.address || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.address} />
+      
+      {/* Section prefix selector */}
+      <div className="form-field-wrapper section-prefix-field">
+        <label className="form-label">
+          Section <span className="required-asterisk">*</span>
+        </label>
+        {studentForm.errors.sectionName && (
+          <span className="error-message">{studentForm.errors.sectionName}</span>
+        )}
+        <select
+          value={sectionPrefix}
+          onChange={(e) => {
+            setSectionPrefix(e.target.value);
+            if (globalError) setGlobalError("");
+          }}
+          className={`section-dropdown ${studentForm.errors.sectionName ? 'error' : ''}`}
+        >
+          <option value="">Select</option>
+          {SECTION_PREFIX_OPTIONS.map(prefix => (
+            <option key={prefix} value={prefix}>{prefix}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-field-wrapper section-number-field">
+        <label className="form-label">
+          &nbsp;
+        </label>
+        <select
+          value={sectionNumber}
+          onChange={(e) => {
+            setSectionNumber(e.target.value);
+            if (globalError) setGlobalError("");
+          }}
+          className={`section-dropdown ${studentForm.errors.sectionName ? 'error' : ''}`}
+          disabled={!sectionPrefix}
+        >
+
+         <option value="" disabled hidden>
+              Year  
+          </option>
+
+          <option value="">-</option>
+          {SECTION_NUMBER_OPTIONS.map(num => (
+            <option key={num} value={num}>{num}</option>
+          ))}
+        </select>
+      </div>
+
       <FormField
         label="Cluster Head"
         name="clusterHead"
@@ -512,16 +620,17 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
         value={studentForm.formData.clusterHead || ""}
         onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }}
         error={studentForm.errors.clusterHead}
-        options={{ fullWidth: true }}
         selectOptions={CLUSTER_HEAD_OPTIONS}
       />
+
+      <FormField label="Address" name="address" value={studentForm.formData.address || ""} onChange={(e) => { studentForm.handleChange(e); if (globalError) setGlobalError(""); }} error={studentForm.errors.address} />
     </div>
   );
 
   return (
     <div className="registration-modal-overlay">
       <div className="registration-modal-content">
-        <h2 className="registration-modal-title  " >
+        <h2 className="registration-modal-title">
           Register {currentRole === "GUIDANCE" ? "Guidance" : "Student"}
         </h2>
         

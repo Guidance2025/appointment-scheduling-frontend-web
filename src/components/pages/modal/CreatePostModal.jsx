@@ -75,6 +75,13 @@ const CreatePostModal = ({
     }
   };
 
+  const handleCancel = () => {
+    // Reset selections when canceling
+    setSelectedSections([]);
+    setSelectAll(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (

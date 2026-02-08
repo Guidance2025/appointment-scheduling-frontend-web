@@ -38,7 +38,6 @@ function App() {
       <Routes>
         <Route path="/login" element={<GuidanceLogin onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/verification-success" element={<VerificationSuccessPage />} />
-        
         <Route 
           path="/dashboard/MainPage" 
           element={

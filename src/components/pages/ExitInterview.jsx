@@ -313,7 +313,6 @@ const ExitInterview = () => {
         return;
       }
 
-  
       const htmlContent = `
         <html>
           <head>

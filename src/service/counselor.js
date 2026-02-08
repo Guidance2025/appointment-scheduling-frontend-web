@@ -168,13 +168,12 @@ export async function getProfileByEmployeeNumber(employeeNumber){
 }
 
 
-export async function updateCounselorProfile(guidanceStaffId, profileData) {
+export async function updateCounselorProfile(userId, profileData) {
   try {
     const jwtToken = localStorage.getItem("jwtToken");
     
-    console.log("=== UPDATE COUNSELOR PROFILE DEBUG ===");
-    console.log("Guidance Staff ID:", guidanceStaffId);
     console.log("JWT Token exists:", !!jwtToken);
+    console.log("User ID:", userId);
     
     if (!jwtToken) {
       throw new Error("No JWT Token Found. Please log in again.");
@@ -191,7 +190,7 @@ export async function updateCounselorProfile(guidanceStaffId, profileData) {
     console.log("Request Body:", requestBody);
     
 
-    const response = await fetch(`${API_BASE_URL}/counselor-profile/${guidanceStaffId}/profile`, {
+    const response = await fetch(`${API_BASE_URL}/counselor-profile/${userId}/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -219,7 +218,6 @@ export async function updateCounselorProfile(guidanceStaffId, profileData) {
     throw error;
   }
 }
-
 
 const searchStudentNumber  = async (studentNumber) => {
   try {
