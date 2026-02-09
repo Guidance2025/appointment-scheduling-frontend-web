@@ -236,7 +236,7 @@ export const fetchAllSectionsByStudent = async () => {
  */
 export const fetchPostsBySection = async (sectionName, limit = 20) => {
   try {
-    const response = await fetch(`http://localhost:8080/api/posts/section/${encodeURIComponent(sectionName)}?limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}/api/posts/section/${encodeURIComponent(sectionName)}?limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

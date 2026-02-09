@@ -206,7 +206,6 @@ const Dashboard = () => {
     try {
       await deletePost(postToDelete);
       setPosts((prev) => prev.filter((p) => p.post_id !== postToDelete));
-      setIsConfirmOpen(false);  
       setPostToDelete(null); 
     } catch (e) {
       console.error("Delete failed:", e);
