@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import "../../../css/Navbar.css";
 import { getNotificationByUser, markNotificationAsRead } from "../../../service/counselor";
 import { getClass, getLabel } from "../../../helper/NotificationHelper";
-import { listenForForegroundMessages } from "../../../utils/firebase";
 import { API_BASE_URL } from "../../../../constants/api";
 import { usePopUp } from "../../../helper/message/pop/up/provider/PopUpModalProvider";
 import * as PHTimeUtils from "../../../utils/dateTime"; 
@@ -59,13 +58,15 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
   
   const audioRef = useRef(new Audio("/bell/notification-bell.mp3"));
   const userIdRef = useRef(localStorage.getItem("userId"));
+  const fetchUnreadRef = useRef(fetchUnread);
   const { showSuccess, showError } = usePopUp();
 
+  // Keep fetchUnread ref up to date
+  useEffect(() => { fetchUnreadRef.current = fetchUnread; }, [fetchUnread]);
+
+  // Update relative time every minute
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000); 
-    
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000); 
     return () => clearInterval(timer);
   }, []);
 
@@ -74,110 +75,73 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
     const notificationTime = PHTimeUtils.parseUTCToPH(createdAt);
     const diffInSeconds = Math.floor((now - notificationTime) / 1000);
     
-    if (diffInSeconds < 60) {
-      return "Just now";
-    }
+    if (diffInSeconds < 60) return "Just now";
     
     const diffInMinutes = Math.floor(diffInSeconds / 60);
-    if (diffInMinutes < 60) {
-      return diffInMinutes === 1 ? "1 minute ago" : `${diffInMinutes} minutes ago`;
-    }
+    if (diffInMinutes < 60) return diffInMinutes === 1 ? "1 minute ago" : `${diffInMinutes} minutes ago`;
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) {
-      return diffInHours === 1 ? "1 hour ago" : `${diffInHours} hours ago`;
-    }
+    if (diffInHours < 24) return diffInHours === 1 ? "1 hour ago" : `${diffInHours} hours ago`;
     
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) {
-      return diffInDays === 1 ? "Yesterday" : `${diffInDays} days ago`;
-    }
+    if (diffInDays < 7) return diffInDays === 1 ? "Yesterday" : `${diffInDays} days ago`;
     
     const diffInWeeks = Math.floor(diffInDays / 7);
-    if (diffInWeeks < 4) {
-      return diffInWeeks === 1 ? "1 week ago" : `${diffInWeeks} weeks ago`;
-    }
+    if (diffInWeeks < 4) return diffInWeeks === 1 ? "1 week ago" : `${diffInWeeks} weeks ago`;
     
     return PHTimeUtils.formatDatePH(notificationTime);
   };
 
   const getLatestRescheduleNotifications = (notifications) => {
     const rescheduleGroups = {};
-    
     notifications.forEach(notif => {
-      if (notif.actionType === "RESCHEDULE REQUEST" && 
-          notif.appointment?.appointmentId) {
+      if (notif.actionType === "RESCHEDULE REQUEST" && notif.appointment?.appointmentId) {
         const appointmentId = notif.appointment.appointmentId;
-        
-        if (!rescheduleGroups[appointmentId]) {
-          rescheduleGroups[appointmentId] = [];
-        }
+        if (!rescheduleGroups[appointmentId]) rescheduleGroups[appointmentId] = [];
         rescheduleGroups[appointmentId].push(notif);
       }
     });
     
     const latestNotificationIds = new Set();
-    
     Object.values(rescheduleGroups).forEach(group => {
-      group.sort((a, b) => {
-        const timeA = PHTimeUtils.parseUTCToPH(a.createdAt);
-        const timeB = PHTimeUtils.parseUTCToPH(b.createdAt);
-        return timeB - timeA;
-      });
-      
+      group.sort((a, b) => PHTimeUtils.parseUTCToPH(b.createdAt) - PHTimeUtils.parseUTCToPH(a.createdAt));
       if (group.length > 0 && group[0].appointment?.status === "RESCHEDULE_PENDING") {
         latestNotificationIds.add(group[0].notificationId);
       }
     });
-    
     return latestNotificationIds;
   };
 
   const getLatestAppointmentRequests = (notifications) => {
     const appointmentGroups = {};
-    
     notifications.forEach(notif => {
-      if (notif.actionType === "APPOINTMENT_REQUEST" && 
-          notif.appointment?.appointmentId) {
+      if (notif.actionType === "APPOINTMENT_REQUEST" && notif.appointment?.appointmentId) {
         const appointmentId = notif.appointment.appointmentId;
-        
-        if (!appointmentGroups[appointmentId]) {
-          appointmentGroups[appointmentId] = [];
-        }
+        if (!appointmentGroups[appointmentId]) appointmentGroups[appointmentId] = [];
         appointmentGroups[appointmentId].push(notif);
       }
     });
     
     const latestNotificationIds = new Set();
-    
     Object.values(appointmentGroups).forEach(group => {
-      group.sort((a, b) => {
-        const timeA = PHTimeUtils.parseUTCToPH(a.createdAt);
-        const timeB = PHTimeUtils.parseUTCToPH(b.createdAt);
-        return timeB - timeA;
-      });
-      
+      group.sort((a, b) => PHTimeUtils.parseUTCToPH(b.createdAt) - PHTimeUtils.parseUTCToPH(a.createdAt));
       if (group.length > 0 && group[0].appointment?.status === "PENDING") {
         latestNotificationIds.add(group[0].notificationId);
       }
     });
-    
     return latestNotificationIds;
   };
 
   const shouldShowActionButtons = (notification, latestRescheduleIds, latestAppointmentIds) => {
     if (notification.isRead) return false;
-    
     if (notification.actionType === "APPOINTMENT_REQUEST") {
       return notification.appointment?.status === "PENDING" &&
              latestAppointmentIds.has(notification.notificationId);
     }
-    
     if (notification.actionType === "RESCHEDULE REQUEST") {
       return notification.appointment?.status === "RESCHEDULE_PENDING" &&
              latestRescheduleIds.has(notification.notificationId);
     }
-    
     return false;
   };
 
@@ -188,10 +152,7 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
         `${API_BASE_URL}/counselor/${appointmentId}/guidance/response`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_TOKEN}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${JWT_TOKEN}` },
           body: JSON.stringify({ action }),
         }
       );
@@ -208,186 +169,131 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
 
   const handleAcceptAppointment = async (appointmentId) => {
     if (processingIds.has(appointmentId)) return;
-    
     setProcessingIds(prev => new Set(prev).add(appointmentId));
     try {
       setIsDisabled(true);
       await guidanceStaffAppointmentResponse(appointmentId, "ACCEPT");
       showSuccess("Appointment accepted successfully", "Please check your calendar", 2000);
       loadNotifications();
-      fetchUnread();
+      fetchUnreadRef.current();
       if (typeof window.refreshCalendar === "function") window.refreshCalendar();
     } catch (error) {
       if (error.message.includes("not in PENDING status") || error.message.includes("already")) {
         showError("Already Processed", "This appointment has already been handled", 3000);
         loadNotifications();
-        fetchUnread();
+        fetchUnreadRef.current();
       } else {
         showError("Failed to accept appointment", error.message || "Please try again", 3000);
       }
     } finally {
       setIsDisabled(false);
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(appointmentId); return s; });
     }
   };
 
   const handleDeclineAppointment = async (appointmentId) => {
     if (processingIds.has(appointmentId)) return;
-    
     setProcessingIds(prev => new Set(prev).add(appointmentId));
     try {
       setIsDisabled(true);
       await guidanceStaffAppointmentResponse(appointmentId, "DECLINE");
       showSuccess("Appointment declined successfully", "Try again next time!", 2000);
       loadNotifications();
-      fetchUnread();
+      fetchUnreadRef.current();
       if (typeof window.refreshCalendar === "function") window.refreshCalendar();
     } catch (error) {
       if (error.message.includes("not in PENDING status") || error.message.includes("already")) {
         showError("Already Processed", "This appointment has already been handled", 3000);
         loadNotifications();
-        fetchUnread();
+        fetchUnreadRef.current();
       } else {
         showError("Failed to decline appointment", error.message || "Please try again", 3000);
       }
     } finally {
       setIsDisabled(false);
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(appointmentId); return s; });
     }
   };
 
   const handleAcceptReschedule = async (appointmentId) => {
     if (processingIds.has(appointmentId)) return;
-    
     setProcessingIds(prev => new Set(prev).add(appointmentId));
     try {
       setIsDisabled(true);
       const JWT_TOKEN = localStorage.getItem("jwtToken");
-      
       const response = await fetch(
         `${API_BASE_URL}/counselor/${appointmentId}/reschedule/response`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_TOKEN}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${JWT_TOKEN}` },
           body: JSON.stringify({ action: "ACCEPT" }),
         }
       );
-      
       if (!response.ok) {
         const errorText = await response.text();
-        
-        if (errorText.includes("not pending reschedule approval") || 
-            errorText.includes("already") ||
-            errorText.includes("RESCHEDULE_PENDING")) {
+        if (errorText.includes("not pending reschedule approval") || errorText.includes("already") || errorText.includes("RESCHEDULE_PENDING")) {
           showError("Reschedule Already Processed", "This request has already been handled", 3000);
-          loadNotifications();
-          fetchUnread();
-          return;
+          loadNotifications(); fetchUnreadRef.current(); return;
         }
-        
-        if (errorText.includes("TIME SLOT IS BLOCKED") || 
-            errorText.includes("UNAVAILABLE FOR APPOINTMENTS")) {
+        if (errorText.includes("TIME SLOT IS BLOCKED") || errorText.includes("UNAVAILABLE FOR APPOINTMENTS")) {
           showError("Time Slot Unavailable", "The requested time slot is blocked. Please decline and ask student to choose another time.", 4000);
-          loadNotifications();
-          fetchUnread();
-          return;
+          loadNotifications(); fetchUnreadRef.current(); return;
         }
-        
         if (errorText.includes("CONFLICT") || response.status === 409) {
           showError("Schedule Conflict", "This time slot conflicts with another appointment", 3000);
-          loadNotifications();
-          fetchUnread();
-          return;
+          loadNotifications(); fetchUnreadRef.current(); return;
         }
-        
         throw new Error(errorText);
       }
-      
       showSuccess("Reschedule approved successfully", "Appointment time updated", 2000);
       loadNotifications();
-      fetchUnread();
+      fetchUnreadRef.current();
       if (typeof window.refreshCalendar === "function") window.refreshCalendar();
     } catch (error) {
       console.error("Error approving reschedule:", error);
-      
-      if (!error.message.includes("not pending reschedule approval") && 
-          !error.message.includes("already")) {
+      if (!error.message.includes("not pending reschedule approval") && !error.message.includes("already")) {
         showError("Failed to approve reschedule", error.message || "Please try again", 3000);
       }
     } finally {
       setIsDisabled(false);
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(appointmentId); return s; });
     }
   };
 
   const handleDeclineReschedule = async (appointmentId) => {
     if (processingIds.has(appointmentId)) return;
-    
     setProcessingIds(prev => new Set(prev).add(appointmentId));
     try {
       setIsDisabled(true);
       const JWT_TOKEN = localStorage.getItem("jwtToken");
-      
       const response = await fetch(
         `${API_BASE_URL}/counselor/${appointmentId}/reschedule/response`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${JWT_TOKEN}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${JWT_TOKEN}` },
           body: JSON.stringify({ action: "DECLINE" }),
         }
       );
-      
       if (!response.ok) {
         const errorText = await response.text();
-        
-        if (errorText.includes("not pending reschedule approval") || 
-            errorText.includes("already") ||
-            errorText.includes("RESCHEDULE_PENDING")) {
+        if (errorText.includes("not pending reschedule approval") || errorText.includes("already") || errorText.includes("RESCHEDULE_PENDING")) {
           showError("Reschedule Already Processed", "This request has already been handled", 3000);
-          loadNotifications();
-          fetchUnread();
-          return;
+          loadNotifications(); fetchUnreadRef.current(); return;
         }
-        
         throw new Error(errorText);
       }
-      
       showSuccess("Reschedule declined", "Original appointment time maintained", 2000);
       loadNotifications();
-      fetchUnread();
+      fetchUnreadRef.current();
       if (typeof window.refreshCalendar === "function") window.refreshCalendar();
     } catch (error) {
       console.error("Error declining reschedule:", error);
-      
-      if (!error.message.includes("not pending reschedule approval") && 
-          !error.message.includes("already")) {
+      if (!error.message.includes("not pending reschedule approval") && !error.message.includes("already")) {
         showError("Failed to decline reschedule", error.message || "Please try again", 3000);
       }
     } finally {
       setIsDisabled(false);
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(appointmentId); return s; });
     }
   };
 
@@ -417,16 +323,11 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
     if (isMarkingRead) return;
     const unreadCount = notifications.filter((n) => !n.isRead).length;
     if (unreadCount === 0) return;
-    
     try {
       setIsMarkingRead(true);
       await markNotificationAsRead(userIdRef.current);
-      
-      setNotifications(prevNotifications => 
-        prevNotifications.filter(n => n.isRead)
-      );
-      
-      fetchUnread();
+      setNotifications(prev => prev.filter(n => n.isRead));
+      fetchUnreadRef.current();
     } catch {
       setError("Failed to mark notifications as read");
     } finally {
@@ -435,35 +336,49 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
   };
 
   const handleNotificationClick = (notification) => {
-    if (!notification.isRead) console.log("Clicked notification:", notification);
     setSelectedNotification(notification);
   };
 
-  const fetchUnreadRef = useRef(fetchUnread);
-  useEffect(() => { fetchUnreadRef.current = fetchUnread; }, [fetchUnread]);
-
   useEffect(() => {
-    if (typeof window.refreshCalendar === "function") {
-      window.refreshCalendar();
-    }
     loadNotifications();
-    const unsubscribe = listenForForegroundMessages(() => {
-      if (typeof window.refreshCalendar === "function") {
-        window.refreshCalendar();
-      }
+
+    const unsubscribeFCM = listenForForegroundMessages((payload) => {
+      console.log("FCM foreground (modal):", payload);
       audioRef.current.play().catch(() => {});
       loadNotifications();
       fetchUnreadRef.current();
+      if (typeof window.refreshCalendar === "function") window.refreshCalendar();
     });
-    return () => unsubscribe();
+
+    const handleSWMessage = (event) => {
+      if (event.data?.type === "FCM_BACKGROUND_MESSAGE") {
+        console.log("SW background message (modal):", event.data);
+        loadNotifications();
+        fetchUnreadRef.current();
+        if (typeof window.refreshCalendar === "function") window.refreshCalendar();
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleSWMessage);
+    }
+
+    return () => {
+      unsubscribeFCM();
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleSWMessage);
+      }
+    };
+  }, [loadNotifications]); 
+
+  useEffect(() => {
+    if (isOpen) loadNotifications();
   }, [isOpen, loadNotifications]);
 
   if (!isOpen) return null;
   
-  // Filter to show only UNREAD notifications
   const unreadNotifications = notifications.filter((n) => !n.isRead);
   const unreadCount = unreadNotifications.length;
-
   const latestRescheduleIds = getLatestRescheduleNotifications(unreadNotifications);
   const latestAppointmentIds = getLatestAppointmentRequests(unreadNotifications);
 
@@ -479,6 +394,64 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
     const notifTime = PHTimeUtils.parseUTCToPH(notif.createdAt);
     return notifTime && notifTime < last24Hours;
   });
+
+  const renderNotificationItem = (notif) => {
+    const isProcessing = processingIds.has(notif.appointment?.appointmentId);
+    return (
+      <div
+        key={notif.notificationId}
+        className={getClass(notif)}
+        onClick={() => handleNotificationClick(notif)}
+      >
+        <div className="notification-unread-dot"></div>
+        <div className="notification-item-content">
+          <p className="notification-type">{getLabel(notif.actionType)}</p>
+          <p className="notification-message">{notif.message || "New notification"}</p>
+          <p className="notification-time">{getRelativeTime(notif.createdAt)}</p>
+
+          {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
+           notif.actionType === "APPOINTMENT_REQUEST" && (
+            <div className="notification-actions">
+              <button
+                className="notification-accept-btn"
+                onClick={(e) => { e.stopPropagation(); handleAcceptAppointment(notif.appointment.appointmentId); }}
+                disabled={isDisabled || isProcessing}
+              >
+                {isProcessing ? "Processing..." : "Accept"}
+              </button>
+              <button
+                className="notification-decline-btn"
+                onClick={(e) => { e.stopPropagation(); handleDeclineAppointment(notif.appointment.appointmentId); }}
+                disabled={isDisabled || isProcessing}
+              >
+                {isProcessing ? "Processing..." : "Decline"}
+              </button>
+            </div>
+          )}
+
+          {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
+           notif.actionType === "RESCHEDULE REQUEST" && (
+            <div className="notification-actions">
+              <button
+                className="notification-accept-btn"
+                onClick={(e) => { e.stopPropagation(); handleAcceptReschedule(notif.appointment.appointmentId); }}
+                disabled={isDisabled || isProcessing}
+              >
+                {isProcessing ? "Processing..." : "Approve"}
+              </button>
+              <button
+                className="notification-decline-btn"
+                onClick={(e) => { e.stopPropagation(); handleDeclineReschedule(notif.appointment.appointmentId); }}
+                disabled={isDisabled || isProcessing}
+              >
+                {isProcessing ? "Processing..." : "Decline"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="notification-modal">
@@ -507,154 +480,13 @@ const NotificationModal = ({ isOpen, fetchUnread }) => {
             {newNotifications.length > 0 && (
               <>
                 <div className="notification-section-header">New</div>
-                {newNotifications.map((notif) => {
-                  const isProcessing = processingIds.has(notif.appointment?.appointmentId);
-                  
-                  return (
-                    <div
-                      key={notif.notificationId}
-                      className={getClass(notif)}
-                      onClick={() => handleNotificationClick(notif)}
-                    >
-                      <div className="notification-unread-dot"></div>
-                      <div className="notification-item-content">
-                        <p className="notification-type">{getLabel(notif.actionType)}</p>
-                        <p className="notification-message">{notif.message || "New notification"}</p>
-                        
-                        <p className="notification-time">{getRelativeTime(notif.createdAt)}</p>
-
-                        {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
-                         notif.actionType === "APPOINTMENT_REQUEST" && (
-                          <div className="notification-actions">
-                            <button
-                              className="notification-accept-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleAcceptAppointment(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Accept"}
-                            </button>
-                            <button
-                              className="notification-decline-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleDeclineAppointment(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Decline"}
-                            </button>
-                          </div>
-                        )}
-
-                        {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
-                         notif.actionType === "RESCHEDULE REQUEST" && (
-                          <div className="notification-actions">
-                            <button
-                              className="notification-accept-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleAcceptReschedule(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Approve"}
-                            </button>
-                            <button
-                              className="notification-decline-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleDeclineReschedule(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Decline"}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {newNotifications.map(renderNotificationItem)}
               </>
             )}
-
             {earlierNotifications.length > 0 && (
               <>
                 <div className="notification-section-header">Earlier</div>
-                {earlierNotifications.map((notif) => {
-                  const isProcessing = processingIds.has(notif.appointment?.appointmentId);
-                  
-                  return (
-                    <div
-                      key={notif.notificationId}
-                      className={getClass(notif)}
-                      onClick={() => handleNotificationClick(notif)}
-                    >
-                      <div className="notification-unread-dot"></div>
-                      <div className="notification-item-content">
-                        <p className="notification-type">{getLabel(notif.actionType)}</p>
-                        <p className="notification-message">{notif.message || "New notification"}</p>
-                        
-                        <p className="notification-time">{getRelativeTime(notif.createdAt)}</p>
-
-                        {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
-                         notif.actionType === "APPOINTMENT_REQUEST" && (
-                          <div className="notification-actions">
-                            <button
-                              className="notification-accept-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleAcceptAppointment(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Accept"}
-                            </button>
-                            <button
-                              className="notification-decline-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleDeclineAppointment(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Decline"}
-                            </button>
-                          </div>
-                        )}
-
-                        {shouldShowActionButtons(notif, latestRescheduleIds, latestAppointmentIds) && 
-                         notif.actionType === "RESCHEDULE REQUEST" && (
-                          <div className="notification-actions">
-                            <button
-                              className="notification-accept-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleAcceptReschedule(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Approve"}
-                            </button>
-                            <button
-                              className="notification-decline-btn"
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                handleDeclineReschedule(notif.appointment.appointmentId); 
-                              }}
-                              disabled={isDisabled || isProcessing}
-                            >
-                              {isProcessing ? "Processing..." : "Decline"}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                {earlierNotifications.map(renderNotificationItem)}
               </>
             )}
           </>

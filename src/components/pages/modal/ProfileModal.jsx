@@ -10,7 +10,7 @@ const ProfileModal = ({ isOpen, onClose }) => {
   const [loading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const {showSuccess, showError} = usePopUp(false);
+  const { showSuccess, showError } = usePopUp(false);
   
   const [editForm, setEditForm] = useState({
     email: "",
@@ -65,78 +65,81 @@ const ProfileModal = ({ isOpen, onClose }) => {
     }
     return changes;
   };
-
-  const handleSaveProfile = async () => {
-    try {
-      if (!editForm.email.trim()) {
-        showError('Email address is required.', '', 3000);
-        return;
-      }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(editForm.email.trim())) {
-        showError('Please enter a valid email address.', '', 3000);
-        return;
-      }
-
-      if (!editForm.contactNumber.trim()) {
-        showError('Contact number is required.', '', 3000);
-        return;
-      }
-
-      const phoneRegex = /\d{10,}/;
-      if (!phoneRegex.test(editForm.contactNumber.trim().replace(/\D/g, ''))) {
-        showError('Please enter a valid contact number (at least 10 digits).', '', 3000);
-        return;
-      }
-
-      setIsSaving(true);
-      const guidanceStaffId = localStorage.getItem("guidanceStaffId");
-      if (!guidanceStaffId) throw new Error("Guidance Staff ID not found");
-
-      const updatedStaff = await updateCounselorProfile(guidanceStaffId, editForm);
-
-      const newProfileData = {
-        ...profile,
-        email: updatedStaff.person.email,
-        contactNumber: updatedStaff.person.contactNumber
-      };
-      setProfile(newProfileData);
-
-      const newFormData = {
-        email: updatedStaff.person.email,
-        contactNumber: updatedStaff.person.contactNumber
-      };
-      setOriginalForm(newFormData);
-      setEditForm(newFormData);
-
-      setIsEditing(false);
-
-      const changedFields = getChangedFields();
-      const fieldsText = changedFields.length === 1 
-        ? changedFields[0] 
-        : changedFields.join(' and ');
-      
-      showSuccess(
-        "Profile Updated Successfully!", 
-        `Your ${fieldsText} has been updated.`, 
-        3000
-      );
-    } catch (err) {
-      console.error('Profile update error:', err);
-      if (err.message.includes('EMAIL ALREADY EXIST') || 
-          err.message.includes('409') || 
-          err.message.includes('CONFLICT')) {
-        showError('This email address is already in use. Please try a different email.', '', 3000);
-      } else if (err.message.includes('PHONE') || err.message.includes('CONTACT')) {
-        showError('This contact number is already in use. Please try a different number.', '', 3000);
-      } else {
-        showError(err.message || 'Failed to update profile. Please try again.', '', 3000);
-      }
-    } finally {
-      setIsSaving(false);
+const handleSaveProfile = async () => {
+  try {
+    if (!editForm.email.trim()) {
+      showError('Email address is required.', '', 3000);
+      return;
     }
-  };
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(editForm.email.trim())) {
+      showError('Please enter a valid email address.', '', 3000);
+      return;
+    }
+
+    if (!editForm.contactNumber.trim()) {
+      showError('Contact number is required.', '', 3000);
+      return;
+    }
+
+    // Remove non-digit characters
+    const digitsOnly = editForm.contactNumber.trim().replace(/\D/g, '');
+    
+    // Minimum and maximum length validation
+    if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+      showError('Please enter a valid contact number (10-15 digits).', '', 3000);
+      return;
+    }
+
+    setIsSaving(true);
+    const userId = localStorage.getItem("userId");
+    if (!userId) throw new Error("User ID not found");
+
+    const updatedPerson = await updateCounselorProfile(userId, editForm);
+
+    const newProfileData = {
+      ...profile,
+      email: updatedPerson.email,
+      contactNumber: updatedPerson.contactNumber
+    };
+    setProfile(newProfileData);
+
+    const newFormData = {
+      email: updatedPerson.email,
+      contactNumber: updatedPerson.contactNumber
+    };
+    setOriginalForm(newFormData);
+    setEditForm(newFormData);
+
+    setIsEditing(false);
+
+    const changedFields = getChangedFields();
+    const fieldsText = changedFields.length === 1 
+      ? changedFields[0] 
+      : changedFields.join(' and ');
+
+    showSuccess(
+      "Profile Updated Successfully!", 
+      `Your ${fieldsText} has been updated.`, 
+      3000
+    );
+  } catch (err) {
+    console.error('Profile update error:', err);
+    if (err.message.includes('EMAIL ALREADY EXIST') || 
+        err.message.includes('Email Already Exist') ||
+        err.message.includes('409') || 
+        err.message.includes('CONFLICT')) {
+      showError('This email address is already in use. Please try a different email.', '', 3000);
+    } else if (err.message.includes('PHONE') || err.message.includes('CONTACT')) {
+      showError('This contact number is already in use. Please try a different number.', '', 3000);
+    } else {
+      showError(err.message || 'Failed to update profile. Please try again.', '', 3000);
+    }
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   const handleCancelEdit = () => {
     if (profile) {
@@ -153,18 +156,19 @@ const ProfileModal = ({ isOpen, onClose }) => {
     localStorage.removeItem("guidanceStaffId");
     window.location.href = "/GuidanceLogin";
   };
-const getFullName = () => {
-  if (!profile) return "Loading...";
 
-  const capitalize = (str = "") =>
-    str.charAt(0).toUpperCase() + str.slice(1);
+  const getFullName = () => {
+    if (!profile) return "Loading...";
 
-  const firstName = capitalize(profile.firstName);
-  const lastName = capitalize(profile.lastName);
+    const capitalize = (str = "") =>
+      str.charAt(0).toUpperCase() + str.slice(1);
 
-  const parts = [firstName, profile.middleName, lastName].filter(Boolean);
-  return parts.join(" ") || "Unknown User";
-};
+    const firstName = capitalize(profile.firstName);
+    const lastName = capitalize(profile.lastName);
+
+    const parts = [firstName, profile.middleName, lastName].filter(Boolean);
+    return parts.join(" ") || "Unknown User";
+  };
 
   if (!isOpen) return null;
 
@@ -244,7 +248,7 @@ const getFullName = () => {
                     <button className="edit-profile btn-color-primary" onClick={() => setIsEditing(true)}>
                       Edit Profile
                     </button>
-                    <button className="logout " onClick={handleLogout} disabled={isEditing}>
+                    <button className="logout" onClick={handleLogout} disabled={isEditing}>
                       Log Out
                     </button>
                   </>

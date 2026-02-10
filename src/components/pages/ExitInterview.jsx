@@ -6,6 +6,31 @@ import { API_BASE_URL } from '../../../constants/api';
 import { formatFullDateTimePH, isTodayPH, isThisWeekPH, isThisMonthPH } from '../../utils/dateTime';
 import { usePopUp } from '../../helper/message/pop/up/provider/PopUpModalProvider';
 
+const getFriendlyError = (raw = '') => {
+  const msg = typeof raw === 'string' ? raw : JSON.stringify(raw);
+
+  if (msg.includes('EmptyFieldException') || msg.toLowerCase().includes('user id list cannot be empty'))
+    return 'No students found. Please ensure students are enrolled and assigned before posting questions.';
+  if (msg.includes('401') || msg.toLowerCase().includes('unauthorized'))
+    return 'Your session has expired. Please log in again.';
+  if (msg.includes('403') || msg.toLowerCase().includes('forbidden'))
+    return 'You do not have permission to perform this action.';
+  if (msg.includes('404'))
+    return 'The requested resource was not found. Please refresh and try again.';
+  if (msg.includes('409') || msg.toLowerCase().includes('conflict'))
+    return 'A conflict occurred. This question may already exist.';
+  if (msg.includes('500') || msg.toLowerCase().includes('internal server'))
+    return 'No students found. Please ensure students are enrolled and assigned before posting questions.';
+  if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror'))
+    return 'Network error. Please check your connection and try again.';
+  if (msg.toLowerCase().includes('question text cannot be empty'))
+    return 'Question text cannot be empty.';
+  if (msg.trim())
+    return msg;
+
+  return 'Something went wrong. Please try again.';
+};
+
 const ExitInterview = () => {
   const [activeTab, setActiveTab] = useState('questions');
   const [questions, setQuestions] = useState(['']);
@@ -16,8 +41,10 @@ const ExitInterview = () => {
   const [success, setSuccess] = useState('');
   const [questionsData, setQuestionsData] = useState([]);
   const [fetchingQuestions, setFetchingQuestions] = useState(true);
+  const [fetchQuestionsError, setFetchQuestionsError] = useState('');
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
+  const [fetchResponsesError, setFetchResponsesError] = useState('');
   const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
   
   // Student Selection Modal States
@@ -43,49 +70,36 @@ const ExitInterview = () => {
   const filterByDateRange = (dateString, filterType) => {
     if (filterType === 'all') return true;
     if (!dateString) return false;
-
     switch (filterType) {
-      case 'today':
-        return isTodayPH(dateString);
-      case 'week':
-        return isThisWeekPH(dateString);
-      case 'month':
-        return isThisMonthPH(dateString);
-      default:
-        return true;
+      case 'today': return isTodayPH(dateString);
+      case 'week':  return isThisWeekPH(dateString);
+      case 'month': return isThisMonthPH(dateString);
+      default:      return true;
     }
   };
 
   const fetchPostedQuestions = async () => {
     try {
       setFetchingQuestions(true);
+      setFetchQuestionsError('');
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token) {
-        console.log("No token found");
-        setFetchingQuestions(false);
-        return;
-      }
+      if (!token) { setFetchingQuestions(false); return; }
 
-      const response = await fetch(
-        `${API_BASE_URL}/exit-interview/student/all-questions`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/exit-interview/student/all-questions`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch questions');
+        const raw = await response.text().catch(() => '');
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
       setQuestionsData(data);
     } catch (err) {
       console.error('Error fetching questions:', err);
+      setFetchQuestionsError(getFriendlyError(err.message));
     } finally {
       setFetchingQuestions(false);
     }
@@ -94,16 +108,12 @@ const ExitInterview = () => {
   const fetchStudentResponses = async () => {
     try {
       setFetchingResponses(true);
+      setFetchResponsesError('');
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token) {
-        console.log("No token found");
-        setFetchingResponses(false);
-        return;
-      }
+      if (!token) { setFetchingResponses(false); return; }
 
       const response = await fetch(
-        `${API_BASE_URL}/exit-interview/student-response`,
+      `${API_BASE_URL}/exit-interview/student-response`,
         {
           method: 'GET',
           headers: {
@@ -114,14 +124,16 @@ const ExitInterview = () => {
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch responses');
+        const raw = await response.text().catch(() => '');
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      const answeredResponses = data.filter(item => item.responseText && item.responseText.trim() !== '');
-      setResponsesData(answeredResponses);
+      const answered = data.filter(item => item.responseText && item.responseText.trim() !== '');
+      setResponsesData(answered);
     } catch (err) {
       console.error('Error fetching responses:', err);
+      setFetchResponsesError(getFriendlyError(err.message));
     } finally {
       setFetchingResponses(false);
     }
@@ -166,119 +178,21 @@ const ExitInterview = () => {
   };
 
   const handleAddQuestion = () => {
-    if (questions.length >= 5) {
-      setError('You can only create up to 5 questions.');
-      return;
-    }
+    if (questions.length >= 5) { setError('You can only create up to 5 questions.'); return; }
     setQuestions([...questions, '']);
     setError('');
     setSuccess('');
   };
 
   const handleRemoveQuestion = (index) => {
-    if (questions.length > 1) {
-      const newQuestions = questions.filter((_, i) => i !== index);
-      setQuestions(newQuestions);
-    }
+    if (questions.length > 1) setQuestions(questions.filter((_, i) => i !== index));
   };
 
   const handleQuestionChange = (index, value) => {
-    const newQuestions = [...questions];
-    newQuestions[index] = value;
-    setQuestions(newQuestions);
+    const updated = [...questions];
+    updated[index] = value;
+    setQuestions(updated);
   };
-
-  // Open student selection modal
-  const openStudentSelectionModal = async () => {
-    const validQuestions = questions.filter(q => q.trim() !== '');
-
-    if (validQuestions.length === 0) {
-      setError('Please add at least one question.');
-      return;
-    }
-
-    if (validQuestions.length > 5) {
-      setError('You can only create up to 5 questions.');
-      return;
-    }
-
-    setError('');
-    setStudentSelectionModal({ isOpen: true });
-    await fetchAllStudents();
-  };
-
-  // Close student selection modal
-  const closeStudentSelectionModal = () => {
-    setStudentSelectionModal({ isOpen: false });
-    setSelectedStudents([]);
-    setStudentSearchTerm('');
-    setSelectedSection('all');
-  };
-
-  // Get unique sections from all students
-  const getUniqueSections = () => {
-    const sections = allStudents
-      .map(student => student.section?.sectionName)
-      .filter(Boolean);
-    return [...new Set(sections)].sort();
-  };
-
-  // Handle student selection toggle
-  const handleStudentToggle = (studentId) => {
-    setSelectedStudents(prev => {
-      if (prev.includes(studentId)) {
-        return prev.filter(id => id !== studentId);
-      } else {
-        return [...prev, studentId];
-      }
-    });
-  };
-
-  // Select all students in filtered view
-  const handleSelectAll = () => {
-    if (selectedStudents.length === filteredStudents.length) {
-      setSelectedStudents([]);
-    } else {
-      setSelectedStudents(filteredStudents.map(student => student.id));
-    }
-  };
-
-  // Select/Deselect all students in a specific section
-  const handleSelectSection = (sectionName) => {
-    const studentsInSection = allStudents
-      .filter(student => student.section?.sectionName === sectionName)
-      .map(student => student.id);
-    
-    const allSelected = studentsInSection.every(id => selectedStudents.includes(id));
-    
-    if (allSelected) {
-      // Deselect all students in this section
-      setSelectedStudents(prev => prev.filter(id => !studentsInSection.includes(id)));
-    } else {
-      // Select all students in this section
-      setSelectedStudents(prev => {
-        const newSelection = [...prev];
-        studentsInSection.forEach(id => {
-          if (!newSelection.includes(id)) {
-            newSelection.push(id);
-          }
-        });
-        return newSelection;
-      });
-    }
-  };
-
-  // Filter students based on search and section
-  const filteredStudents = allStudents.filter(student => {
-    const searchLower = studentSearchTerm.toLowerCase();
-    const fullName = `${student.person?.firstName || ''} ${student.person?.middleName || ''} ${student.person?.lastName || ''}`.toLowerCase();
-    const studentNumber = student.studentNumber?.toLowerCase() || '';
-    
-    const matchesSearch = fullName.includes(searchLower) || studentNumber.includes(searchLower);
-    const matchesSection = selectedSection === 'all' || student.section?.sectionName === selectedSection;
-    
-    return matchesSearch && matchesSection;
-  });
 
   const handlePost = async () => {
     try {
@@ -288,8 +202,14 @@ const ExitInterview = () => {
 
       const validQuestions = questions.filter(q => q.trim() !== '');
 
-      if (selectedStudents.length === 0) {
-        setError('Please select at least one student.');
+      if (validQuestions.length === 0) {
+        setError('Please add at least one question.');
+        setLoading(false);
+        return;
+      }
+
+      if (validQuestions.length > 5) {
+        setError('You can only create up to 5 questions.');
         setLoading(false);
         return;
       }
@@ -304,8 +224,7 @@ const ExitInterview = () => {
       }
 
       const payload = {
-        questionTexts: validQuestions,
-        studentIds: selectedStudents // Include selected student IDs
+        questionTexts: validQuestions
       };
 
       const response = await fetch(
@@ -316,59 +235,41 @@ const ExitInterview = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload)  
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to post questions');
+        let raw = '';
+        try { raw = await response.text(); } catch (_) {}
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
       console.log('Questions posted successfully:', data);
-      showSuccess(`Questions posted successfully to ${selectedStudents.length} student(s)!`, '', 2000);
+      showSuccess('Questions posted successfully!', '', 2000);
       setQuestions(['']);
       setSuccess(`Successfully posted ${data.length} question(s) to ${selectedStudents.length} student(s)!`);
       closeStudentSelectionModal();
       fetchPostedQuestions();
 
-      setTimeout(() => {
-        setSuccess('');
-        setError('');
-      }, 2000);
-
+      setTimeout(() => { setSuccess(''); setError(''); }, 2000);
     } catch (err) {
       console.error('Error posting questions:', err);
       setError(err.message || 'Failed to post questions. Please try again.');
-    } finally {
+    } finally { 
       setLoading(false);
     }
   };
 
-  const handleClear = () => {
-    setQuestions(['']);
-    setError('');
-    setSuccess('');
-  };
+  const handleClear = () => { setQuestions(['']); setError(''); setSuccess(''); };
+  const handleClearSearch = () => setSearchTerm('');
 
-  const handleClearSearch = () => {
-    setSearchTerm('');
-  };
-
-  const openEditModal = (questionId, questionText) => {
-    setEditModal({ isOpen: true, questionId, questionText });
-  };
-
-  const closeEditModal = () => {
-    setEditModal({ isOpen: false, questionId: null, questionText: '' });
-  };
+  const openEditModal  = (questionId, questionText) => setEditModal({ isOpen: true, questionId, questionText });
+  const closeEditModal = () => setEditModal({ isOpen: false, questionId: null, questionText: '' });
 
   const handleUpdateQuestion = async () => {
-    if (!editModal.questionText.trim()) {
-      setError('Question text cannot be empty');
-      return;
-    }
+    if (!editModal.questionText.trim()) { setError('Question text cannot be empty.'); return; }
 
     const { questionId, questionText } = editModal;
     closeEditModal();
@@ -376,11 +277,7 @@ const ExitInterview = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('jwtToken');
-      
-      if (!token) {
-        setError('No authentication token found');
-        return;
-      }
+      if (!token) { setError('Your session has expired. Please log in again.'); return; }
 
       const response = await fetch(
         `${API_BASE_URL}/exit-interview/questions/${questionId}`,
@@ -390,25 +287,25 @@ const ExitInterview = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ questionText: questionText.trim() })
+          body: JSON.stringify({ questionText: questionText.trim() }) 
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to update question' }));
+        const errorData = await response.json().catch(() => ({ message: 'Failed to update question' }));  
         throw new Error(errorData.message || 'Failed to update question');
       }
 
-      const updatedQuestion = await response.json();
+      const updatedQuestion = await response.json(); 
       setSuccess('Question updated successfully!');
-      fetchPostedQuestions();
+      fetchPostedQuestions();  
 
       setTimeout(() => {
         setSuccess('');
       }, 2000);
     } catch (err) {
       console.error('Error updating question:', err);
-      setError(err.message || 'Failed to update question. Please try again.');
+      setError(getFriendlyError(err.message));
     } finally {
       setLoading(false);
     }
@@ -417,35 +314,25 @@ const ExitInterview = () => {
   const exportStudentResponse = async (studentId, studentName) => {
     try {
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token) {
-        alert('Authentication required');
-        return;
-      }
+      if (!token) { alert('Authentication required. Please log in again.'); return; }
 
-      const response = await fetch(
-        `${API_BASE_URL}/exit-interview/student-response`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/exit-interview/student-response`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch student responses');
+        const raw = await response.text().catch(() => '');
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const allResponses = await response.json();
-      
-      const studentResponses = allResponses.filter(r => 
-        r.student?.id === studentId && r.responseText && r.responseText.trim() !== ''
-      ).sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
+      const studentResponses = allResponses
+        .filter(r => r.student?.id === studentId && r.responseText && r.responseText.trim() !== '')
+        .sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
 
       if (studentResponses.length === 0) {
-        alert('No responses found for this student');
+        alert(`No responses found for ${studentName}.`);
         return;
       }
 
@@ -466,30 +353,23 @@ const ExitInterview = () => {
             <table>
               <tr class="header"><td colspan="4"><strong>Student Information</strong></td></tr>
               <tr>
-                <td><strong>Name:</strong></td>
-                <td>${studentName}</td>
-                <td><strong>Student Number:</strong></td>
-                <td>${studentResponses[0]?.student?.studentNumber || 'N/A'}</td>
+                <td><strong>Name:</strong></td><td>${studentName}</td>
+                <td><strong>Student Number:</strong></td><td>${studentResponses[0]?.student?.studentNumber || 'N/A'}</td>
               </tr>
               <tr>
-                <td><strong>Export Date:</strong></td>
-                <td>${formatFullDateTimePH(new Date().toISOString())}</td>
-                <td><strong>Total Responses:</strong></td>
-                <td>${studentResponses.length}</td>
+                <td><strong>Export Date:</strong></td><td>${formatFullDateTimePH(new Date().toISOString())}</td>
+                <td><strong>Total Responses:</strong></td><td>${studentResponses.length}</td>
               </tr>
               <tr><td colspan="4">&nbsp;</td></tr>
               <tr class="header">
-                <th>Response #</th>
-                <th>Question</th>
-                <th>Response</th>
-                <th>Submitted Date</th>
+                <th>Response #</th><th>Question</th><th>Response</th><th>Submitted Date</th>
               </tr>
-              ${studentResponses.map((response, index) => `
+              ${studentResponses.map((r, i) => `
                 <tr>
-                  <td>${studentResponses.length - index}</td>
-                  <td>${response.question?.questionText || 'N/A'}</td>
-                  <td>${response.responseText}</td>
-                  <td>${formatFullDateTimePH(response.submittedDate)}</td>
+                  <td>${studentResponses.length - i}</td>
+                  <td>${r.question?.questionText || 'N/A'}</td>
+                  <td>${r.responseText}</td>
+                  <td>${formatFullDateTimePH(r.submittedDate)}</td>
                 </tr>
               `).join('')}
             </table>
@@ -502,22 +382,15 @@ const ExitInterview = () => {
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      
-      const currentDate = new Date().toISOString().split('T')[0];
-      const fileName = `${studentName.replace(/\s+/g, '_')}_Exit_Interview_${currentDate}.xls`;
-      link.setAttribute('download', fileName);
-      
+      link.setAttribute('download', `${studentName.replace(/\s+/g, '_')}_Exit_Interview_${new Date().toISOString().split('T')[0]}.xls`);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
       URL.revokeObjectURL(url);
-      
-      console.log(`Excel file exported: ${fileName}`);
-    } catch (error) {
-      console.error('Error exporting student response:', error);
-      alert('Failed to export Excel file. Please try again.');
+    } catch (err) {
+      console.error('Error exporting student response:', err);
+      alert(getFriendlyError(err.message));
     }
   };
 
@@ -527,6 +400,7 @@ const ExitInterview = () => {
     const questionText = item.questionText?.toLowerCase() || '';
     
     const matchesSearch = staffName.includes(searchLower) || questionText.includes(searchLower);
+    
     const matchesDate = filterByDateRange(item.dateCreated, filterDate);
     
     return matchesSearch && matchesDate;
@@ -539,56 +413,64 @@ const ExitInterview = () => {
     const responseText = item.responseText?.toLowerCase() || '';
     
     const matchesSearch = questionText.includes(searchLower) || responseText.includes(searchLower);
+    
     const matchesDate = filterByDateRange(item.submittedDate, filterDate);
     
     return matchesSearch && matchesDate;
   })
   .sort((a, b) => new Date(b.submittedDate) - new Date(a.submittedDate));
 
+  const EmptyState = ({ icon, title, subtitle, colSpan = 6 }) => (
+    <tr>
+      <td colSpan={colSpan} style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>{icon}</div>
+        <div style={{ fontWeight: '600', color: '#374151', marginBottom: '4px' }}>{title}</div>
+        {subtitle && <div style={{ fontSize: '13px', color: '#6B7280' }}>{subtitle}</div>}
+      </td>
+    </tr>
+  );
+
+  const ErrorState = ({ message, onRetry, colSpan = 6 }) => (
+    <tr>
+      <td colSpan={colSpan} style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>⚠️</div>
+        <div style={{ fontWeight: '600', color: '#DC2626', marginBottom: '4px' }}>Failed to load data</div>
+        <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>{message}</div>
+        {onRetry && (
+          <button onClick={onRetry} style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontSize: '13px' }}>
+            Try again
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+
   return (
     <div className="page-container">
       <div className="assessment-form-card">
         <h2 className="form-title">Create Exit Interview Questions</h2>
         <p className="form-description">Add Questions (Maximum 5 questions)</p>
-        
+
         {error && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: '#fee',
-            border: '1px solid #fcc',
-            borderRadius: '4px',
-            color: '#c33'
-          }}>
-            {error}
+          <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span></span>
+            <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', color: '#15803D', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span></span>
+            <span>{success}</span>
           </div>
         )}
 
-        {success && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: '#d4edda',
-            border: '1px solid #c3e6cb',
-            borderRadius: '4px',
-            color: '#155724'
-          }}>
-            {success}
-          </div>
-        )}
-        
         <div className="questions-list">
           {questions.map((question, index) => (
             <div key={index} className="question-item">
               <div className="question-header">
                 <label className="question-label">Question {index + 1}</label>
                 {questions.length > 1 && (
-                  <button
-                    className="remove-question-btn"
-                    onClick={() => handleRemoveQuestion(index)}
-                  >
-                    ✕
-                  </button>
+                  <button className="remove-question-btn" onClick={() => handleRemoveQuestion(index)}>✕</button>
                 )}
               </div>
               <textarea
@@ -602,14 +484,11 @@ const ExitInterview = () => {
           ))}
         </div>
 
-        <button 
-          className="add-question-btn" 
+        <button
+          className="add-question-btn"
           onClick={handleAddQuestion}
           disabled={questions.length >= 5}
-          style={{
-            opacity: questions.length >= 5 ? 0.5 : 1,
-            cursor: questions.length >= 5 ? 'not-allowed' : 'pointer'
-          }}
+          style={{ opacity: questions.length >= 5 ? 0.5 : 1, cursor: questions.length >= 5 ? 'not-allowed' : 'pointer' }}
         >
           + Add Question {questions.length >= 5 && '(Maximum reached)'}
         </button>
@@ -624,30 +503,26 @@ const ExitInterview = () => {
           </button>
           <button 
             className="action-btn action-btn-post btn-color-primary" 
-            onClick={openStudentSelectionModal}
+            onClick={handlePost}
             disabled={loading}
           >
-            Post Exit Interview
+            {loading ? 'Posting...' : 'Post Exit Interview'}
           </button>
         </div>
       </div>
 
+      {/* ── Tabs ── */}
       <div className="assessment-tabs-container">
         <div className="tabs-header">
-          <button
-            className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('questions')}
-          >
-            Posted Questions  
+          <button className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`} onClick={() => setActiveTab('questions')}>
+            Posted Questions
           </button>
-          <button
-            className={`tab-button ${activeTab === 'responses' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('responses')}
-          >
+          <button className={`tab-button ${activeTab === 'responses' ? 'tab-active' : ''}`} onClick={() => setActiveTab('responses')}>
             Student Responses
           </button>
         </div>
 
+        {/* Filter bar */}
         <div className="assessment-filter-bar">
           <div className="assessment-filter-row">
             <div className="assessment-filter-group assessment-search-group">
@@ -661,20 +536,13 @@ const ExitInterview = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>
-                    ✕
-                  </button>
+                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>✕</button>
                 )}
               </div>
             </div>
-
             <div className="assessment-filter-group assessment-date-group">
               <label className="assessment-filter-label">Date Range</label>
-              <select
-                className="assessment-filter-select"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              >
+              <select className="assessment-filter-select" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
@@ -684,13 +552,12 @@ const ExitInterview = () => {
           </div>
         </div>
 
+        {/* Table content */}
         <div className="appointments-content">
           {activeTab === 'questions' ? (
             <div className="appointments-table-container">
               {fetchingQuestions ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  Loading questions...
-                </div>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>Loading questions…</div>
               ) : (
                 <table className="appointments-table">
                   <thead>
@@ -702,24 +569,27 @@ const ExitInterview = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredQuestions.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
-                          {searchTerm ? 'No questions found matching your search' : 'No questions posted yet'}
-                        </td>
-                      </tr>
+                    {fetchQuestionsError ? (
+                      <ErrorState message={fetchQuestionsError} onRetry={fetchPostedQuestions} colSpan={4} />
+                    ) : filteredQuestions.length === 0 ? (
+                      <EmptyState
+                        colSpan={4}
+                        icon="📋"
+                        title={searchTerm ? 'No matching questions found' : 'No questions posted yet'}
+                        subtitle={
+                          searchTerm
+                            ? `No questions match "${searchTerm}". Try a different search term.`
+                            : 'Create your first exit interview question using the form above.'
+                        }
+                      />
                     ) : (
                       filteredQuestions.map((item) => (
                         <tr key={item.id} className="appointment-row">
-                          <td className="questions-cell">
-                            {item.questionText}
-                          </td>
+                          <td className="questions-cell">{item.questionText}</td>
                           <td className="counselor-cell">
                             {item.guidanceStaff?.person?.firstName} {item.guidanceStaff?.person?.lastName}
                           </td>
-                          <td className="date-cell">
-                            {formatFullDateTimePH(item.dateCreated)}
-                          </td>
+                          <td className="date-cell">{formatFullDateTimePH(item.dateCreated)}</td>
                           <td className="action-cell">
                             <button
                               className="update-button"
@@ -740,9 +610,7 @@ const ExitInterview = () => {
           ) : (
             <div className="appointments-table-container">
               {fetchingResponses ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  Loading responses...
-                </div>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>Loading responses…</div>
               ) : (
                 <table className="appointments-table">
                   <thead>
@@ -756,30 +624,28 @@ const ExitInterview = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredResponses.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                          {searchTerm ? 'No responses found matching your search' : 'No student responses yet'}
-                        </td>
-                      </tr>
+                    {fetchResponsesError ? (
+                      <ErrorState message={fetchResponsesError} onRetry={fetchStudentResponses} colSpan={6} />
+                    ) : filteredResponses.length === 0 ? (
+                      <EmptyState
+                        colSpan={6}
+                        icon="💬"
+                        title={searchTerm ? 'No matching responses found' : 'No student responses yet'}
+                        subtitle={
+                          searchTerm
+                            ? `No responses match "${searchTerm}". Try a different search term.`
+                            : 'Student responses will appear here once they answer posted questions.'
+                        }
+                      />
                     ) : (
                       filteredResponses.map((item) => {
                         const studentName = `${item.student?.person?.firstName || ''} ${item.student?.person?.middleName || ''} ${item.student?.person?.lastName || ''}`.trim();
-                        
                         return (
                           <tr key={item.id} className="appointment-row">
-                            <td className="student-cell">
-                              {studentName}
-                            </td>
-                            <td className="questions-cell" style={{ maxWidth: '250px' }}>
-                              {item.question?.questionText}
-                            </td>
-                            <td className="response-cell" style={{ maxWidth: '300px' }}>
-                              {item.responseText}
-                            </td>
-                            <td className="date-cell">
-                              {formatFullDateTimePH(item.submittedDate)}
-                            </td>
+                            <td className="student-cell">{studentName}</td>
+                            <td className="questions-cell" style={{ maxWidth: '250px' }}>{item.question?.questionText}</td>
+                            <td className="response-cell" style={{ maxWidth: '300px' }}>{item.responseText}</td>
+                            <td className="date-cell">{formatFullDateTimePH(item.submittedDate)}</td>
                             <td className="counselor-cell">
                               {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
                             </td>
@@ -804,286 +670,51 @@ const ExitInterview = () => {
           )}
         </div>
       </div>
-
-      {/* Student Selection Modal */}
-      {studentSelectionModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '700px', width: '90%' }}>
-            <div className="modal-header-row">
-              <h2>Select Students</h2>
-              <button className="close-btn" onClick={closeStudentSelectionModal}>×</button>
-            </div>
-            
-            <div className="modal-body">
-              {/* Search, Section Filter, and Select All */}
-              <div style={{ marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-                  <div className="input-with-clear" style={{ flex: 2 }}>
-                    <input
-                      type="text"
-                      className="table-input"
-                      placeholder="Search by name or student number..."
-                      value={studentSearchTerm}
-                      onChange={(e) => setStudentSearchTerm(e.target.value)}
-                    />
-                    {studentSearchTerm && (
-                      <button 
-                        className="clear-filter-icon"
-                        onClick={() => setStudentSearchTerm('')}
-                        style={{
-                          position: 'absolute',
-                          right: '12px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          color: '#6b7280',
-                          cursor: 'pointer',
-                          fontSize: '18px'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  
-                  <select
-                    className="table-input"
-                    value={selectedSection}
-                    onChange={(e) => setSelectedSection(e.target.value)}
-                    style={{ flex: 1, cursor: 'pointer' }}
-                  >
-                    <option value="all">All Sections</option>
-                    {getUniqueSections().map(section => (
-                      <option key={section} value={section}>{section}</option>
-                    ))}
-                  </select>
-                  
-                  <button 
-                    className="btn-green-outline"
-                    onClick={handleSelectAll}
-                    style={{ whiteSpace: 'nowrap' }}
-                  >
-                    {selectedStudents.length === filteredStudents.length && filteredStudents.length > 0 
-                      ? 'Deselect All' 
-                      : 'Select All'}
-                  </button>
-                </div>
-                
-                {/* Section Quick Select Buttons */}
-                {getUniqueSections().length > 0 && (
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '8px',
-                    marginBottom: '12px',
-                    padding: '12px',
-                    background: '#f8fafc',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#374151',
-                      alignSelf: 'center',
-                      marginRight: '8px'
-                    }}>
-                      Quick Select:
-                    </span>
-                    {getUniqueSections().map(section => {
-                      const studentsInSection = allStudents.filter(s => s.section?.sectionName === section);
-                      const selectedInSection = studentsInSection.filter(s => selectedStudents.includes(s.id)).length;
-                      const allSelected = selectedInSection === studentsInSection.length && studentsInSection.length > 0;
-                      
-                      return (
-                        <button
-                          key={section}
-                          onClick={() => handleSelectSection(section)}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            border: `2px solid ${allSelected ? '#16a34a' : '#cbd5e0'}`,
-                            background: allSelected ? '#16a34a' : 'white',
-                            color: allSelected ? 'white' : '#374151',
-                            fontSize: '13px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            whiteSpace: 'nowrap'
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!allSelected) {
-                              e.target.style.borderColor = '#16a34a';
-                              e.target.style.background = '#f0fdf4';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!allSelected) {
-                              e.target.style.borderColor = '#cbd5e0';
-                              e.target.style.background = 'white';
-                            }
-                          }}
-                        >
-                          {section} ({selectedInSection}/{studentsInSection.length})
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                
-                <div style={{
-                  fontSize: '14px',
-                  color: '#6b7280',
-                  padding: '8px 12px',
-                  background: '#f8fafc',
-                  borderRadius: '6px'
-                }}>
-                  {selectedStudents.length} of {filteredStudents.length} students selected
-                  {selectedSection !== 'all' && ` in ${selectedSection}`}
-                </div>
-              </div>
-
-              {/* Students List */}
-              <div style={{
-                maxHeight: '400px',
-                overflowY: 'auto',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                padding: '8px'
-              }}>
-                {fetchingStudents ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    Loading students...
-                  </div>
-                ) : filteredStudents.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                    {studentSearchTerm ? 'No students found matching your search' : 'No students available'}
-                  </div>
-                ) : (
-                  filteredStudents.map((student) => {
-                    const fullName = `${student.person?.firstName || ''} ${student.person?.middleName || ''} ${student.person?.lastName || ''}`.trim();
-                    const isSelected = selectedStudents.includes(student.id);
-                    
-                    return (
-                      <div
-                        key={student.id}
-                        onClick={() => handleStudentToggle(student.id)}
-                        style={{
-                          padding: '12px 14px',
-                          marginBottom: '6px',
-                          border: `2px solid ${isSelected ? '#16a34a' : '#e2e8f0'}`,
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          background: isSelected ? '#f0fdf4' : 'white',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '12px'
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => {}}
-                          className="table-checkbox"
-                          style={{ cursor: 'pointer' }}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            fontWeight: '600',
-                            color: '#111827',
-                            marginBottom: '2px'
-                          }}>
-                            {fullName}
-                          </div>
-                          <div style={{
-                            fontSize: '13px',
-                            color: '#6b7280',
-                            display: 'flex',
-                            gap: '12px'
-                          }}>
-                            <span>Student #: {student.studentNumber}</span>
-                            {student.section?.sectionName && (
-                              <>
-                                <span>•</span>
-                                <span>Section: {student.section.sectionName}</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button 
-                className="btn-cancel" 
-                onClick={closeStudentSelectionModal}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-save" 
-                onClick={handlePost}
-                disabled={loading || selectedStudents.length === 0}
-              >
-                {loading ? 'Posting...' : `Post to ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     
-      {/* Edit Question Modal */}
-      {editModal.isOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card edit-modal">
-            <div className="modal-header-row">
-              <h2>Edit Question</h2>
-              <button className="close-btn" onClick={closeEditModal}>×</button>
-            </div>
-            <div className="modal-body">
-              <div className="form-group">
-                <label htmlFor="edit-question-text">Question Text</label>
-                <textarea
-                  id="edit-question-text"
-                  className="edit-textarea"
-                  value={editModal.questionText}
-                  onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
-                  rows={6}
-                  placeholder="Enter your question here..."
-                />
-                {editModal.questionText && !editModal.questionText.trim() && (
-                  <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>
-                )}
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn-cancel" 
-                onClick={closeEditModal}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-save" 
-                onClick={handleUpdateQuestion}
-                disabled={loading || !editModal.questionText.trim()}
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
-              </button>
-            </div>
+    {editModal.isOpen && (
+    <div className="modal-overlay">
+      <div className="modal-card edit-modal">
+        <div className="modal-header-row">
+          <h2>Edit Question</h2>
+          <button className="close-btn" onClick={closeEditModal}>×</button>
+        </div>
+        <div className="modal-body">
+          <div className="form-group">
+            <label htmlFor="edit-question-text">Question Text</label>
+            <textarea
+              id="edit-question-text"
+              className="edit-textarea"
+              value={editModal.questionText}
+              onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
+              rows={6}
+              placeholder="Enter your question here..."
+            />
+            {editModal.questionText && !editModal.questionText.trim() && (
+              <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>  
+            )}
           </div>
         </div>
-      )}
+        <div className="modal-footer">
+          <button 
+            className="btn-cancel" 
+            onClick={closeEditModal}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button 
+            className="btn-save" 
+            onClick={handleUpdateQuestion}
+            disabled={loading || !editModal.questionText.trim()}  
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+    )}
     </div>
   );
-}
+};
 
 export default ExitInterview;

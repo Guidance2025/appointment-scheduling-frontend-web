@@ -1,12 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging"; 
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBNDQ1AFffA1gBH6tqNSzWMS9Gk5v4V-8M",
   authDomain: "appointment-notification-cc54d.firebaseapp.com",
-storageBucket: "appointment-notification-cc54d.appspot.com", 
-messagingSenderId: "106572713774",
-projectId: "appointment-notification-cc54d",
+  projectId: "appointment-notification-cc54d",
+  storageBucket: "appointment-notification-cc54d.appspot.com",
+  messagingSenderId: "106572713774",
   appId: "1:106572713774:web:fd87d0ea8dfa87c9bf74bf",
   measurementId: "G-KM3T6ZDKXB"
 };
@@ -16,20 +16,23 @@ const VAPID_KEY = "BD9gstUBvsx9KLRfJI7htCdgn0L4DFMKPs6_sAGJsaarvQlZYxRXV4ato3xa5
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
+// ✅ FIXED: Does NOT request permission here.
+// Permission is requested in NotificationPrompt via user click.
+// This function only runs after permission is already granted.
 export const requestForToken = async () => {
   try {
     if (!("Notification" in window)) {
-      console.warn("This browser does not support notifications");
+      console.warn("⚠️ This browser does not support notifications");
       return null;
     }
 
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.warn("Notification permission denied");
+    if (Notification.permission !== "granted") {
+      console.warn("⚠️ Permission not granted:", Notification.permission);
       return null;
     }
 
     const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    await navigator.serviceWorker.ready; // Wait for SW to be ready
 
     const fcmToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
@@ -37,14 +40,14 @@ export const requestForToken = async () => {
     });
 
     if (fcmToken) {
-      console.log(" FCM Token (Web):", fcmToken);
+      console.log("✅ FCM Token (Web):", fcmToken);
       return fcmToken;
     } else {
-      console.error(" No registration token available.");
+      console.error("❌ No registration token available.");
       return null;
     }
   } catch (error) {
-    console.error(" An error occurred while retrieving token:", error);
+    console.error("❌ An error occurred while retrieving token:", error);
     return null;
   }
 };
@@ -54,4 +57,4 @@ export const listenForForegroundMessages = (callback) => {
     console.log("Foreground message received:", payload);
     if (callback) callback(payload);
   });
-}
+};

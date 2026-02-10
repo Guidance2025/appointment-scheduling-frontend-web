@@ -4,19 +4,45 @@ import { API_BASE_URL } from '../../../constants/api';
 import "../../css/button/button.css";
 import { convertLocalToUTCISO, formatFullDateTimePH, parseUTCToPH, isTodayPH, isThisWeekPH, isThisMonthPH } from '../../utils/dateTime';
 
+const getFriendlyError = (raw = '') => {
+  const msg = typeof raw === 'string' ? raw : JSON.stringify(raw);
+
+  if (msg.includes('EmptyFieldException') || msg.toLowerCase().includes('user id list cannot be empty'))
+    return 'No students found. Please ensure students are enrolled and assigned before posting questions.';
+  if (msg.includes('401') || msg.toLowerCase().includes('unauthorized'))
+    return 'Your session has expired. Please log in again.';
+  if (msg.includes('403') || msg.toLowerCase().includes('forbidden'))
+    return 'You do not have permission to perform this action.';
+  if (msg.includes('404'))
+    return 'The requested resource was not found. Please refresh and try again.';
+  if (msg.includes('409') || msg.toLowerCase().includes('conflict'))
+    return 'A conflict occurred. This question may already exist.';
+  if (msg.includes('500') || msg.toLowerCase().includes('internal server'))
+    return 'No students found. Please ensure students are enrolled and assigned before posting questions.';
+  if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('networkerror'))
+    return 'Network error. Please check your connection and try again.';
+  if (msg.toLowerCase().includes('question text cannot be empty'))
+    return 'Question text cannot be empty.';
+  if (msg.trim())
+    return msg;
+
+  return 'Something went wrong. Please try again.';
+};
+
 const SelfAssessment = () => {
   const [activeTab, setActiveTab] = useState('questions');
   const [questions, setQuestions] = useState(['']);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [questionsData, setQuestionsData] = useState([]);
   const [fetchingQuestions, setFetchingQuestions] = useState(true);
+  const [fetchQuestionsError, setFetchQuestionsError] = useState('');
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
+  const [fetchResponsesError, setFetchResponsesError] = useState('');
   const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
 
   useEffect(() => {
@@ -31,55 +57,38 @@ const SelfAssessment = () => {
 
   const filterByDateRange = (dateString, filterType) => {
     if (filterType === 'all') return true;
-    
     const datePH = parseUTCToPH(dateString);
     if (!datePH) return false;
-
-    switch(filterType) {
-      case 'today':
-        return isTodayPH(datePH);
-
-      case 'week':
-        return isThisWeekPH(datePH);
-
-      case 'month':
-        return isThisMonthPH(datePH);
-
-      default:
-        return true;
+    switch (filterType) {
+      case 'today':  return isTodayPH(datePH);
+      case 'week':   return isThisWeekPH(datePH);
+      case 'month':  return isThisMonthPH(datePH);
+      default:       return true;
     }
   };
 
   const fetchPostedQuestions = async () => {
     try {
       setFetchingQuestions(true);
+      setFetchQuestionsError('');
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token) {
-        console.log("No token found");
-        setFetchingQuestions(false);
-        return;
-      }
+      if (!token) { setFetchingQuestions(false); return; }
 
-      const response = await fetch(
-        `${API_BASE_URL}/self-assessment/student/all-questions`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/self-assessment/student/all-questions`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch questions');
+        const raw = await response.text().catch(() => '');
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
       setQuestionsData(data);
     } catch (err) {
       console.error('Error fetching questions:', err);
+      setFetchQuestionsError(getFriendlyError(err.message));
     } finally {
       setFetchingQuestions(false);
     }
@@ -88,60 +97,46 @@ const SelfAssessment = () => {
   const fetchStudentResponses = async () => {
     try {
       setFetchingResponses(true);
+      setFetchResponsesError('');
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token) {
-        console.log("No token found");
-        setFetchingResponses(false);
-        return;
-      }
+      if (!token) { setFetchingResponses(false); return; }
 
-      const response = await fetch(
-      `${API_BASE_URL}/self-assessment/student-response`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/self-assessment/student-response`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch responses');
+        const raw = await response.text().catch(() => '');
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      const answeredResponses = data.filter(item => item.responseText && item.responseText.trim() !== '');
-      setResponsesData(answeredResponses);
+      const answered = data.filter(item => item.responseText && item.responseText.trim() !== '');
+      setResponsesData(answered);
     } catch (err) {
       console.error('Error fetching responses:', err);
+      setFetchResponsesError(getFriendlyError(err.message));
     } finally {
       setFetchingResponses(false);
     }
   };
 
   const handleAddQuestion = () => {
-    if (questions.length >= 5) {
-      setError('You can only create up to 5 questions.');
-      return;
-    }
+    if (questions.length >= 5) { setError('You can only create up to 5 questions.'); return; }
     setQuestions([...questions, '']);
     setError('');
     setSuccess('');
   };
 
   const handleRemoveQuestion = (index) => {
-    if (questions.length > 1) {
-      const newQuestions = questions.filter((_, i) => i !== index);
-      setQuestions(newQuestions);
-    }
+    if (questions.length > 1) setQuestions(questions.filter((_, i) => i !== index));
   };
 
   const handleQuestionChange = (index, value) => {
-    const newQuestions = [...questions];
-    newQuestions[index] = value;
-    setQuestions(newQuestions);
+    const updated = [...questions];
+    updated[index] = value;
+    setQuestions(updated);
   };
 
   const handlePost = async () => {
@@ -151,221 +146,152 @@ const SelfAssessment = () => {
       setSuccess('');
 
       const validQuestions = questions.filter(q => q.trim() !== '');
-
-      if (validQuestions.length === 0) {
-        setError('Please add at least one question.');
-        setLoading(false);
-        return;
-      }
-
-      if (validQuestions.length > 5) {
-        setError('You can only create up to 5 questions.');
-        setLoading(false);
-        return;
-      }
+      if (validQuestions.length === 0) { setError('Please add at least one question.'); setLoading(false); return; }
+      if (validQuestions.length > 5)  { setError('You can only create up to 5 questions.'); setLoading(false); return; }
 
       const guidanceStaffId = localStorage.getItem("guidanceStaffId");
       const token = localStorage.getItem("jwtToken");
-      
-      if (!token || !guidanceStaffId) {
-        setError('Authentication required');
-        setLoading(false);
-        return;
-      }
+      if (!token || !guidanceStaffId) { setError('Authentication required. Please log in again.'); setLoading(false); return; }
 
-      const payload = {
-        questionTexts: validQuestions
-      };
-
-      const response = await fetch(
-        `${API_BASE_URL}/self-assessment/create/${guidanceStaffId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(payload)  
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/self-assessment/create/${guidanceStaffId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ questionTexts: validQuestions })
+      });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || 'Failed to post questions');
+        let raw = '';
+        try { raw = await response.text(); } catch (_) {}
+        throw new Error(raw || `HTTP ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Questions posted successfully:', data);
-      
       setQuestions(['']);
       setSuccess(`Successfully posted ${data.length} question(s)!`);
       fetchPostedQuestions();
 
-      setTimeout(() => {
-        setSuccess('');
-        setError('');
-      }, 2000);
-
+      setTimeout(() => { setSuccess(''); setError(''); }, 2000);
     } catch (err) {
       console.error('Error posting questions:', err);
-      setError(err.message || 'Failed to post questions. Please try again.');
-    } finally { 
-      setLoading(false);
-    }
-  };
-
-  const handleClear = () => {
-    setQuestions(['']);
-    setError('');
-    setSuccess('');
-  };
-
-  const handleClearSearch = () => {
-    setSearchTerm('');
-  };
-
-  const openEditModal = (questionId, questionText) => {
-    setEditModal({ isOpen: true, questionId, questionText });
-  };
-
-  const closeEditModal = () => {
-    setEditModal({ isOpen: false, questionId: null, questionText: '' });
-  };
-
-  const handleUpdateQuestion = async () => {
-    if (!editModal.questionText.trim()) {
-      setError('Question text cannot be empty');
-      return;
-    }
-
-    const { questionId, questionText } = editModal;
-
-    try {
-      setLoading(true);
-      setError('');
-      const token = localStorage.getItem('jwtToken');
-      if (!token) {
-        setError('No authentication token found');
-        setLoading(false);
-        return;
-      }
-
-      console.log('Updating self-assessment question', { questionId, questionText: questionText.trim() });
-
-      const response = await fetch(
-        `${API_BASE_URL}/self-assessment/questions/${questionId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ questionText: questionText.trim() })
-        }
-      );
-
-      if (!response.ok) {
-        let message = 'Failed to update question';
-        try {
-          const errJson = await response.json();
-          message = errJson.message || JSON.stringify(errJson) || message;
-        } catch (e) {
-          try {
-            const errText = await response.text();
-            message = errText || message;
-          } catch (e2) {
-          }
-        }
-        throw new Error(message);
-      }
-
-      const updatedQuestion = await response.json().catch(() => null);
-      console.log('Update response', updatedQuestion);
-      setSuccess('Question updated successfully!');
-      await fetchPostedQuestions();
-      closeEditModal();
-
-      setTimeout(() => {
-        setSuccess('');
-      }, 2000);
-    } catch (err) {
-      console.error('Error updating question:', err);
-      setError(err.message || 'Failed to update question. Please try again.');
+      setError(getFriendlyError(err.message));
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredQuestions = questionsData.filter(item => {
-    const searchLower = searchTerm.toLowerCase();
-    const staffName = `${item.guidanceStaff?.person?.firstName || ''} ${item.guidanceStaff?.person?.lastName || ''}`.toLowerCase();
-    const questionText = item.questionText?.toLowerCase() || '';
-    
-    const matchesSearch = staffName.includes(searchLower) || questionText.includes(searchLower);
-    
-    const matchesDate = filterByDateRange(item.dateCreated, filterDate);
-    
-    return matchesSearch && matchesDate;
-  })
-  .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
+  const handleClear = () => { setQuestions(['']); setError(''); setSuccess(''); };
+  const handleClearSearch = () => setSearchTerm('');
 
-  const filteredResponses = responsesData.filter(item => {
-    const searchLower = searchTerm.toLowerCase();
-    const questionText = item.question?.questionText?.toLowerCase() || '';
-    const responseText = item.responseText?.toLowerCase() || '';
-    
-    const matchesSearch = questionText.includes(searchLower) || responseText.includes(searchLower);
-    
-    const matchesDate = filterByDateRange(item.responseDate, filterDate);
-    
-    return matchesSearch && matchesDate;
-  })
-  .sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
+  const openEditModal  = (questionId, questionText) => setEditModal({ isOpen: true, questionId, questionText });
+  const closeEditModal = () => setEditModal({ isOpen: false, questionId: null, questionText: '' });
+
+  const handleUpdateQuestion = async () => {
+    if (!editModal.questionText.trim()) { setError('Question text cannot be empty.'); return; }
+
+    const { questionId, questionText } = editModal;
+    try {
+      setLoading(true);
+      setError('');
+      const token = localStorage.getItem('jwtToken');
+      if (!token) { setError('Your session has expired. Please log in again.'); setLoading(false); return; }
+
+      const response = await fetch(`${API_BASE_URL}/self-assessment/questions/${questionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ questionText: questionText.trim() })
+      });
+
+      if (!response.ok) {
+        let raw = '';
+        try { const j = await response.json(); raw = j.message || JSON.stringify(j); }
+        catch (_) { try { raw = await response.text(); } catch (_2) {} }
+        throw new Error(raw || `HTTP ${response.status}`);
+      }
+
+      await response.json().catch(() => null);
+      setSuccess('Question updated successfully!');
+      await fetchPostedQuestions();
+      closeEditModal();
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (err) {
+      console.error('Error updating question:', err);
+      setError(getFriendlyError(err.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredQuestions = questionsData
+    .filter(item => {
+      const searchLower = searchTerm.toLowerCase();
+      const staffName = `${item.guidanceStaff?.person?.firstName || ''} ${item.guidanceStaff?.person?.lastName || ''}`.toLowerCase();
+      const questionText = item.questionText?.toLowerCase() || '';
+      return (staffName.includes(searchLower) || questionText.includes(searchLower))
+          && filterByDateRange(item.dateCreated, filterDate);
+    })
+    .sort((a, b) => new Date(b.dateCreated) - new Date(a.dateCreated));
+
+  const filteredResponses = responsesData
+    .filter(item => {
+      const searchLower = searchTerm.toLowerCase();
+      const questionText  = item.question?.questionText?.toLowerCase() || '';
+      const responseText  = item.responseText?.toLowerCase() || '';
+      return (questionText.includes(searchLower) || responseText.includes(searchLower))
+          && filterByDateRange(item.responseDate, filterDate);
+    })
+    .sort((a, b) => new Date(b.responseDate) - new Date(a.responseDate));
+
+  // ─── Empty-state helper ───────────────────────────────────────────────────
+  const EmptyState = ({ icon, title, subtitle }) => (
+    <tr>
+      <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>{icon}</div>
+        <div style={{ fontWeight: '600', color: '#374151', marginBottom: '4px' }}>{title}</div>
+        {subtitle && <div style={{ fontSize: '13px', color: '#6B7280' }}>{subtitle}</div>}
+      </td>
+    </tr>
+  );
+
+  const ErrorState = ({ message, onRetry }) => (
+    <tr>
+      <td colSpan="6" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div style={{ fontSize: '32px', marginBottom: '8px' }}>⚠️</div>
+        <div style={{ fontWeight: '600', color: '#DC2626', marginBottom: '4px' }}>Failed to load data</div>
+        <div style={{ fontSize: '13px', color: '#6B7280', marginBottom: '12px' }}>{message}</div>
+        {onRetry && (
+          <button onClick={onRetry} style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid #D1D5DB', background: '#fff', cursor: 'pointer', fontSize: '13px' }}>
+            Try again
+          </button>
+        )}
+      </td>
+    </tr>
+  );
 
   return (
     <div className="page-container">
       <div className="assessment-form-card">
         <h2 className="form-title">Create Self-Assessment</h2>
         <p className="form-description">Add Questions (Maximum 5 questions)</p>
-        
+
         {error && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: '#fee',
-            border: '1px solid #fcc',
-            borderRadius: '4px',
-            color: '#c33'
-          }}>
-            {error}
+          <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span></span>
+            <span>{error}</span>
+          </div>
+        )}
+        {success && (
+          <div style={{ padding: '12px', marginBottom: '16px', backgroundColor: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '6px', color: '#15803D', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+            <span>{success}</span>
           </div>
         )}
 
-        {success && (
-          <div style={{
-            padding: '12px',
-            marginBottom: '16px',
-            backgroundColor: '#d4edda',
-            border: '1px solid #c3e6cb',
-            borderRadius: '4px',
-            color: '#155724'
-          }}>
-            {success}
-          </div>
-        )}
-        
         <div className="questions-list">
           {questions.map((question, index) => (
             <div key={index} className="question-item">
               <div className="question-header">
                 <label className="question-label">Question {index + 1}</label>
                 {questions.length > 1 && (
-                  <button
-                    className="remove-question-btn"
-                    onClick={() => handleRemoveQuestion(index)}
-                  >
-                    ✕
-                  </button>
+                  <button className="remove-question-btn" onClick={() => handleRemoveQuestion(index)}>✕</button>
                 )}
               </div>
               <textarea
@@ -379,52 +305,35 @@ const SelfAssessment = () => {
           ))}
         </div>
 
-        <button 
-          className="add-question-btn" 
+        <button
+          className="add-question-btn"
           onClick={handleAddQuestion}
           disabled={questions.length >= 5}
-          style={{
-            opacity: questions.length >= 5 ? 0.5 : 1,
-            cursor: questions.length >= 5 ? 'not-allowed' : 'pointer'
-          }}
+          style={{ opacity: questions.length >= 5 ? 0.5 : 1, cursor: questions.length >= 5 ? 'not-allowed' : 'pointer' }}
         >
           + Add Question {questions.length >= 5 && '(Maximum reached)'}
         </button>
 
         <div className="form-actions">
-          <button 
-            className="action-btn action-btn-clear" 
-            onClick={handleClear}
-            disabled={loading}
-          >
-            Clear
-          </button>
-          <button 
-            className="action-btn action-btn-post btn-color-primary" 
-            onClick={handlePost}
-            disabled={loading}
-          >
+          <button className="action-btn action-btn-clear" onClick={handleClear} disabled={loading}>Clear</button>
+          <button className="action-btn action-btn-post btn-color-primary" onClick={handlePost} disabled={loading}>
             {loading ? 'Posting...' : 'Post Assessment'}
           </button>
         </div>
       </div>
 
+      {/* ── Tabs ── */}
       <div className="assessment-tabs-container">
         <div className="tabs-header">
-          <button
-            className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('questions')}
-          >
-            Posted Questions  
+          <button className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`} onClick={() => setActiveTab('questions')}>
+            Posted Questions
           </button>
-          <button
-            className={`tab-button ${activeTab === 'responses' ? 'tab-active' : ''}`}
-            onClick={() => setActiveTab('responses')}
-          >
+          <button className={`tab-button ${activeTab === 'responses' ? 'tab-active' : ''}`} onClick={() => setActiveTab('responses')}>
             Student Responses
           </button>
         </div>
 
+        {/* Filter bar */}
         <div className="assessment-filter-bar">
           <div className="assessment-filter-row">
             <div className="assessment-filter-group assessment-search-group">
@@ -438,20 +347,13 @@ const SelfAssessment = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 {searchTerm && (
-                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>
-                    ✕
-                  </button>
+                  <button className="assessment-clear-filter-icon" onClick={handleClearSearch}>✕</button>
                 )}
               </div>
             </div>
-
             <div className="assessment-filter-group assessment-date-group">
               <label className="assessment-filter-label">Date Range</label>
-              <select
-                className="assessment-filter-select"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              >
+              <select className="assessment-filter-select" value={filterDate} onChange={(e) => setFilterDate(e.target.value)}>
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
                 <option value="week">This Week</option>
@@ -461,13 +363,12 @@ const SelfAssessment = () => {
           </div>
         </div>
 
+        {/* Table content */}
         <div className="appointments-content">
           {activeTab === 'questions' ? (
             <div className="appointments-table-container">
               {fetchingQuestions ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  Loading questions...
-                </div>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>Loading questions…</div>
               ) : (
                 <table className="appointments-table">
                   <thead>
@@ -479,24 +380,26 @@ const SelfAssessment = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredQuestions.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
-                          {searchTerm ? 'No questions found matching your search' : 'No questions posted yet'}
-                        </td>
-                      </tr>
+                    {fetchQuestionsError ? (
+                      <ErrorState message={fetchQuestionsError} onRetry={fetchPostedQuestions} />
+                    ) : filteredQuestions.length === 0 ? (
+                      <EmptyState
+                        icon="📋"
+                        title={searchTerm ? 'No matching questions found' : 'No questions posted yet'}
+                        subtitle={
+                          searchTerm
+                            ? `No questions match "${searchTerm}". Try a different search term.`
+                            : 'Create your first self-assessment question using the form above.'
+                        }
+                      />
                     ) : (
                       filteredQuestions.map((item) => (
                         <tr key={item.id} className="appointment-row">
-                          <td className="questions-cell">
-                            {item.questionText}
-                          </td>
+                          <td className="questions-cell">{item.questionText}</td>
                           <td className="counselor-cell">
                             {item.guidanceStaff?.person?.firstName} {item.guidanceStaff?.person?.lastName}
                           </td>
-                          <td className="date-cell">
-                              {formatFullDateTimePH(item.dateCreated)}
-                          </td>
+                          <td className="date-cell">{formatFullDateTimePH(item.dateCreated)}</td>
                           <td className="action-cell">
                             <button
                               className="update-button"
@@ -517,9 +420,7 @@ const SelfAssessment = () => {
           ) : (
             <div className="appointments-table-container">
               {fetchingResponses ? (
-                <div style={{ textAlign: 'center', padding: '40px' }}>
-                  Loading responses...
-                </div>
+                <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>Loading responses…</div>
               ) : (
                 <table className="appointments-table">
                   <thead>
@@ -531,12 +432,18 @@ const SelfAssessment = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredResponses.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
-                          {searchTerm ? 'No responses found matching your search' : 'No student responses yet'}
-                        </td>
-                      </tr>
+                    {fetchResponsesError ? (
+                      <ErrorState message={fetchResponsesError} onRetry={fetchStudentResponses} />
+                    ) : filteredResponses.length === 0 ? (
+                      <EmptyState
+                        icon="💬"
+                        title={searchTerm ? 'No matching responses found' : 'No student responses yet'}
+                        subtitle={
+                          searchTerm
+                            ? `No responses match "${searchTerm}". Try a different search term.`
+                            : 'Student responses will appear here once they answer posted questions.'
+                        }
+                      />
                     ) : (
                       filteredResponses.map((item) => (
                         <tr key={item.id} className="appointment-row">
@@ -546,9 +453,7 @@ const SelfAssessment = () => {
                           <td className="response-cell" style={{ maxWidth: '300px' }}>
                             {item.responseText}
                           </td>
-                          <td className="date-cell">
-                            {formatFullDateTimePH(item.responseDate)}
-                          </td>
+                          <td className="date-cell">{formatFullDateTimePH(item.responseDate)}</td>
                           <td className="counselor-cell">
                             {item.question?.guidanceStaff?.person?.firstName} {item.question?.guidanceStaff?.person?.lastName}
                           </td>
@@ -563,6 +468,7 @@ const SelfAssessment = () => {
         </div>
       </div>
 
+      {/* ── Edit Modal ── */}
       {editModal.isOpen && (
         <div className="modal-overlay">
           <div className="modal-card edit-modal">
@@ -571,6 +477,11 @@ const SelfAssessment = () => {
               <button className="close-btn" onClick={closeEditModal}>×</button>
             </div>
             <div className="modal-body">
+              {error && (
+                <div style={{ padding: '10px 12px', marginBottom: '12px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '6px', color: '#DC2626', fontSize: '13px', display: 'flex', gap: '6px' }}>
+                  <span></span><span>{error}</span>
+                </div>
+              )}
               <div className="form-group">
                 <label htmlFor="edit-question-text">Question Text</label>
                 <textarea
@@ -582,24 +493,18 @@ const SelfAssessment = () => {
                   placeholder="Enter your question here..."
                 />
                 {editModal.questionText && !editModal.questionText.trim() && (
-                  <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>
+                  <span style={{ color: '#DC2626', fontSize: '12px' }}>Question text cannot be empty.</span>
                 )}
               </div>
             </div>
             <div className="modal-footer">
-              <button 
-                className="btn-cancel" 
-                onClick={closeEditModal}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn-save" 
+              <button className="btn-cancel" onClick={closeEditModal} disabled={loading}>Cancel</button>
+              <button
+                className="btn-save"
                 onClick={handleUpdateQuestion}
                 disabled={loading || !editModal.questionText.trim()}
               >
-                {loading ? 'Saving...' : 'Save Changes'}
+                {loading ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>

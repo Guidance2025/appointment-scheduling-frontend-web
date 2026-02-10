@@ -85,7 +85,7 @@ const Dashboard = () => {
   const loadSections = async () => {
     try {
       const token = localStorage.getItem("jwtToken");
-      const res = await fetch("http://localhost:8080/api/posts/students/section", {
+      const res = await fetch(`${API_BASE_URL}/api/sections`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
@@ -206,7 +206,6 @@ const Dashboard = () => {
     try {
       await deletePost(postToDelete);
       setPosts((prev) => prev.filter((p) => p.post_id !== postToDelete));
-      setIsConfirmOpen(false);  
       setPostToDelete(null); 
     } catch (e) {
       console.error("Delete failed:", e);
