@@ -4,6 +4,7 @@ import '../../css/Navbar.css';
 import NotificationModal from '../pages/modal/NotificationModal';
 import ProfileModal from './../pages/modal/ProfileModal';
 import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
+import { listenForForegroundMessages } from '../../utils/firebase';
 
 const POLL_INTERVAL = 15000; 
 
@@ -60,7 +61,6 @@ const Navbar = () => {
       fetchUnreadCount();
     });
 
-    // Background FCM via service worker postMessage (tab was inactive)
     const handleSWMessage = (event) => {
       if (event.data?.type === "FCM_BACKGROUND_MESSAGE") {
         console.log("SW background message received");
@@ -100,7 +100,6 @@ const Navbar = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [fetchUnreadCount, startPolling, stopPolling, playSound]);
 
-  // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleModalClose = () => {
     setIsModalOpen(false);
     fetchUnreadCount();
