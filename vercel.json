@@ -1,5 +1,29 @@
 {
+  "routes": [
+    {
+      "src": "/firebase-messaging-sw.js",
+      "dest": "/firebase-messaging-sw.js"
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/(.*)", 
+      "destination": "/index.html" 
+    }
+  ],
+  "headers": [
+    {
+      "source": "/firebase-messaging-sw.js",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript; charset=utf-8"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
+      ]
+    }
   ]
 }
