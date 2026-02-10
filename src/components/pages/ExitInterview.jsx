@@ -19,7 +19,17 @@ const ExitInterview = () => {
   const [responsesData, setResponsesData] = useState([]);
   const [fetchingResponses, setFetchingResponses] = useState(false);
   const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
+  
+  // Student Selection Modal States
+  const [studentSelectionModal, setStudentSelectionModal] = useState({ isOpen: false });
+  const [allStudents, setAllStudents] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [fetchingStudents, setFetchingStudents] = useState(false);
+  const [selectedSection, setSelectedSection] = useState('all');
+  
   const { showSuccess } = usePopUp();
+
   useEffect(() => {
     fetchPostedQuestions();
   }, []);
@@ -93,7 +103,7 @@ const ExitInterview = () => {
       }
 
       const response = await fetch(
-      `${API_BASE_URL}/exit-interview/student-response`,
+        `${API_BASE_URL}/exit-interview/student-response`,
         {
           method: 'GET',
           headers: {
@@ -114,6 +124,44 @@ const ExitInterview = () => {
       console.error('Error fetching responses:', err);
     } finally {
       setFetchingResponses(false);
+    }
+  };
+
+  // Fetch all students for the selection modal
+  const fetchAllStudents = async () => {
+    try {
+      setFetchingStudents(true);
+      const token = localStorage.getItem("jwtToken");
+      
+      if (!token) {
+        console.log("No token found");
+        setFetchingStudents(false);
+        return;
+      }
+
+      // Replace with your actual endpoint for fetching students
+      const response = await fetch(
+        `${API_BASE_URL}/students/all`, // Adjust this endpoint as needed
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch students');
+      }
+
+      const data = await response.json();
+      setAllStudents(data);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to fetch students. Please try again.');
+    } finally {
+      setFetchingStudents(false);
     }
   };
 
@@ -140,6 +188,98 @@ const ExitInterview = () => {
     setQuestions(newQuestions);
   };
 
+  // Open student selection modal
+  const openStudentSelectionModal = async () => {
+    const validQuestions = questions.filter(q => q.trim() !== '');
+
+    if (validQuestions.length === 0) {
+      setError('Please add at least one question.');
+      return;
+    }
+
+    if (validQuestions.length > 5) {
+      setError('You can only create up to 5 questions.');
+      return;
+    }
+
+    setError('');
+    setStudentSelectionModal({ isOpen: true });
+    await fetchAllStudents();
+  };
+
+  // Close student selection modal
+  const closeStudentSelectionModal = () => {
+    setStudentSelectionModal({ isOpen: false });
+    setSelectedStudents([]);
+    setStudentSearchTerm('');
+    setSelectedSection('all');
+  };
+
+  // Get unique sections from all students
+  const getUniqueSections = () => {
+    const sections = allStudents
+      .map(student => student.section?.sectionName)
+      .filter(Boolean);
+    return [...new Set(sections)].sort();
+  };
+
+  // Handle student selection toggle
+  const handleStudentToggle = (studentId) => {
+    setSelectedStudents(prev => {
+      if (prev.includes(studentId)) {
+        return prev.filter(id => id !== studentId);
+      } else {
+        return [...prev, studentId];
+      }
+    });
+  };
+
+  // Select all students in filtered view
+  const handleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(filteredStudents.map(student => student.id));
+    }
+  };
+
+  // Select/Deselect all students in a specific section
+  const handleSelectSection = (sectionName) => {
+    const studentsInSection = allStudents
+      .filter(student => student.section?.sectionName === sectionName)
+      .map(student => student.id);
+    
+    const allSelected = studentsInSection.every(id => selectedStudents.includes(id));
+    
+    if (allSelected) {
+      // Deselect all students in this section
+      setSelectedStudents(prev => prev.filter(id => !studentsInSection.includes(id)));
+    } else {
+      // Select all students in this section
+      setSelectedStudents(prev => {
+        const newSelection = [...prev];
+        studentsInSection.forEach(id => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
+
+  // Filter students based on search and section
+  const filteredStudents = allStudents.filter(student => {
+    const searchLower = studentSearchTerm.toLowerCase();
+    const fullName = `${student.person?.firstName || ''} ${student.person?.middleName || ''} ${student.person?.lastName || ''}`.toLowerCase();
+    const studentNumber = student.studentNumber?.toLowerCase() || '';
+    
+    const matchesSearch = fullName.includes(searchLower) || studentNumber.includes(searchLower);
+    const matchesSection = selectedSection === 'all' || student.section?.sectionName === selectedSection;
+    
+    return matchesSearch && matchesSection;
+  });
+
   const handlePost = async () => {
     try {
       setLoading(true);
@@ -148,14 +288,8 @@ const ExitInterview = () => {
 
       const validQuestions = questions.filter(q => q.trim() !== '');
 
-      if (validQuestions.length === 0) {
-        setError('Please add at least one question.');
-        setLoading(false);
-        return;
-      }
-
-      if (validQuestions.length > 5) {
-        setError('You can only create up to 5 questions.');
+      if (selectedStudents.length === 0) {
+        setError('Please select at least one student.');
         setLoading(false);
         return;
       }
@@ -170,7 +304,8 @@ const ExitInterview = () => {
       }
 
       const payload = {
-        questionTexts: validQuestions
+        questionTexts: validQuestions,
+        studentIds: selectedStudents // Include selected student IDs
       };
 
       const response = await fetch(
@@ -181,7 +316,7 @@ const ExitInterview = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(payload)  
+          body: JSON.stringify(payload)
         }
       );
 
@@ -192,9 +327,10 @@ const ExitInterview = () => {
 
       const data = await response.json();
       console.log('Questions posted successfully:', data);
-      showSuccess('Questions posted successfully!', '', 2000);
+      showSuccess(`Questions posted successfully to ${selectedStudents.length} student(s)!`, '', 2000);
       setQuestions(['']);
-      setSuccess(`Successfully posted ${data.length} question(s)!`);
+      setSuccess(`Successfully posted ${data.length} question(s) to ${selectedStudents.length} student(s)!`);
+      closeStudentSelectionModal();
       fetchPostedQuestions();
 
       setTimeout(() => {
@@ -205,7 +341,7 @@ const ExitInterview = () => {
     } catch (err) {
       console.error('Error posting questions:', err);
       setError(err.message || 'Failed to post questions. Please try again.');
-    } finally { 
+    } finally {
       setLoading(false);
     }
   };
@@ -254,18 +390,18 @@ const ExitInterview = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ questionText: questionText.trim() }) 
+          body: JSON.stringify({ questionText: questionText.trim() })
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to update question' }));  
+        const errorData = await response.json().catch(() => ({ message: 'Failed to update question' }));
         throw new Error(errorData.message || 'Failed to update question');
       }
 
-      const updatedQuestion = await response.json(); 
+      const updatedQuestion = await response.json();
       setSuccess('Question updated successfully!');
-      fetchPostedQuestions();  
+      fetchPostedQuestions();
 
       setTimeout(() => {
         setSuccess('');
@@ -313,7 +449,6 @@ const ExitInterview = () => {
         return;
       }
 
-  
       const htmlContent = `
         <html>
           <head>
@@ -392,7 +527,6 @@ const ExitInterview = () => {
     const questionText = item.questionText?.toLowerCase() || '';
     
     const matchesSearch = staffName.includes(searchLower) || questionText.includes(searchLower);
-    
     const matchesDate = filterByDateRange(item.dateCreated, filterDate);
     
     return matchesSearch && matchesDate;
@@ -405,7 +539,6 @@ const ExitInterview = () => {
     const responseText = item.responseText?.toLowerCase() || '';
     
     const matchesSearch = questionText.includes(searchLower) || responseText.includes(searchLower);
-    
     const matchesDate = filterByDateRange(item.submittedDate, filterDate);
     
     return matchesSearch && matchesDate;
@@ -491,10 +624,10 @@ const ExitInterview = () => {
           </button>
           <button 
             className="action-btn action-btn-post btn-color-primary" 
-            onClick={handlePost}
+            onClick={openStudentSelectionModal}
             disabled={loading}
           >
-            {loading ? 'Posting...' : 'Post Exit Interview'}
+            Post Exit Interview
           </button>
         </div>
       </div>
@@ -671,49 +804,284 @@ const ExitInterview = () => {
           )}
         </div>
       </div>
-    
-    {editModal.isOpen && (
-    <div className="modal-overlay">
-      <div className="modal-card edit-modal">
-        <div className="modal-header-row">
-          <h2>Edit Question</h2>
-          <button className="close-btn" onClick={closeEditModal}>×</button>
-        </div>
-        <div className="modal-body">
-          <div className="form-group">
-            <label htmlFor="edit-question-text">Question Text</label>
-            <textarea
-              id="edit-question-text"
-              className="edit-textarea"
-              value={editModal.questionText}
-              onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
-              rows={6}
-              placeholder="Enter your question here..."
-            />
-            {editModal.questionText && !editModal.questionText.trim() && (
-              <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>  
-            )}
+
+      {/* Student Selection Modal */}
+      {studentSelectionModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card" style={{ maxWidth: '700px', width: '90%' }}>
+            <div className="modal-header-row">
+              <h2>Select Students</h2>
+              <button className="close-btn" onClick={closeStudentSelectionModal}>×</button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Search, Section Filter, and Select All */}
+              <div style={{ marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                  <div className="input-with-clear" style={{ flex: 2 }}>
+                    <input
+                      type="text"
+                      className="table-input"
+                      placeholder="Search by name or student number..."
+                      value={studentSearchTerm}
+                      onChange={(e) => setStudentSearchTerm(e.target.value)}
+                    />
+                    {studentSearchTerm && (
+                      <button 
+                        className="clear-filter-icon"
+                        onClick={() => setStudentSearchTerm('')}
+                        style={{
+                          position: 'absolute',
+                          right: '12px',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'none',
+                          border: 'none',
+                          color: '#6b7280',
+                          cursor: 'pointer',
+                          fontSize: '18px'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  
+                  <select
+                    className="table-input"
+                    value={selectedSection}
+                    onChange={(e) => setSelectedSection(e.target.value)}
+                    style={{ flex: 1, cursor: 'pointer' }}
+                  >
+                    <option value="all">All Sections</option>
+                    {getUniqueSections().map(section => (
+                      <option key={section} value={section}>{section}</option>
+                    ))}
+                  </select>
+                  
+                  <button 
+                    className="btn-green-outline"
+                    onClick={handleSelectAll}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    {selectedStudents.length === filteredStudents.length && filteredStudents.length > 0 
+                      ? 'Deselect All' 
+                      : 'Select All'}
+                  </button>
+                </div>
+                
+                {/* Section Quick Select Buttons */}
+                {getUniqueSections().length > 0 && (
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    marginBottom: '12px',
+                    padding: '12px',
+                    background: '#f8fafc',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <span style={{
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      color: '#374151',
+                      alignSelf: 'center',
+                      marginRight: '8px'
+                    }}>
+                      Quick Select:
+                    </span>
+                    {getUniqueSections().map(section => {
+                      const studentsInSection = allStudents.filter(s => s.section?.sectionName === section);
+                      const selectedInSection = studentsInSection.filter(s => selectedStudents.includes(s.id)).length;
+                      const allSelected = selectedInSection === studentsInSection.length && studentsInSection.length > 0;
+                      
+                      return (
+                        <button
+                          key={section}
+                          onClick={() => handleSelectSection(section)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            border: `2px solid ${allSelected ? '#16a34a' : '#cbd5e0'}`,
+                            background: allSelected ? '#16a34a' : 'white',
+                            color: allSelected ? 'white' : '#374151',
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            whiteSpace: 'nowrap'
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!allSelected) {
+                              e.target.style.borderColor = '#16a34a';
+                              e.target.style.background = '#f0fdf4';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!allSelected) {
+                              e.target.style.borderColor = '#cbd5e0';
+                              e.target.style.background = 'white';
+                            }
+                          }}
+                        >
+                          {section} ({selectedInSection}/{studentsInSection.length})
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                
+                <div style={{
+                  fontSize: '14px',
+                  color: '#6b7280',
+                  padding: '8px 12px',
+                  background: '#f8fafc',
+                  borderRadius: '6px'
+                }}>
+                  {selectedStudents.length} of {filteredStudents.length} students selected
+                  {selectedSection !== 'all' && ` in ${selectedSection}`}
+                </div>
+              </div>
+
+              {/* Students List */}
+              <div style={{
+                maxHeight: '400px',
+                overflowY: 'auto',
+                border: '2px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '8px'
+              }}>
+                {fetchingStudents ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    Loading students...
+                  </div>
+                ) : filteredStudents.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                    {studentSearchTerm ? 'No students found matching your search' : 'No students available'}
+                  </div>
+                ) : (
+                  filteredStudents.map((student) => {
+                    const fullName = `${student.person?.firstName || ''} ${student.person?.middleName || ''} ${student.person?.lastName || ''}`.trim();
+                    const isSelected = selectedStudents.includes(student.id);
+                    
+                    return (
+                      <div
+                        key={student.id}
+                        onClick={() => handleStudentToggle(student.id)}
+                        style={{
+                          padding: '12px 14px',
+                          marginBottom: '6px',
+                          border: `2px solid ${isSelected ? '#16a34a' : '#e2e8f0'}`,
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          background: isSelected ? '#f0fdf4' : 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px'
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="table-checkbox"
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{
+                            fontWeight: '600',
+                            color: '#111827',
+                            marginBottom: '2px'
+                          }}>
+                            {fullName}
+                          </div>
+                          <div style={{
+                            fontSize: '13px',
+                            color: '#6b7280',
+                            display: 'flex',
+                            gap: '12px'
+                          }}>
+                            <span>Student #: {student.studentNumber}</span>
+                            {student.section?.sectionName && (
+                              <>
+                                <span>•</span>
+                                <span>Section: {student.section.sectionName}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={closeStudentSelectionModal}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handlePost}
+                disabled={loading || selectedStudents.length === 0}
+              >
+                {loading ? 'Posting...' : `Post to ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}`}
+              </button>
+            </div>
           </div>
         </div>
-        <div className="modal-footer">
-          <button 
-            className="btn-cancel" 
-            onClick={closeEditModal}
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button 
-            className="btn-save" 
-            onClick={handleUpdateQuestion}
-            disabled={loading || !editModal.questionText.trim()}  
-          >
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
+      )}
+    
+      {/* Edit Question Modal */}
+      {editModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-card edit-modal">
+            <div className="modal-header-row">
+              <h2>Edit Question</h2>
+              <button className="close-btn" onClick={closeEditModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label htmlFor="edit-question-text">Question Text</label>
+                <textarea
+                  id="edit-question-text"
+                  className="edit-textarea"
+                  value={editModal.questionText}
+                  onChange={(e) => setEditModal({ ...editModal, questionText: e.target.value })}
+                  rows={6}
+                  placeholder="Enter your question here..."
+                />
+                {editModal.questionText && !editModal.questionText.trim() && (
+                  <span style={{ color: 'red', fontSize: '12px' }}>Question text cannot be empty</span>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={closeEditModal}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-save" 
+                onClick={handleUpdateQuestion}
+                disabled={loading || !editModal.questionText.trim()}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    )}
+      )}
     </div>
   );
 }
