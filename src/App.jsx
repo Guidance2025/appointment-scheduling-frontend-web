@@ -3,9 +3,9 @@ import GuidanceLogin from './components/pages/GuidanceLogin';
 import MainPage from './components/pages/MainPage';
 import AdminDashboard from './components/admin/pages/AdminDashboard';
 import VerificationSuccessPage from './components/pages/modal/login/forget/password/message/VerificationSuccessMessage';
+import { listenForForegroundMessages, requestFCMToken } from './utils/firebase';
+import { useEffect } from 'react';
 
-// ✅ REMOVED: import { requestForToken } from './utils/firebase';
-// requestForToken should only be called from NotificationPrompt after user clicks allow
 
 function ProtectedRoute({ children, allowedRole }) {
   const token = localStorage.getItem("jwtToken");
@@ -25,9 +25,18 @@ function ProtectedRoute({ children, allowedRole }) {
 function App() {
   const handleLoginSuccess = () => {};
 
-  // ✅ REMOVED: useEffect that called requestForToken() on app load
-  // This was causing permission to be granted before login
-  // and skipping the NotificationPrompt entirely
+   useEffect(() => {
+    requestFCMToken();
+    const unsubscribe = listenForForegroundMessages((payload) => {
+      console.log("🔥 FCM foreground received (App):", payload);
+
+      window.dispatchEvent(
+        new CustomEvent("FCM_MESSAGE", { detail: payload })
+      );
+    });
+
+    return unsubscribe;
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();

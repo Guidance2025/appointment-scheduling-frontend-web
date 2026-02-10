@@ -8,70 +8,33 @@ const firebaseConfig = {
   storageBucket: "appointment-notification-cc54d.appspot.com",
   messagingSenderId: "106572713774",
   appId: "1:106572713774:web:fd87d0ea8dfa87c9bf74bf",
-  measurementId: "G-KM3T6ZDKXB"
 };
+
+const app = initializeApp(firebaseConfig);
+const messaging = getMessaging(app);
 
 const VAPID_KEY = "BD9gstUBvsx9KLRfJI7htCdgn0L4DFMKPs6_sAGJsaarvQlZYxRXV4ato3xa5Kt7wbIUsx_EtM4AT6ZZClwXDrM";
 
-// Initialize Firebase
-let app;
-let messaging;
-
-try {
-  app = initializeApp(firebaseConfig);
-  messaging = getMessaging(app);
-} catch (error) {
-  console.error("Firebase initialization error:", error);
-}
-
-export const requestForToken = async () => {
+export const requestFCMToken = async () => {
   try {
-    if (!("Notification" in window)) {
-      console.warn("⚠️ This browser does not support notifications");
-      return null;
-    }
+    const registration = await navigator.serviceWorker.register(
+      "/firebase-messaging-sw.js"
+    );
 
-    if (Notification.permission !== "granted") {
-      console.warn("⚠️ Permission not granted:", Notification.permission);
-      return null;
-    }
-
-    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-    await navigator.serviceWorker.ready;
-
-    const fcmToken = await getToken(messaging, {
+    const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
       serviceWorkerRegistration: registration,
     });
 
-    if (fcmToken) {
-      console.log("✅ FCM Token (Web):", fcmToken);
-      return fcmToken;
-    } else {
-      console.error("❌ No registration token available.");
-      return null;
+    if (token) {
+      console.log("✅ FCM Token:", token);
+      return token;
     }
-  } catch (error) {
-    console.error("❌ An error occurred while retrieving token:", error);
-    return null;
+  } catch (err) {
+    console.error("❌ FCM error:", err);
   }
 };
 
 export const listenForForegroundMessages = (callback) => {
-  if (!messaging) {
-    console.error("❌ Firebase messaging not initialized");
-    return () => {}; 
-  }
-
-  try {
-    return onMessage(messaging, (payload) => {
-      console.log("✅ Foreground message received:", payload);
-      if (callback && typeof callback === 'function') {
-        callback(payload);
-      }
-    });
-  } catch (error) {
-    console.error("❌ Error setting up foreground listener:", error);
-    return () => {}; 
-  }
+  return onMessage(messaging, callback);
 };
