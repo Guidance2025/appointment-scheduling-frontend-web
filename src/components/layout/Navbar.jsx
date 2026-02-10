@@ -4,7 +4,9 @@ import '../../css/Navbar.css';
 import NotificationModal from '../pages/modal/NotificationModal';
 import ProfileModal from './../pages/modal/ProfileModal';
 import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
-import { listenForForegroundMessages, requestForToken } from '../../utils/firebase';
+import { listenForForegroundMessages } from '../../utils/firebase';
+
+// ✅ REMOVED: requestForToken import — only NotificationPrompt should call it
 
 const Navbar = () => { 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,7 +33,9 @@ const Navbar = () => {
     fetchUnreadCount();
     fetchProfile();
 
-    requestForToken(); 
+    // ✅ REMOVED: requestForToken() call here
+    // Token is already registered in NotificationPrompt after login
+    // We only need to LISTEN for foreground messages here
 
     const unsubscribe = listenForForegroundMessages((payload) => {
       console.log("Foreground notification:", payload);
@@ -59,8 +63,8 @@ const Navbar = () => {
       <div className="navbar-actions">
         <button 
           className={`notification-button`}
-          style={isModalOpen ? {backgroundColor : " rgba(255, 9, 9, 0.089)" } : {}}
-          onClick={() => setIsModalOpen(!isModalOpen) }
+          style={isModalOpen ? { backgroundColor: "rgba(255, 9, 9, 0.089)" } : {}}
+          onClick={() => setIsModalOpen(!isModalOpen)}
           aria-label="Notifications"
         > 
           <Bell strokeWidth={1.5} size={20} />
@@ -75,7 +79,7 @@ const Navbar = () => {
 
         <div 
           className={`profile-section`}
-          style={isProfileModalOpen ? {backgroundColor : "rgba(9, 255, 58, 0.089)" } :  {}}
+          style={isProfileModalOpen ? { backgroundColor: "rgba(9, 255, 58, 0.089)" } : {}}
           onClick={() => setIsProfileModalOpen(!isProfileModalOpen)}
         >
           <div className="profile-info">

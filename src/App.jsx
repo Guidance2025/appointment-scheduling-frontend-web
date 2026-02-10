@@ -3,8 +3,10 @@ import GuidanceLogin from './components/pages/GuidanceLogin';
 import MainPage from './components/pages/MainPage';
 import AdminDashboard from './components/admin/pages/AdminDashboard';
 import VerificationSuccessPage from './components/pages/modal/login/forget/password/message/VerificationSuccessMessage';
-import { useEffect } from 'react';
-import { requestForToken } from './utils/firebase';
+
+// ✅ REMOVED: import { requestForToken } from './utils/firebase';
+// requestForToken should only be called from NotificationPrompt after user clicks allow
+
 function ProtectedRoute({ children, allowedRole }) {
   const token = localStorage.getItem("jwtToken");
   const role = localStorage.getItem("role");
@@ -21,12 +23,11 @@ function ProtectedRoute({ children, allowedRole }) {
 }
 
 function App() {
-  const handleLoginSuccess = () => {
-  };
+  const handleLoginSuccess = () => {};
 
-    useEffect(() => {
-    requestForToken();
-  }, []);
+  // ✅ REMOVED: useEffect that called requestForToken() on app load
+  // This was causing permission to be granted before login
+  // and skipping the NotificationPrompt entirely
 
   const handleLogout = () => {
     localStorage.clear();
@@ -46,7 +47,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        
         <Route 
           path="/admin/pages/AdminDashboard" 
           element={
@@ -55,9 +55,7 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

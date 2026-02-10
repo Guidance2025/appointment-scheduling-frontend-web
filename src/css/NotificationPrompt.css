@@ -1,0 +1,130 @@
+.notification-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
+}
+
+.notification-prompt-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+/* Denied variant — red top border to signal blocked state */
+.notification-prompt-card--denied {
+  border-top: 4px solid #e74c3c;
+}
+
+.notification-prompt-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.notification-prompt-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.notification-prompt-card p {
+  margin: 0 0 24px 0;
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Steps box shown for denied state */
+.notification-prompt-steps {
+  background: #fff5f5;
+  border: 1px solid #fdd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.notification-prompt-steps-label {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #c0392b !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 10px 0 !important;
+}
+
+.notification-prompt-steps ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.notification-prompt-steps li {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.7;
+}
+
+.notification-prompt-buttons {
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+}
+
+.btn-enable {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-enable:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-enable:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-dismiss {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-dismiss:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
