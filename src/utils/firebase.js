@@ -13,12 +13,17 @@ const firebaseConfig = {
 
 const VAPID_KEY = "BD9gstUBvsx9KLRfJI7htCdgn0L4DFMKPs6_sAGJsaarvQlZYxRXV4ato3xa5Kt7wbIUsx_EtM4AT6ZZClwXDrM";
 
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
+// Initialize Firebase
+let app;
+let messaging;
 
-// ✅ FIXED: Does NOT request permission here.
-// Permission is requested in NotificationPrompt via user click.
-// This function only runs after permission is already granted.
+try {
+  app = initializeApp(firebaseConfig);
+  messaging = getMessaging(app);
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
+
 export const requestForToken = async () => {
   try {
     if (!("Notification" in window)) {
@@ -32,7 +37,7 @@ export const requestForToken = async () => {
     }
 
     const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
-    await navigator.serviceWorker.ready; // Wait for SW to be ready
+    await navigator.serviceWorker.ready;
 
     const fcmToken = await getToken(messaging, {
       vapidKey: VAPID_KEY,
@@ -53,8 +58,20 @@ export const requestForToken = async () => {
 };
 
 export const listenForForegroundMessages = (callback) => {
-  return onMessage(messaging, (payload) => {
-    console.log("Foreground message received:", payload);
-    if (callback) callback(payload);
-  });
+  if (!messaging) {
+    console.error("❌ Firebase messaging not initialized");
+    return () => {}; 
+  }
+
+  try {
+    return onMessage(messaging, (payload) => {
+      console.log("✅ Foreground message received:", payload);
+      if (callback && typeof callback === 'function') {
+        callback(payload);
+      }
+    });
+  } catch (error) {
+    console.error("❌ Error setting up foreground listener:", error);
+    return () => {}; 
+  }
 };
