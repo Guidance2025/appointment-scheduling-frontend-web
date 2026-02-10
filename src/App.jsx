@@ -26,7 +26,6 @@ function App() {
   const handleLoginSuccess = () => {};
 
    useEffect(() => {
-    requestFCMToken();
     const unsubscribe = listenForForegroundMessages((payload) => {
       console.log("🔥 FCM foreground received (App):", payload);
 
