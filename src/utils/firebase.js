@@ -60,7 +60,7 @@ export const requestForToken = async () => {
 export const listenForForegroundMessages = (callback) => {
   if (!messaging) {
     console.error("❌ Firebase messaging not initialized");
-    return () => {}; // Return a no-op function
+    return () => {}; 
   }
 
   try {
@@ -72,6 +72,6 @@ export const listenForForegroundMessages = (callback) => {
     });
   } catch (error) {
     console.error("❌ Error setting up foreground listener:", error);
-    return () => {}; // Return a no-op function
+    return () => {}; 
   }
 };
