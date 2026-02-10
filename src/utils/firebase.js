@@ -16,6 +16,9 @@ const VAPID_KEY = "BD9gstUBvsx9KLRfJI7htCdgn0L4DFMKPs6_sAGJsaarvQlZYxRXV4ato3xa5
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 
+// ✅ FIXED: Does NOT request permission here.
+// Permission is requested in NotificationPrompt via user click.
+// This function only runs after permission is already granted.
 export const requestForToken = async () => {
   try {
     if (!("Notification" in window)) {
