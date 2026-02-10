@@ -60,7 +60,6 @@ const Navbar = () => {
       fetchUnreadCount();
     });
 
-    // Background FCM via service worker postMessage (tab was inactive)
     const handleSWMessage = (event) => {
       if (event.data?.type === "FCM_BACKGROUND_MESSAGE") {
         console.log("SW background message received");
