@@ -4,7 +4,6 @@ import '../../css/Navbar.css';
 import NotificationModal from '../pages/modal/NotificationModal';
 import ProfileModal from './../pages/modal/ProfileModal';
 import { getUnreadNotification, getProfileByEmployeeNumber } from '../../service/counselor';
-import { listenForForegroundMessages } from '../../utils/firebase';
 
 const POLL_INTERVAL = 15000; 
 
@@ -100,6 +99,7 @@ const Navbar = () => {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [fetchUnreadCount, startPolling, stopPolling, playSound]);
 
+  // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleModalClose = () => {
     setIsModalOpen(false);
     fetchUnreadCount();
