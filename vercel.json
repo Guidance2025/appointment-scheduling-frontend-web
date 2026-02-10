@@ -1,7 +1,11 @@
 {
   "rewrites": [
     { 
-      "source": "/((?!firebase-messaging-sw\\.js$).*)", 
+      "source": "/firebase-messaging-sw.js",
+      "destination": "/firebase-messaging-sw.js"
+    },
+    { 
+      "source": "/(.*)", 
       "destination": "/index.html" 
     }
   ],
@@ -19,10 +23,9 @@
         },
         {
           "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     }
-  ],
-  "cleanUrls": true
+  ]
 }
