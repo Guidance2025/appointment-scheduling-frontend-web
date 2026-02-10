@@ -1,5 +1,5 @@
 import { REGISTER_FCM_TOKEN } from "../../constants/api";
-import { requestForToken } from "../utils/firebase";
+import { requestFCMToken } from "../utils/firebase";
 
 export async function registerFcmToken(userId) {
   try {
@@ -8,14 +8,12 @@ export async function registerFcmToken(userId) {
       return false;
     }
 
-    // By the time this is called from NotificationPrompt,
-    // permission is already granted. But we guard here just in case.
     if (Notification.permission !== "granted") {
       console.warn("⚠️ Notification permission is not granted:", Notification.permission);
       return false;
     }
 
-    const fcmToken = await requestForToken();
+    const fcmToken = await requestFCMToken();
 
     if (!fcmToken) {
       console.warn("⚠️ No FCM token available");
