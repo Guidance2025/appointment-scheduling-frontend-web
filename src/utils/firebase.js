@@ -17,9 +17,16 @@ const VAPID_KEY = "BD9gstUBvsx9KLRfJI7htCdgn0L4DFMKPs6_sAGJsaarvQlZYxRXV4ato3xa5
 
 export const requestFCMToken = async () => {
   try {
-    const registration = await navigator.serviceWorker.register(
+    const existingRegistration = await navigator.serviceWorker.getRegistration(
       "/firebase-messaging-sw.js"
     );
+
+    const registration = existingRegistration || 
+      await navigator.serviceWorker.register("/firebase-messaging-sw.js", {
+        scope: "/"
+      });
+
+    await navigator.serviceWorker.ready;
 
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
