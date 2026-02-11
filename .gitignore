@@ -55,3 +55,4 @@ android/
 
 # Public assets
 public/
+.vercel

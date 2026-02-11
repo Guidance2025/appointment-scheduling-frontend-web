@@ -1,20 +1,17 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "headers": [
+  "routes": [
     {
-      "source": "/firebase-messaging-sw.js",
-      "headers": [
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
-        { "key": "Service-Worker-Allowed", "value": "/" },
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
-  ],
-  "rewrites": [
+      "src": "/firebase-messaging-sw.js",
+      "dest": "/firebase-messaging-sw.js"
+    },
     {
-      "source": "/((?!firebase-messaging-sw\\.js).*)",
-      "destination": "/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
