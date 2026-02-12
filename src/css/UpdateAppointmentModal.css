@@ -139,6 +139,27 @@
   margin-bottom: 16px;
 }
 
+/* NEW: Date and Time Row Layout */
+.date-time-fields-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.date-time-fields-row .form-group {
+  margin-bottom: 0;
+}
+
+.date-time-fields-row .date-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.date-time-fields-row .time-field {
+  flex: 1;
+  min-width: 0;
+}
+
 .form-group label {
   display: flex;
   align-items: center;
@@ -747,6 +768,11 @@
   }
 
   .date-time-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .date-time-fields-row {
     flex-direction: column;
     gap: 12px;
   }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, Edit2, Trash2, Edit } from 'lucide-react';
+import { X, Calendar, Clock, Edit2, Trash2, Edit, Edit2Icon } from 'lucide-react';
 import '../../css/AppointmentSummary.css';
 import * as PHTimeUtils from '../../utils/dateTime';
 
@@ -176,7 +176,7 @@ const AppointmentSidePanel = ({
                           disabled={isDeleting}
                           title="Update appointment"
                         >
-                          <Edit2 size={18} strokeWidth={2.5}/>
+                          <Edit2Icon size={18} strokeWidth={2.5}/>
                         </button>
                         <button
                           className="action-button delete-button"

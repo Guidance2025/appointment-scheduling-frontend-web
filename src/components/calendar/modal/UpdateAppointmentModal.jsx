@@ -755,79 +755,81 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="scheduledDate">
-                Appointment Date: <span style={{ color: "red" }}>*</span>
-              </label>
-              <div className="date-picker-wrapper">
-                <DatePicker
-                  selected={selectedDate}
-                  onChange={handleDateChange}
-                  minDate={minDate}
-                  filterDate={filterAvailableDates}
-                  dateFormat="MM/dd/yyyy"
-                  placeholderText="Select date"
-                  disabled={isLoadingBlocks}
-                  className={`date-picker-input ${error && error.includes("date") ? 'error' : ''}`}
-                  calendarClassName="custom-calendar"
-                  dayClassName={(date) => {
-                    if (isWeekend(date)) return "weekend-day";
-                    
-                    const year = date.getFullYear();
-                    const month = date.getMonth();
-                    const day = date.getDate();
-                    
-                    const isBlocked = fullyBlockedDates.some(blockedDate => {
-                      return year === blockedDate.year && 
-                             month === blockedDate.month && 
-                             day === blockedDate.day;
-                    });
-                    
-                    return isBlocked ? "blocked-day" : undefined;
-                  }}
-                />
-                <Calendar className="calendar-icon" size={18} />
+            <div className="date-time-fields-row">
+              <div className="form-group date-field">
+                <label htmlFor="scheduledDate">
+                  Appointment Date: <span style={{ color: "red" }}>*</span>
+                </label>
+                <div className="date-picker-wrapper">
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={handleDateChange}
+                    minDate={minDate}
+                    filterDate={filterAvailableDates}
+                    dateFormat="MM/dd/yyyy"
+                    placeholderText="Select date"
+                    disabled={isLoadingBlocks}
+                    className={`date-picker-input ${error && error.includes("date") ? 'error' : ''}`}
+                    calendarClassName="custom-calendar"
+                    dayClassName={(date) => {
+                      if (isWeekend(date)) return "weekend-day";
+                      
+                      const year = date.getFullYear();
+                      const month = date.getMonth();
+                      const day = date.getDate();
+                      
+                      const isBlocked = fullyBlockedDates.some(blockedDate => {
+                        return year === blockedDate.year && 
+                               month === blockedDate.month && 
+                               day === blockedDate.day;
+                      });
+                      
+                      return isBlocked ? "blocked-day" : undefined;
+                    }}
+                  />
+                  <Calendar className="calendar-icon" size={18} />
+                </div>
+                {isLoadingBlocks && (
+                  <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
+                    Loading availability...
+                  </div>
+                )}
               </div>
-              {isLoadingBlocks && (
-                <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
-                  Loading availability...
+
+              {scheduledDate && (
+                <div className="form-group time-field">
+                  <label htmlFor="scheduledTime">
+                    Start Time: <span style={{ color: "red" }}>*</span>
+                  </label>
+                  <div className={`update-time-picker-wrapper ${showStartPicker ? 'picker-open' : ''}`} ref={startPickerRef}>
+                    <input
+                      type="text"
+                      id="scheduledTime"
+                      readOnly
+                      value={formatTime(startPickerValue)}
+                      onClick={() => {
+                        if (!isLoadingBlocks && scheduledDate) {
+                          setShowStartPicker(!showStartPicker);
+                          setShowEndPicker(false);
+                        }
+                      }}
+                      placeholder="--:-- --"
+                      className={`form-input time-input ${error && (error.includes("time") || error.includes("Start time")) ? 'error' : ''}`}
+                      disabled={isLoadingBlocks || !scheduledDate}
+                    />
+                    {showStartPicker && scheduledDate && (
+                      <div className="update-time-picker-dropdown">
+                        <IOSTimePicker
+                          value={startPickerValue}
+                          onChange={setStartPickerValue}
+                          isStart={true}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
-
-            {scheduledDate && (
-              <div className="form-group">
-                <label htmlFor="scheduledTime">
-                  Start Time: <span style={{ color: "red" }}>*</span>
-                </label>
-                <div className={`update-time-picker-wrapper ${showStartPicker ? 'picker-open' : ''}`} ref={startPickerRef}>
-                  <input
-                    type="text"
-                    id="scheduledTime"
-                    readOnly
-                    value={formatTime(startPickerValue)}
-                    onClick={() => {
-                      if (!isLoadingBlocks && scheduledDate) {
-                        setShowStartPicker(!showStartPicker);
-                        setShowEndPicker(false);
-                      }
-                    }}
-                    placeholder="--:-- --"
-                    className={`form-input time-input ${error && (error.includes("time") || error.includes("Start time")) ? 'error' : ''}`}
-                    disabled={isLoadingBlocks || !scheduledDate}
-                  />
-                  {showStartPicker && scheduledDate && (
-                    <div className="update-time-picker-dropdown">
-                      <IOSTimePicker
-                        value={startPickerValue}
-                        onChange={setStartPickerValue}
-                        isStart={true}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
 
             {scheduledDate && (
               <div className="form-group">
