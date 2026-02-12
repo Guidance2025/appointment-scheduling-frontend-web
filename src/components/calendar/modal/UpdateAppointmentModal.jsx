@@ -755,7 +755,6 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* CHANGED: Date picker and Start Time in one row */}
             <div className="date-time-fields-row">
               <div className="form-group date-field">
                 <label htmlFor="scheduledDate">
@@ -832,7 +831,6 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
               )}
             </div>
 
-            {/* CHANGED: End Time on its own row */}
             {scheduledDate && (
               <div className="form-group">
                 <label htmlFor="endTime">
