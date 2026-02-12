@@ -795,12 +795,6 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                   </div>
                 )}
               </div>
-              {isLoadingBlocks && (
-                <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
-                  Loading availability...
-                </div>
-              )}
-            </div>
 
               {scheduledDate && (
                 <div className="form-group time-field">
