@@ -276,7 +276,6 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
     const now = new Date();
     now.setSeconds(0, 0);
 
-
     if (scheduledDateTime < now) return "Start time cannot be in the past";
     
     if (endDateTime.getTime() === scheduledDateTime.getTime()) {
@@ -669,7 +668,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
               className="update-ios-picker-arrow"
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
+                e.stopPropagagation();
                 decrementValue("period");
               }}
               onMouseDown={(e) => e.preventDefault()}
@@ -755,47 +754,45 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="scheduledDate">
-                Appointment Date: <span style={{ color: "red" }}>*</span>
-              </label>
-              <div className="date-picker-wrapper">
-                <DatePicker
-                  selected={selectedDate}
-                  onChange={handleDateChange}
-                  minDate={minDate}
-                  filterDate={filterAvailableDates}
-                  dateFormat="MM/dd/yyyy"
-                  placeholderText="Select date"
-                  disabled={isLoadingBlocks}
-                  className={`date-picker-input ${error && error.includes("date") ? 'error' : ''}`}
-                  calendarClassName="custom-calendar"
-                  dayClassName={(date) => {
-                    if (isWeekend(date)) return "weekend-day";
-                    
-                    const year = date.getFullYear();
-                    const month = date.getMonth();
-                    const day = date.getDate();
-                    
-                    const isBlocked = fullyBlockedDates.some(blockedDate => {
-                      return year === blockedDate.year && 
-                             month === blockedDate.month && 
-                             day === blockedDate.day;
-                    });
-                    
-                    return isBlocked ? "blocked-day" : undefined;
-                  }}
-                />
-                <Calendar className="calendar-icon" size={18} />
-              </div>
-              {isLoadingBlocks && (
-                <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
-                  Loading availability...
+            {/* THREE FIELDS IN A ROW */}
+            <div className="date-time-row">
+              {/* APPOINTMENT DATE */}
+              <div className="form-group">
+                <label htmlFor="scheduledDate">
+                  Appointment Date: <span style={{ color: "red" }}>*</span>
+                </label>
+                <div className="date-picker-wrapper">
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={handleDateChange}
+                    minDate={minDate}
+                    filterDate={filterAvailableDates}
+                    dateFormat="MM/dd/yyyy"
+                    placeholderText="Select date"
+                    disabled={isLoadingBlocks}
+                    className={`date-picker-input ${error && error.includes("date") ? 'error' : ''}`}
+                    calendarClassName="custom-calendar"
+                    dayClassName={(date) => {
+                      if (isWeekend(date)) return "weekend-day";
+                      
+                      const year = date.getFullYear();
+                      const month = date.getMonth();
+                      const day = date.getDate();
+                      
+                      const isBlocked = fullyBlockedDates.some(blockedDate => {
+                        return year === blockedDate.year && 
+                               month === blockedDate.month && 
+                               day === blockedDate.day;
+                      });
+                      
+                      return isBlocked ? "blocked-day" : undefined;
+                    }}
+                  />
+                  <Calendar className="calendar-icon" size={18} />
                 </div>
-              )}
-            </div>
+              </div>
 
-            {scheduledDate && (
+              {/* START TIME */}
               <div className="form-group">
                 <label htmlFor="scheduledTime">
                   Start Time: <span style={{ color: "red" }}>*</span>
@@ -827,9 +824,8 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                   )}
                 </div>
               </div>
-            )}
 
-            {scheduledDate && (
+              {/* END TIME */}
               <div className="form-group">
                 <label htmlFor="endTime">
                   End Time: <span style={{ color: "red" }}>*</span>
@@ -861,7 +857,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                   )}
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="modal-actions">
               <button

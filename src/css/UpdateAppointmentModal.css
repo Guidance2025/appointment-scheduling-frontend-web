@@ -236,14 +236,18 @@
   font-weight: 500;
 }
 
-/* NEW: Date and Time Layout - Side by Side */
-.date-time-container {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
+.date-time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.date-section {
+.date-time-row .form-group {
+  margin-bottom: 0;
+}
+
+.half-width {
   flex: 1;
   min-width: 0;
 }
@@ -528,8 +532,47 @@
   pointer-events: none !important;
 }
 
-/* Time Input Styles - Simple inputs on the right */
-.time-input-group {
+/* Time Picker */
+.update-time-picker-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+/* When picker is open, add extra space */
+.update-time-picker-wrapper.picker-open {
+  margin-bottom: 280px;
+}
+
+.update-time-picker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 1002;
+  margin-top: 8px;
+  padding: 16px;
+  max-width: 280px;
+  width: 100%;
+}
+
+.update-time-picker-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid white;
+  filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+}
+
+.update-ios-time-picker {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -641,9 +684,9 @@
     border-radius: 12px;
   }
 
-  .date-time-container {
-    flex-direction: column;
-    gap: 16px;
+  .date-time-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .time-section {
