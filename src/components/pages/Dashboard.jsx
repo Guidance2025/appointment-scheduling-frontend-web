@@ -207,9 +207,9 @@ const Dashboard = () => {
       await deletePost(postToDelete);
       setPosts((prev) => prev.filter((p) => p.post_id !== postToDelete));
       setPostToDelete(null); 
+      setIsConfirmOpen(false);
     } catch (e) {
       console.error("Delete failed:", e);
-      alert("Failed to delete post: " + e.message);
       setIsConfirmOpen(false);  
       setPostToDelete(null);
     }
@@ -221,7 +221,7 @@ const Dashboard = () => {
 
     const postContent = (newPost.post_content || "").trim();
     if (!newPost.category_name || !postContent) {
-      alert("Category and content are required.");
+      console.error("Category and content are required.");
       return;
     }
 
@@ -253,7 +253,6 @@ const Dashboard = () => {
       setIsModalOpen(false);
     } catch (err) {
       console.error("Create error:", err);
-      alert(`Failed to create post:\n${err.message}`);
     } finally {
       setCreating(false);
     }
