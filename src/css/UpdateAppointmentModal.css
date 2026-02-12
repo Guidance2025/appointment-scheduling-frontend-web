@@ -24,6 +24,7 @@
   min-width: 320px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: visible;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
               0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -86,7 +87,7 @@
 
 /* Modal Body */
 .update-modal-body {
-  /* No special styling needed, content flows naturally */
+  overflow: visible;
 }
 
 .update-modal-content2::-webkit-scrollbar {
@@ -241,6 +242,7 @@
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+  overflow: visible;
 }
 
 .half-width {
