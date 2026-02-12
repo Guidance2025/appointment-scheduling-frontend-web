@@ -176,7 +176,7 @@ const AppointmentSidePanel = ({
                           disabled={isDeleting}
                           title="Update appointment"
                         >
-                          <Edit size={16} />
+                          <Edit2 size={18} strokeWidth={2.5}/>
                         </button>
                         <button
                           className="action-button delete-button"
@@ -203,7 +203,7 @@ const AppointmentSidePanel = ({
                         {isDeleting ? (
                           <span className="spinner-small"></span>
                         ) : (
-                          <Trash2 size={16} />
+                          <Trash2 size={18} strokeWidth={2.5} />
                         )}
                       </button>
                     )}
