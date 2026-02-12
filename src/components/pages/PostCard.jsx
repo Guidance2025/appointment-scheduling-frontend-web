@@ -55,12 +55,9 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
       if (result) {
         await loadComments();
         setShowCommentModal(false);
-      } else {
-        alert("Failed to submit comment. Please try again.");
       }
     } catch (error) {
       console.error("Error submitting comment:", error);
-      alert("Failed to submit comment: " + error.message);
     } finally {
       setIsSubmittingComment(false);
     }
@@ -75,7 +72,6 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
       await onDelete(post.post_id || post.POST_ID);
     } catch (error) {
       console.error("Error deleting post:", error);
-      alert("Failed to delete post: " + error.message);
     } finally {
       setIsDeleting(false);
     }
