@@ -23,6 +23,7 @@
   min-width: 320px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: visible;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
               0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -85,7 +86,7 @@
 
 /* Modal Body */
 .update-modal-body {
-  /* No special styling needed, content flows naturally */
+  overflow: visible;
 }
 
 .update-modal-content2::-webkit-scrollbar {
@@ -242,6 +243,7 @@
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
   margin-bottom: 16px;
+  overflow: visible;
 }
 
 .date-time-row .form-group {
@@ -297,17 +299,18 @@
   pointer-events: none;
 }
 
-/* React DatePicker Styles */
+/* React DatePicker Styles - FIXED Z-INDEX */
 .react-datepicker-wrapper {
   width: 100%;
 }
 
 .react-datepicker-popper {
-  z-index: 1001 !important;
-  position: relative !important;
-  transform: none !important;
-  padding: 0 !important;
-  margin-top: 0 !important;
+  z-index: 10000 !important;
+  position: fixed !important;
+}
+
+.react-datepicker__portal {
+  z-index: 10000 !important;
 }
 
 .react-datepicker {
@@ -317,6 +320,7 @@
   font-family: inherit !important;
   overflow: hidden;
   width: 280px !important;
+  z-index: 10000 !important;
 }
 
 .react-datepicker__month-container {

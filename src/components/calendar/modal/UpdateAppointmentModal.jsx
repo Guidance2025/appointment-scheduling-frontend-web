@@ -668,7 +668,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
               className="update-ios-picker-arrow"
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagagation();
+                e.stopPropagation();
                 decrementValue("period");
               }}
               onMouseDown={(e) => e.preventDefault()}
@@ -770,6 +770,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                     dateFormat="MM/dd/yyyy"
                     placeholderText="Select date"
                     disabled={isLoadingBlocks}
+                    withPortal
                     className={`date-picker-input ${error && error.includes("date") ? 'error' : ''}`}
                     calendarClassName="custom-calendar"
                     dayClassName={(date) => {
