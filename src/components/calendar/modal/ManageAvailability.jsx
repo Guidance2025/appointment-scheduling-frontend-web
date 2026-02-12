@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, Clock, Trash2, Edit2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, CalendarDays, CheckSquare } from 'lucide-react';
+import { X, Calendar, Clock, Trash2, Edit2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, CheckSquare } from 'lucide-react';
 import { API_BASE_URL } from '../../../../constants/api';
 import "../../../css/ManageAvailability.css";
 import * as PHTimeUtils from '../../../utils/dateTime';
@@ -24,9 +24,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [dayFullyBlocked, setDayFullyBlocked] = useState(false);
   const [validationError, setValidationError] = useState('');
-
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedDates, setSelectedDates] = useState([]);
@@ -282,15 +279,12 @@ const ManageAvailability = ({ isOpen, onClose }) => {
 
   const groupBlockedPeriods = () => {
     const grouped = {
-      monthLeaves: [],
       bulkBlocks: [],
       individualBlocks: [],
-      pastBlocks: []  // NEW: Past/expired blocks
+      pastBlocks: []
     };
 
-    const monthLeaveMap = new Map();
     const bulkBlockMap = new Map();
-    const pastMonthMap = new Map();
     const pastBulkMap = new Map();
 
     const nowPH = PHTimeUtils.getCurrentPHTime();
@@ -310,25 +304,8 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       }
 
       const notes = block.notes || '';
-      const date = blockDate;
 
-      if (notes.startsWith('Month Leave:')) {
-        const key = `${date.getFullYear()}-${date.getMonth()}`;
-        const targetMap = isPast ? pastMonthMap : monthLeaveMap;
-        
-        if (!targetMap.has(key)) {
-          targetMap.set(key, {
-            type: 'month',
-            year: date.getFullYear(),
-            month: date.getMonth(),
-            reason: notes.replace('Month Leave: ', ''),
-            blocks: [],
-            isPast: isPast
-          });
-        }
-        targetMap.get(key).blocks.push(block);
-      } 
-      else if (notes.startsWith('Bulk Block:')) {
+      if (notes.startsWith('Bulk Block:')) {
         const key = `bulk-${notes}-${isPast}`;
         const targetMap = isPast ? pastBulkMap : bulkBlockMap;
         
@@ -352,7 +329,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
       }
     });
 
-    grouped.monthLeaves = Array.from(monthLeaveMap.values());
     grouped.bulkBlocks = Array.from(bulkBlockMap.values()).map(bulkBlock => {
       // Sort blocks by date for accurate date range display
       bulkBlock.blocks.sort((a, b) => {
@@ -364,10 +340,8 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     });
     
     // Add past grouped blocks
-    const pastMonthLeaves = Array.from(pastMonthMap.values());
     const pastBulkBlocks = Array.from(pastBulkMap.values());
     grouped.pastBlocks = [
-      ...pastMonthLeaves.flatMap(m => m.blocks),
       ...pastBulkBlocks.flatMap(b => b.blocks),
       ...grouped.pastBlocks
     ];
@@ -765,57 +739,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleCreateMonthLeave = async () => {
-    try {
-      if (!reason.trim()) {
-        showWarning('Reason Required', 'Please provide a reason for the month leave.', 3000);
-        return;
-      }
-
-      setIsLoading(true);
-
-      const payload = {
-        guidanceStaffId: parseInt(guidanceStaffId),
-        year: selectedYear,
-        month: selectedMonth,
-        reason: reason.trim()
-      };
-
-      const response = await fetch(`${API_BASE_URL}/counselor/availability/month-leave`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${JWT_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const responseData = await response.json();
-        throw new Error(responseData.message || 'Failed to create month leave');
-      }
-
-      const responseData = await response.json();
-
-      showSuccess(
-        'Month Leave Created!',
-        `Successfully blocked ${responseData.blockedDays} working days in ${monthsShort[selectedMonth - 1]} ${selectedYear}.`,
-        5000
-      );
-
-      setReason('');
-      await fetchBlockedPeriods();
-      if (typeof window.refreshCalendar === "function") {
-        window.refreshCalendar();
-      }
-    } catch (error) {
-      console.error('Error creating month leave:', error);
-      showError('Failed to Create Leave', error.message, 6000);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleEdit = (period) => {
     setEditingId(period.appointmentId);
     setSelectedDate(PHTimeUtils.parseUTCToPH(period.scheduledDate));
@@ -1062,7 +985,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const groupedBlocks = groupBlockedPeriods();
-  const totalBlocks = groupedBlocks.monthLeaves.length + groupedBlocks.bulkBlocks.length + groupedBlocks.individualBlocks.length;
+  const totalBlocks = groupedBlocks.bulkBlocks.length + groupedBlocks.individualBlocks.length;
 
   return (
     <div className="availability-overlay">
@@ -1070,7 +993,7 @@ const ManageAvailability = ({ isOpen, onClose }) => {
         <div className="availability-header">
           <div>
             <h2>Manage Availability</h2>
-            <p>Block dates, manage leaves, and control your schedule</p>
+            <p>Block dates and manage your schedule</p>
           </div>
           <button onClick={onClose} className="close-btn1" aria-label="Close">
             <X size={20} />
@@ -1202,13 +1125,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                   <Calendar size={16} /> Block Day/Time
                 </button>
                 <button
-                  onClick={() => !selectionMode && setActiveTab('leave')}
-                  className={`tab-btn ${activeTab === 'leave' ? 'active' : ''} ${selectionMode ? 'disabled' : ''}`}
-                  disabled={selectionMode}
-                >
-                  <CalendarDays size={16} /> Month Leave
-                </button>
-                <button
                   onClick={() => !selectionMode && setActiveTab('list')}
                   className={`tab-btn ${activeTab === 'list' ? 'active' : ''} ${selectionMode ? 'disabled' : ''}`}
                   disabled={selectionMode}
@@ -1319,58 +1235,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                       {isLoading ? 'Processing...' : (editingId ? 'Update Block' : 'Add Block')}
                     </button>
                   </div>
-                ) : activeTab === 'leave' ? (
-                  <div className="leave-form">
-                    <div className="form-group">
-                      <label>Select Month & Year</label>
-                      <div className="month-year-picker">
-                        <select
-                          className="form-input"
-                          value={selectedMonth}
-                          onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                        >
-                          {monthsShort.map((m, idx) => (
-                            <option key={idx} value={idx + 1}>{m}</option>
-                          ))}
-                        </select>
-                        <select
-                          className="form-input"
-                          value={selectedYear}
-                          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                        >
-                          {[...Array(5)].map((_, idx) => {
-                            const year = new Date().getFullYear() + idx;
-                            return <option key={year} value={year}>{year}</option>;
-                          })}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="leave-info-box">
-                      <p> This will block all working days (Mon-Fri) in <strong>{monthsShort[selectedMonth - 1]} {selectedYear}</strong></p>
-                      <p className="leave-info-note">Weekends are automatically excluded. Already blocked dates will be skipped.</p>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Reason *</label>
-                      <textarea
-                        className="form-textarea"
-                        placeholder="e.g., Vacation, Training, Conference..."
-                        value={reason}
-                        onChange={e => setReason(e.target.value)}
-                        maxLength={200}
-                        required
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleCreateMonthLeave}
-                      className="add-leave-btn"
-                      disabled={isLoading || !reason.trim()}
-                    >
-                      {isLoading ? 'Creating Leave...' : 'Create Month Leave'}
-                    </button>
-                  </div>
                 ) : (
                   <div className="blocked-periods-tab">
                     {isLoading ? (
@@ -1387,32 +1251,6 @@ const ManageAvailability = ({ isOpen, onClose }) => {
                         {totalBlocks > 0 && (
                           <div className="blocked-section">
                             <div className="blocked-items">
-                              {groupedBlocks.monthLeaves.map((leave, idx) => (
-                                <div key={`month-${idx}`} className="blocked-item">
-                                  <div className="blocked-item-info">
-                                    <div className="blocked-item-date">
-                                      {months[leave.month]} {leave.year} ({leave.blocks.length} days)
-                                    </div>
-                                    <div className="blocked-item-type">
-                                      Month Leave
-                                    </div>
-                                    {leave.reason && (
-                                      <div className="blocked-item-reason">{leave.reason}</div>
-                                    )}
-                                  </div>
-                                  <div className="blocked-item-actions">
-                                    <button
-                                      className="icon-btn delete"
-                                      onClick={() => handleDeleteGroup(leave.blocks, 'Month Leave')}
-                                      disabled={isLoading}
-                                      aria-label="Delete"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-
                               {groupedBlocks.bulkBlocks.map((bulk, idx) => (
                                 <div key={`bulk-${idx}`} className="blocked-item">
                                   <div className="blocked-item-info">
