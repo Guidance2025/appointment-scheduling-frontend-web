@@ -669,7 +669,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
               className="update-ios-picker-arrow"
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
+                e.stopPropagagation();
                 decrementValue("period");
               }}
               onMouseDown={(e) => e.preventDefault()}
