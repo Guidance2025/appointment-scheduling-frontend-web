@@ -28,10 +28,8 @@ const getFriendlyError = (raw = '') => {
   return 'Something went wrong. Please try again.';
 };
 
-// ─── Component ──────────────────────────────────────────────────────────────
 
 const ExitInterview = () => {
-  // ── Form state
   const [activeTab, setActiveTab]     = useState('questions');
   const [questions, setQuestions]     = useState(['']);
   const [searchTerm, setSearchTerm]   = useState('');
@@ -40,7 +38,6 @@ const ExitInterview = () => {
   const [error, setError]             = useState('');
   const [success, setSuccess]         = useState('');
 
-  // ── Data state
   const [questionsData, setQuestionsData]             = useState([]);
   const [fetchingQuestions, setFetchingQuestions]     = useState(true);
   const [fetchQuestionsError, setFetchQuestionsError] = useState('');
@@ -48,20 +45,21 @@ const ExitInterview = () => {
   const [fetchingResponses, setFetchingResponses]     = useState(false);
   const [fetchResponsesError, setFetchResponsesError] = useState('');
 
-  // ── Edit modal
   const [editModal, setEditModal] = useState({ isOpen: false, questionId: null, questionText: '' });
 
-  // ── Student-selection modal
   const [studentModal, setStudentModal]           = useState(false);
   const [allStudents, setAllStudents]             = useState([]);
-  const [selectedStudents, setSelectedStudents]   = useState([]);   // stores student.id (pk)
+  const [selectedStudents, setSelectedStudents]   = useState([]);   
   const [studentSearch, setStudentSearch]         = useState('');
   const [filterSection, setFilterSection]         = useState('all');
   const [fetchingStudents, setFetchingStudents]   = useState(false);
 
   const { showSuccess } = usePopUp();
 
-  useEffect(() => { fetchPostedQuestions(); }, []);
+  useEffect(() => { 
+    fetchPostedQuestions(); 
+    fetchStudentResponses();  
+  }, []);
 
   const filterByDate = (dateStr, type) => {
     if (type === 'all' || !dateStr) return type === 'all';
