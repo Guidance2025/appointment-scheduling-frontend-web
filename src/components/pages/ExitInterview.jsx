@@ -119,14 +119,25 @@ const ExitInterview = () => {
     if (!res.ok) throw new Error('Failed to fetch students');
     const data = await res.json();
     
-    console.log('Fetched students data:', data); 
-    // Filter to only show students from sections containing '801'
-    const filtered801Students = data.filter(student => {
-      const sectionName = student.section?.sectionName ?? '';
-      return sectionName.includes('801');
+    console.log('Raw API response:', data);
+    console.log('Total students from API:', data.length);
+    
+    // Filter to ONLY show students from sections ending with '-801'
+    const students801 = data.filter(student => {
+      const sectionName = student.section?.sectionName ?? student.sectionName ?? '';
+      const is801Section = sectionName.endsWith('-801');
+      if (is801Section) {
+        console.log('✓ Including 801 student:', student.studentNumber, 'Section:', sectionName);
+      } else {
+        console.log('✗ Excluding non-801 student:', student.studentNumber, 'Section:', sectionName);
+      }
+      return is801Section;
     });
-    console.log('Filtered 801 students:', filtered801Students);
-    setAllStudents(filtered801Students);
+    
+    console.log('Filtered to 801 sections only:', students801.length, 'students');
+    console.log('Sample 801 student:', students801[0]);
+    
+    setAllStudents(students801);
   } catch (e) {
     console.error('Error fetching students:', e);
     setError('Failed to load students. Please try again.');
@@ -167,18 +178,32 @@ const ExitInterview = () => {
       prev.includes(studentId) ? prev.filter(id => id !== studentId) : [...prev, studentId]
     );
 
-  const getFilteredStudents = () =>
-    allStudents.filter(s => {
-      const name    = `${s.person?.firstName ?? ''} ${s.person?.middleName ?? ''} ${s.person?.lastName ?? ''}`.toLowerCase();
-      const num     = (s.studentNumber ?? '').toLowerCase();
-      const section = (s.section?.sectionName ?? '').toLowerCase();
-      const matchSearch  = name.includes(studentSearch.toLowerCase()) || num.includes(studentSearch.toLowerCase());
+  const getFilteredStudents = () => {
+    const filtered = allStudents.filter(s => {
+      // Handle both nested person object and flat structure
+      const firstName = s.person?.firstName ?? s.firstName ?? '';
+      const middleName = s.person?.middleName ?? s.middleName ?? '';
+      const lastName = s.person?.lastName ?? s.lastName ?? '';
+      const name = `${firstName} ${middleName} ${lastName}`.toLowerCase();
+      const num = (s.studentNumber ?? '').toLowerCase();
+      const section = (s.section?.sectionName ?? s.sectionName ?? '').toLowerCase();
+      
+      const searchLower = studentSearch.toLowerCase();
+      const matchSearch = !studentSearch || name.includes(searchLower) || num.includes(searchLower);
       const matchSection = filterSection === 'all' || section === filterSection.toLowerCase();
+      
       return matchSearch && matchSection;
     });
+    
+    console.log('Search term:', studentSearch);
+    console.log('Total 801 students:', allStudents.length);
+    console.log('After filtering:', filtered.length);
+    
+    return filtered;
+  };
 
   const getUniqueSections = () =>
-    [...new Set(allStudents.map(s => s.section?.sectionName).filter(Boolean))].sort();
+    [...new Set(allStudents.map(s => s.section?.sectionName ?? s.sectionName).filter(Boolean))].sort();
 
   const isAllFilteredSelected = () => {
     const filtered = getFilteredStudents();
@@ -402,6 +427,7 @@ const ExitInterview = () => {
         </div>
       </div>
 
+      {/* ── Student Selection Modal ──────────────────────────────────────── */}
       {studentModal && (
         <div className="modal-overlay">
           <div className="modal-card student-selection-modal">
@@ -481,7 +507,13 @@ const ExitInterview = () => {
                       {getFilteredStudents().map(student => {
                         const sid = student.id;
                         const isSelected = selectedStudents.includes(sid);
-                        const fullName = `${student.person?.firstName ?? ''} ${student.person?.middleName ?? ''} ${student.person?.lastName ?? ''}`.trim();
+                        // Handle both nested person object and flat structure
+                        const firstName = student.person?.firstName ?? student.firstName ?? '';
+                        const middleName = student.person?.middleName ?? student.middleName ?? '';
+                        const lastName = student.person?.lastName ?? student.lastName ?? '';
+                        const fullName = `${firstName} ${middleName} ${lastName}`.replace(/\s+/g, ' ').trim();
+                        const sectionName = student.section?.sectionName ?? student.sectionName ?? 'N/A';
+                        
                         return (
                           <tr
                             key={sid}
@@ -497,9 +529,9 @@ const ExitInterview = () => {
                                 onClick={e => e.stopPropagation()}
                               />
                             </td>
-                            <td>{student.studentNumber}</td>
-                            <td>{fullName}</td>
-                            <td>{student.section?.sectionName ?? 'N/A'}</td>
+                            <td>{student.studentNumber ?? 'N/A'}</td>
+                            <td>{fullName || 'N/A'}</td>
+                            <td>{sectionName}</td>
                           </tr>
                         );
                       })}
