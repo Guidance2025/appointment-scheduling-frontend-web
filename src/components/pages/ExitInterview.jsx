@@ -427,7 +427,6 @@ const ExitInterview = () => {
         </div>
       </div>
 
-      {/* ── Student Selection Modal ──────────────────────────────────────── */}
       {studentModal && (
         <div className="modal-overlay">
           <div className="modal-card student-selection-modal">
