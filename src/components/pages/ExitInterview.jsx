@@ -118,8 +118,15 @@ const ExitInterview = () => {
     const res = await fetch(`${API_BASE_URL}/exit-interview/students/all`, { headers: hdrs });
     if (!res.ok) throw new Error('Failed to fetch students');
     const data = await res.json();
+    
     console.log('Fetched students data:', data); 
-    setAllStudents(data);
+    // Filter to only show students from sections containing '801'
+    const filtered801Students = data.filter(student => {
+      const sectionName = student.section?.sectionName ?? '';
+      return sectionName.includes('801');
+    });
+    console.log('Filtered 801 students:', filtered801Students);
+    setAllStudents(filtered801Students);
   } catch (e) {
     console.error('Error fetching students:', e);
     setError('Failed to load students. Please try again.');
@@ -395,7 +402,6 @@ const ExitInterview = () => {
         </div>
       </div>
 
-      {/* ── Student Selection Modal ──────────────────────────────────────── */}
       {studentModal && (
         <div className="modal-overlay">
           <div className="modal-card student-selection-modal">
@@ -472,10 +478,10 @@ const ExitInterview = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {allStudents.map(student => {
-                        const sid = student.id;  // Now available
+                      {getFilteredStudents().map(student => {
+                        const sid = student.id;
                         const isSelected = selectedStudents.includes(sid);
-                        const fullName = `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim();
+                        const fullName = `${student.person?.firstName ?? ''} ${student.person?.middleName ?? ''} ${student.person?.lastName ?? ''}`.trim();
                         return (
                           <tr
                             key={sid}
@@ -493,7 +499,7 @@ const ExitInterview = () => {
                             </td>
                             <td>{student.studentNumber}</td>
                             <td>{fullName}</td>
-                            <td>{student.sectionName}</td>
+                            <td>{student.section?.sectionName ?? 'N/A'}</td>
                           </tr>
                         );
                       })}
@@ -515,7 +521,6 @@ const ExitInterview = () => {
         </div>
       )}
 
-      {/* ── Tabs container ───────────────────────────────────────────────── */}
       <div className="assessment-tabs-container">
         <div className="tabs-header">
           <button className={`tab-button ${activeTab === 'questions' ? 'tab-active' : ''}`} onClick={() => setActiveTab('questions')}>
@@ -614,7 +619,6 @@ const ExitInterview = () => {
             </div>
 
           ) : (
-            /* ── Responses tab ──────────────────────────────────────────── */
             <div className="appointments-table-container">
               {fetchingResponses ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>Loading responses…</div>
