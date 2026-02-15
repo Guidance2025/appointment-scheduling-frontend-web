@@ -1,13 +1,14 @@
-
 .update-modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
   animation: fadeIn 0.2s ease;
+  padding: 40px 20px;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -19,12 +20,11 @@
   background: white;
   border-radius: 16px;
   padding: 32px;
-  width: 700px;
+  width: 800px;
   max-width: 95%;
   min-width: 320px;
-  max-height: 90vh;
-  overflow-y: auto;
-  overflow-x: visible;
+  max-height: fit-content;
+  overflow: visible;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
               0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -139,24 +139,22 @@
   margin-bottom: 16px;
 }
 
-/* NEW: Date and Time Row Layout */
-.date-time-fields-row {
-  display: flex;
-  gap: 12px;
+/* THREE COLUMN LAYOUT - Main Container */
+.date-time-three-column-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
   margin-bottom: 16px;
+  position: relative;
 }
 
-.date-time-fields-row .form-group {
+.date-time-three-column-row .form-group {
   margin-bottom: 0;
 }
 
-.date-time-fields-row .date-field {
-  flex: 1;
-  min-width: 0;
-}
-
-.date-time-fields-row .time-field {
-  flex: 1;
+.date-time-three-column-row .column-field {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -168,6 +166,7 @@
   font-weight: 600;
   color: #222222;
   margin-bottom: 8px;
+  white-space: nowrap;
 }
 
 .form-input {
@@ -259,17 +258,6 @@
   font-weight: 500;
 }
 
-.date-time-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  overflow: visible;
-}
-
-.half-width {
-  flex: 1;
-}
-
 .date-picker-wrapper {
   position: relative;
   width: 100%;
@@ -321,11 +309,7 @@
 }
 
 .react-datepicker-popper {
-  z-index: 1001 !important;
-  position: relative !important;
-  transform: none !important;
-  padding: 0 !important;
-  margin-top: 0 !important;
+  z-index: 1100 !important;
 }
 
 .react-datepicker {
@@ -540,39 +524,34 @@
   pointer-events: none !important;
 }
 
-/* Time Picker */
+/* Time Picker - Updated for 3-column layout */
 .update-time-picker-wrapper {
   position: relative;
   z-index: 10;
-  margin-bottom: 16px;
-}
-
-/* When picker is open, add extra space */
-.update-time-picker-wrapper.picker-open {
-  margin-bottom: 280px;
 }
 
 .update-time-picker-dropdown {
   position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
   background: white;
   border: 1px solid #e5e5e5;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  z-index: 1002;
-  margin-top: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  z-index: 1050;
   padding: 16px;
-  max-width: 280px;
-  width: 100%;
+  min-width: 260px;
+  width: max-content;
 }
 
+/* Ensure the dropdown is always visible within viewport */
 .update-time-picker-dropdown::before {
   content: '';
   position: absolute;
   top: -8px;
-  left: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 0;
   height: 0;
   border-left: 8px solid transparent;
@@ -767,22 +746,14 @@
     border-radius: 12px;
   }
 
-  .date-time-row {
-    flex-direction: column;
+  .date-time-three-column-row {
+    grid-template-columns: 1fr;
     gap: 12px;
-  }
-
-  .date-time-fields-row {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .half-width {
-    width: 100%;
   }
 
   .update-time-picker-dropdown {
     max-width: 100%;
+    width: 100%;
   }
 
   .modal-actions {
@@ -823,5 +794,14 @@
     height: 28px;
     top: -12px;
     right: -12px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-input {
+    padding: 10px;
+    font-size: 13px;
   }
 }

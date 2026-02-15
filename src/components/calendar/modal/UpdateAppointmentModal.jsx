@@ -285,9 +285,6 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
     
     if (endDateTime <= scheduledDateTime) return "End time must be after start time";
 
-    const durationMinutes = (endDateTime - scheduledDateTime) / (1000 * 60);
-    if (durationMinutes > 60) return "Appointment duration cannot exceed 1 hour";
-
     const startHour = scheduledDateTime.getHours();
     const endHour = endDateTime.getHours();
     const endMinute = endDateTime.getMinutes();
@@ -755,8 +752,8 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="date-time-fields-row">
-              <div className="form-group date-field">
+            <div className="date-time-three-column-row">
+              <div className="form-group column-field">
                 <label htmlFor="scheduledDate">
                   Appointment Date: <span style={{ color: "red" }}>*</span>
                 </label>
@@ -796,47 +793,37 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                 )}
               </div>
 
-              {scheduledDate && (
-                <div className="form-group time-field">
-                  <label htmlFor="scheduledTime">
-                    Start Time: <span style={{ color: "red" }}>*</span>
-                  </label>
-                  <div className={`update-time-picker-wrapper ${showStartPicker ? 'picker-open' : ''}`} ref={startPickerRef}>
-                    <input
-                      type="text"
-                      id="scheduledTime"
-                      readOnly
-                      value={formatTime(startPickerValue)}
-                      onClick={() => {
-                        if (!isLoadingBlocks && scheduledDate) {
-                          setShowStartPicker(!showStartPicker);
-                          setShowEndPicker(false);
-                        }
-                      }}
-                      placeholder="--:-- --"
-                      className={`form-input time-input ${error && (error.includes("time") || error.includes("Start time")) ? 'error' : ''}`}
-                      disabled={isLoadingBlocks || !scheduledDate}
-                    />
-                    {showStartPicker && scheduledDate && (
-                      <div className="update-time-picker-dropdown">
-                        <IOSTimePicker
-                          value={startPickerValue}
-                          onChange={setStartPickerValue}
-                          isStart={true}
-                        />
-                      </div>
-                    )}
-                  </div>
+              <div className="form-group column-field">
+                <label htmlFor="scheduledTime">
+                  Start Time: <span style={{ color: "red" }}>*</span>
+                </label>
+                <div className="update-time-picker-wrapper" ref={startPickerRef}>
+                  <input
+                    type="text"
+                    id="scheduledTime"
+                    readOnly
+                    value={formatTime(startPickerValue)}
+                    onClick={() => {
+                      if (!isLoadingBlocks && scheduledDate) {
+                        setShowStartPicker(!showStartPicker);
+                        setShowEndPicker(false);
+                      }
+                    }}
+                  />
+                  <Calendar className="calendar-icon" size={18} />
                 </div>
-              )}
-            </div>
+                {isLoadingBlocks && (
+                  <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
+                    Loading availability...
+                  </div>
+                )}
+              </div>
 
-            {scheduledDate && (
-              <div className="form-group">
+              <div className="form-group column-field">
                 <label htmlFor="endTime">
                   End Time: <span style={{ color: "red" }}>*</span>
                 </label>
-                <div className={`update-time-picker-wrapper ${showEndPicker ? 'picker-open' : ''}`} ref={endPickerRef}>
+                <div className="update-time-picker-wrapper" ref={endPickerRef}>
                   <input
                     type="text"
                     id="endTime"
@@ -863,7 +850,7 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                   )}
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="modal-actions">
               <button

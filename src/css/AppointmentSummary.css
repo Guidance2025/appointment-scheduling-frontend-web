@@ -40,6 +40,46 @@
     min-width: 0;
 }
 
+.action-button-update-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50px;
+    border: 1px solid #15803d;
+    background: white;
+    color: #5aa777;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.action-button-delete-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50px;
+    border: 1px solid #ef4444;
+    background: white;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+    
+
+.action-button-delete-button:hover:not(:disabled) {
+    background: #ef4444;
+    color: white;
+}
+.action-button-update-button:hover:not(:disabled) {
+    background: #15803d;
+    color: white;
+}
+
 /* Action buttons container */
 .appointment-card-actions {
     display: flex;

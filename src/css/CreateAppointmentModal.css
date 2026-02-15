@@ -7,9 +7,11 @@
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   z-index: 1000;
   animation: fadeIn 0.2s ease;
+  padding: 40px 20px;
+  overflow-y: auto;
 }
 
 @keyframes fadeIn {
@@ -21,12 +23,11 @@
   background: white;
   border-radius: 16px;
   padding: 32px;
-  width: 700px;
+  width: 800px;
   max-width: 95%;
   min-width: 320px;
-  max-height: 95vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  max-height: fit-content;
+  overflow: visible;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
               0 10px 10px -5px rgba(0, 0, 0, 0.04);
@@ -194,24 +195,29 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.create-datetime-row .form-field-wrapper,
+.create-datetime-row > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .create-datetime-row label {
-  margin-bottom: 0;
+  margin-bottom: 6px;
 }
 
 .create-datetime-row input {
   margin-bottom: 0;
 }
 
-/* ============================================
-   DATE PICKER WRAPPER - REMOVED ICON
-   ============================================ */
 .date-picker-wrapper {
   position: relative;
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   display: block;
 }
 
@@ -258,10 +264,10 @@
   display: block;
 }
 
-/* CRITICAL: Use z-index higher than time pickers (11000 vs 10000) */
+/* Use absolute positioning relative to parent, with high z-index */
 .react-datepicker-popper {
   z-index: 11000 !important;
-  position: fixed !important;
+  position: absolute !important;
 }
 
 /* Ensure the popper doesn't create any layout shifts */
@@ -536,15 +542,13 @@
 }
 
 /* ============================================
-   TIME PICKER - IMPROVED Z-INDEX
+   TIME PICKER - NETFLIX STYLE WITH GREEN/WHITE
    ============================================ */
 .create-time-picker-wrapper {
   position: relative;
   z-index: 1;
   margin-bottom: 0;
 }
-
-/* No longer need picker-open class to add margin */
 
 .time-input {
   cursor: pointer;
@@ -575,16 +579,18 @@
 .create-time-picker-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(92, 197, 167, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   z-index: 10000;
-  padding: 16px;
-  max-width: 280px;
-  width: 100%;
+  padding: 0;
+  min-width: 240px;
+  width: max-content;
+  overflow: hidden;
 }
 
 /* Arrow pointer at top of time picker */
@@ -592,29 +598,29 @@
   content: '';
   position: absolute;
   top: -8px;
-  left: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   width: 0;
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
-  border-bottom: 8px solid white;
-  filter: drop-shadow(0 -2px 2px rgba(0, 0, 0, 0.05));
+  border-bottom: 8px solid rgba(255, 255, 255, 0.98);
+  filter: drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .create-ios-time-picker {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 /* Full Day Blocked Warning */
 .create-full-day-blocked-warning {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-bottom: 1px solid rgba(220, 38, 38, 0.2);
+  padding: 10px 14px;
   color: #dc2626;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   text-align: center;
 }
@@ -624,9 +630,8 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
-  padding: 12px;
-  background: #f8fafb;
-  border-radius: 12px;
+  padding: 16px 12px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 1), rgba(245, 245, 245, 0.5));
 }
 
 .create-ios-picker-column {
@@ -645,17 +650,21 @@
   align-items: center;
   justify-content: center;
   color: #5cc5a7;
-  transition: all 0.2s;
-  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
 }
 
 .create-ios-picker-arrow:hover:not(:disabled) {
   background: rgba(92, 197, 167, 0.15);
-  transform: scale(1.1);
+  transform: scale(1.15);
+  color: #4db396;
 }
 
 .create-ios-picker-arrow:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(1.05);
+  background: rgba(92, 197, 167, 0.25);
 }
 
 .create-ios-picker-arrow:disabled {
@@ -664,51 +673,62 @@
 }
 
 .create-ios-picker-value {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #1f2937;
   min-width: 50px;
   text-align: center;
   padding: 8px 12px;
   background: white;
-  border-radius: 10px;
-  border: 2px solid #e5e5e5;
+  border-radius: 6px;
+  border: 1px solid #e5e5e5;
   user-select: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 .create-ios-picker-separator {
-  font-size: 22px;
-  font-weight: 600;
-  color: #1f2937;
-  padding: 0 6px;
-  margin-top: 28px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #5cc5a7;
+  padding: 0 4px;
+  margin-top: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Blocked Times Info */
 .create-blocked-times-info {
-  margin-top: 12px;
-  padding: 12px;
+  margin: 0;
+  padding: 14px;
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 1px solid #fcd34d;
-  border-radius: 10px;
-  font-size: 12px;
+  border-top: 1px solid rgba(251, 191, 36, 0.3);
+  font-size: 11px;
 }
 
 .create-blocked-times-label {
-  font-weight: 600;
+  font-weight: 700;
   color: #92400e;
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .create-blocked-time-item {
-  color: #92400e;
+  color: #78350f;
   font-size: 11px;
-  margin: 4px 0;
-  padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 6px;
+  margin: 5px 0;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  border-left: 3px solid #f59e0b;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.create-blocked-time-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateX(4px);
 }
 
 /* ============================================
