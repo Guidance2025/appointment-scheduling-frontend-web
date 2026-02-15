@@ -809,20 +809,14 @@ const UpdateAppointmentModal = ({ isOpen, isClose, appointment, onSubmit }) => {
                         setShowEndPicker(false);
                       }
                     }}
-                    placeholder="--:-- --"
-                    className={`form-input time-input ${error && (error.includes("time") || error.includes("Start time")) ? 'error' : ''}`}
-                    disabled={isLoadingBlocks || !scheduledDate}
                   />
-                  {showStartPicker && scheduledDate && (
-                    <div className="update-time-picker-dropdown">
-                      <IOSTimePicker
-                        value={startPickerValue}
-                        onChange={setStartPickerValue}
-                        isStart={true}
-                      />
-                    </div>
-                  )}
+                  <Calendar className="calendar-icon" size={18} />
                 </div>
+                {isLoadingBlocks && (
+                  <div style={{ fontSize: 12, color: "#3b82f6", marginTop: 4 }}>
+                    Loading availability...
+                  </div>
+                )}
               </div>
 
               <div className="form-group column-field">
