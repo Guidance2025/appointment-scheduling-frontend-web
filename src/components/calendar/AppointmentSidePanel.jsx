@@ -171,15 +171,15 @@ const AppointmentSidePanel = ({
                     {status === 'SCHEDULED' && (
                       <>
                         <button
-                          className="action-button update-button"
+                          className="action-button-update-button"
                           onClick={(e) => handleUpdate(e, appointment)}
                           disabled={isDeleting}
                           title="Update appointment"
                         >
-                          <Edit2Icon size={18} strokeWidth={2.5}/>
+                          <Edit2Icon size={15} />
                         </button>
                         <button
-                          className="action-button delete-button"
+                          className="action-button-delete-button"
                           onClick={(e) => handleDelete(e, appointment)}
                           disabled={isDeleting}
                           title="Delete appointment"
@@ -187,7 +187,7 @@ const AppointmentSidePanel = ({
                           {isDeleting ? (
                             <span className="spinner-small"></span>
                           ) : (
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           )}
                         </button>
                       </>

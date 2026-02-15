@@ -76,9 +76,6 @@ const CreatePostModal = ({
   };
 
   const handleCancel = () => {
-    // Reset selections when canceling
-    setSelectedSections([]);
-    setSelectAll(false);
     onClose();
   };
 
@@ -86,10 +83,10 @@ const CreatePostModal = ({
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card create-post-modal">
         <div className="modal-header-row">
           <h2>Create New Post</h2>
-          <button type="button" className="close-btn" onClick={onClose}>
+          <button type="button" className="close-btn" onClick={handleCancel}>
             ×
           </button>
         </div>
@@ -99,28 +96,28 @@ const CreatePostModal = ({
             {/* CATEGORY + TARGET SECTION */}
             <div className="form-row two-col">
               <div className="form-group">
-           <label>
-             Category <span className="required">*</span>
-          </label>
-              <select
-                     value={newPost.category_name || ""}
-                      onChange={(e) =>
-                      setNewPost({
-                       ...newPost,
-                        category_name: e.target.value,
-           })
-        }
+                <label>
+                  Category <span className="required">*</span>
+                </label>
+                <select
+                  value={newPost.category_name || ""}
+                  onChange={(e) =>
+                    setNewPost({
+                      ...newPost,
+                      category_name: e.target.value,
+                    })
+                  }
                   required
-  >
-               <option value="" disabled hidden>
-                     Select Category
-                      </option>
-                      {FIXED_CATEGORIES.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
+                >
+                  <option value="" disabled hidden>
+                    Select Category
+                  </option>
+                  {FIXED_CATEGORIES.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
                       {cat.name}
-                       </option>
-            ))}
-         </select>
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -130,26 +127,25 @@ const CreatePostModal = ({
                 </label>
                 <select
                   value={newPost.section_id || ""}
-                onChange={(e) =>
-                setNewPost({
-                ...newPost,
-              section_id: e.target.value || null,
-                   })
-                 }
-              disabled={!isSectionRequired || loadingSections}
-              required={isSectionRequired}
->
-            <option value="" disabled hidden>
-               Select Section
-              </option>
+                  onChange={(e) =>
+                    setNewPost({
+                      ...newPost,
+                      section_id: e.target.value || null,
+                    })
+                  }
+                  disabled={!isSectionRequired || loadingSections}
+                  required={isSectionRequired}
+                >
+                  <option value="" disabled hidden>
+                    Select Section
+                  </option>
 
-  {availableSections.map((section, i) => (
-    <option key={i} value={section}>
-      {section}
-    </option>
-  ))}
-</select>
-
+                  {availableSections.map((section, i) => (
+                    <option key={i} value={section}>
+                      {section}
+                    </option>
+                  ))}
+                </select>
 
                 {!isSectionRequired && (
                   <small className="hint">
@@ -165,7 +161,7 @@ const CreatePostModal = ({
                 Content <span className="required">*</span>
               </label>
               <textarea
-                rows={5}
+                rows={4}
                 value={newPost.post_content}
                 onChange={(e) =>
                   setNewPost({
@@ -173,9 +169,10 @@ const CreatePostModal = ({
                     post_content: e.target.value,
                   })
                 }
+                placeholder="Write your post content here..."
                 required
               />
-              <small>
+              <small className="char-count">
                 {500 - newPost.post_content.length} characters remaining
               </small>
             </div>
@@ -183,8 +180,16 @@ const CreatePostModal = ({
 
           <div className="modal-footer">
             <button
+              type="button"
+              className="post-btn-secondary"
+              onClick={handleCancel}
+              disabled={creating}
+            >
+              Cancel
+            </button>
+            <button
               type="submit"
-              className="btn-primary"
+              className="post-btn-primary"
               disabled={creating}
             >
               {creating ? "Creating..." : "Post"}

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import "../../css/Appointment.css";
 import { getAllCounselorAppointmentByStatus, getAllAppointmentByGuidanceStaff } from "../../service/counselor";
-import { Search, X } from 'lucide-react';
+import { Search, X, Download } from 'lucide-react';
 import * as PHTimeUtils from "../../utils/dateTime";
+import { formatFullDateTimePH } from "../../utils/dateTime";
 
 function Appointments() {
   const [status, setStatus] = useState("All");
@@ -103,6 +104,154 @@ function Appointments() {
 
   const hasActiveFilters = searchTerm || status !== "All" || appointmentType !== "All" || dateRange !== "All";
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // EXPORT FUNCTIONALITY - Similar to Exit Interview Export
+  // ═══════════════════════════════════════════════════════════════════════
+  
+  /**
+   * Export a single student's appointment history
+   * This function creates an Excel file (.xls) containing all appointments for a specific student
+   * 
+   * HOW IT WORKS:
+   * 1. Filters all appointments to get only this student's appointments
+   * 2. Sorts them by date (newest first)
+   * 3. Creates an HTML table with appointment details
+   * 4. Converts the HTML to a downloadable Excel file
+   * 5. Triggers automatic download in the browser
+   */
+  const exportStudentAppointments = async (studentId, studentName) => {
+    try {
+      // Filter appointments for this specific student
+      const studentAppointments = appointments
+        .filter(apt => apt.student?.id === studentId)
+        .sort((a, b) => new Date(b.scheduledDate) - new Date(a.scheduledDate));
+
+      // Check if student has any appointments
+      if (!studentAppointments.length) {
+        alert(`No appointments found for ${studentName}.`);
+        return;
+      }
+
+      // Get student details from first appointment
+      const studentInfo = studentAppointments[0].student;
+      const studentNumber = studentInfo?.studentNumber || 'N/A';
+
+      // Build HTML table with appointment data
+      const html = `
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Appointments – ${studentName}</title>
+            <style>
+              table { 
+                border-collapse: collapse; 
+                width: 100%; 
+                font-family: Arial, sans-serif; 
+              }
+              th, td { 
+                border: 1px solid #ddd; 
+                padding: 8px; 
+                text-align: left; 
+              }
+              th { 
+                background-color: #f2f2f2; 
+                font-weight: bold;
+              }
+              .header-row { 
+                background-color: #16a34a; 
+                color: white; 
+              }
+              .status-pending { color: #f59e0b; }
+              .status-completed { color: #10b981; }
+              .status-cancelled { color: #ef4444; }
+              .status-scheduled { color: #3b82f6; }
+            </style>
+          </head>
+          <body>
+            <h2>Appointment History Report</h2>
+            
+            <table>
+              <!-- Student Information Section -->
+              <tr class="header-row">
+                <td colspan="6"><strong>Student Information</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Name:</strong></td>
+                <td>${studentName}</td>
+                <td><strong>Student No.:</strong></td>
+                <td>${studentNumber}</td>
+                <td><strong>Export Date:</strong></td>
+                <td>${formatFullDateTimePH(new Date().toISOString())}</td>
+              </tr>
+              <tr>
+                <td><strong>Total Appointments:</strong></td>
+                <td>${studentAppointments.length}</td>
+                <td colspan="4">&nbsp;</td>
+              </tr>
+              <tr><td colspan="6">&nbsp;</td></tr>
+              
+              <!-- Appointments Table -->
+              <tr class="header-row">
+                <th>#</th>
+                <th>Type</th>
+                <th>Scheduled Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Created Date</th>
+              </tr>
+              ${studentAppointments.map((apt, index) => {
+                const { date, timeRange } = PHTimeUtils.formatAppointmentDateTime(
+                  apt.scheduledDate,
+                  apt.endDate
+                );
+                const createdDate = apt.dateCreated 
+                  ? formatFullDateTimePH(apt.dateCreated)
+                  : 'N/A';
+                
+                return `
+                  <tr>
+                    <td>${studentAppointments.length - index}</td>
+                    <td>${apt.appointmentType || 'N/A'}</td>
+                    <td>${date}</td>
+                    <td>${timeRange}</td>
+                    <td class="status-${apt.status?.toLowerCase() || 'pending'}">
+                      ${apt.status || 'PENDING'}
+                    </td>
+                    <td>${createdDate}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </table>
+            
+            <p><em>Generated on ${formatFullDateTimePH(new Date().toISOString())}</em></p>
+          </body>
+        </html>
+      `;
+
+      // Create a Blob (binary large object) from the HTML
+      // This is like creating a file in memory
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+      
+      // Create a temporary download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob); // Create a temporary URL for the blob
+      link.download = `${studentName.replace(/\s+/g, '_')}_Appointments_${new Date().toISOString().split('T')[0]}.xls`;
+      link.style.display = 'none';
+      
+      // Add link to page, click it, then remove it
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the temporary URL
+      URL.revokeObjectURL(link.href);
+      
+    } catch (error) {
+      console.error('Error exporting appointments:', error);
+      alert('Failed to export appointments. Please try again.');
+    }
+  };
+
   return (
     <div className="page-container">
       <div className="appointments-filter-bar">
@@ -196,6 +345,7 @@ function Appointments() {
                   <th>Time</th>
                   <th>Status</th>
                   <th>Created</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -208,16 +358,16 @@ function Appointments() {
                     ? PHTimeUtils.formatShortDatePH(appointment.dateCreated)
                     : "N/A";
 
+                  const studentName = appointment.student
+                    ? `${appointment.student.person.firstName} ${appointment.student.person.middleName || ""} ${appointment.student.person.lastName}`.trim()
+                    : "N/A";
+
                   return (
                     <tr key={appointment.appointmentId} className="appointment-row">
                       <td className="student-cell">
                         <div className="student-info-table">
                           <div className="student-details-table">
-                            <span className="student-name-table">
-                              {appointment.student
-                                ? `${appointment.student.person.firstName} ${appointment.student.person.middleName || ""} ${appointment.student.person.lastName}`.trim()
-                                : "N/A"}
-                            </span>
+                            <span className="student-name-table">{studentName}</span>
                             {appointment.student?.studentNumber && (
                               <span className="student-number-table">{appointment.student.studentNumber}</span>
                             )}
@@ -233,6 +383,27 @@ function Appointments() {
                         </span>
                       </td>
                       <td className="created-cell">{createdDate}</td>
+                      <td className="action-cell">
+                        <button
+                          className="export-button"
+                          onClick={() => exportStudentAppointments(appointment.student?.id, studentName)}
+                          title="Export this student's appointment history"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '6px 12px',
+                            backgroundColor: '#16a34a',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                          }}
+                        >
+                          <Download size={14} /> Export
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}

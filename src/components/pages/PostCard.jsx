@@ -64,9 +64,6 @@ const PostCard = ({ post, onDelete, isGuidanceStaff }) => {
   };
 
   const handleDeletePost = async () => {
-    if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-      return;
-    }
     setIsDeleting(true);
     try {
       await onDelete(post.post_id || post.POST_ID);
