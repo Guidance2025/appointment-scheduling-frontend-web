@@ -28,7 +28,6 @@ const CreateAppointmentModal = ({ isOpen, isClose }) => {
   const [fullyBlockedDates, setFullyBlockedDates] = useState([]);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-  // Autocomplete states
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showAutocomplete, setShowAutocomplete] = useState(false);

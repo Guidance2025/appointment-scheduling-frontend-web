@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Search } from 'lucide-react';
-import { getAllStudents } from '../../../service/admin';
+import { getAllOrganizations, getAllStudents } from '../../../service/admin';
 import './../../../css/Pagination.css';
 import './../../../css/admin/StudentInformation.css';
 
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 const DEFAULT_ITEMS_PER_PAGE = 10;
 const MAX_PAGES_TO_SHOW = 5;
-const ORGANIZATIONS = ['ROCS', 'ECE', 'HM', 'TM','BSA'];
+const ORGANIZATIONS = ['ROCS', 'ELITES', 'THM SOCIETY', 'JPIA','BSA'];
 
 const StudentInformation = () => {
   const [students, setStudents] = useState([]);
@@ -16,9 +16,11 @@ const StudentInformation = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(DEFAULT_ITEMS_PER_PAGE);
+  const [showAllOrganizations, setShowAllOrganizations] = useState([]);
 
   useEffect(() => {
     fetchStudents();
+    fetchAllStudentOrganizations();
   }, []);
 
   useEffect(() => {
@@ -36,6 +38,19 @@ const StudentInformation = () => {
       setIsLoading(false);
     }
   };
+
+   const fetchAllStudentOrganizations = async () => {
+    try {
+      setIsLoading(true);
+      const allOrganizations = await getAllOrganizations();
+      setShowAllOrganizations(allOrganizations);
+    } catch (err) {
+      console.error('Failed to fetch all organizations:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -244,7 +259,7 @@ const StudentInformation = () => {
               onChange={handleOrganizationChange}
             >
               <option value="all">All Organizations</option>
-              {ORGANIZATIONS.map((org) => (
+              {showAllOrganizations.map((org) => (
                 <option key={org} value={org}>
                   {org}
                 </option>

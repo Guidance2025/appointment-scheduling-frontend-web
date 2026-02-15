@@ -1,4 +1,4 @@
-import { API_BASE_URL, DELETE_GUIDANCESTAFF_ACCCOUNT, DELETE_STUDENT_ACCCOUNT, GET_ADMIN_PROFILE_BY_USERID, GET_ALL_ACCOUNTS_URL, GET_ALL_STUDENT_URL, GET_GUIDANCESTAFF_ACCOUNTS, GET_STUDENT_ACCOUNTS, REGISTER_ACCOUNT, UPDATE_GUIDANCE_STAFF_ACCOUNT, UPDATE_STUDENT_ACCCOUNT } from "../../constants/api";
+import { API_BASE_URL, DELETE_GUIDANCESTAFF_ACCCOUNT, DELETE_STUDENT_ACCCOUNT, GET_ADMIN_PROFILE_BY_USERID, GET_ALL_ACCOUNTS_URL, GET_ALL_ORGANIZATIONS, GET_ALL_STUDENT_URL, GET_GUIDANCESTAFF_ACCOUNTS, GET_STUDENT_ACCOUNTS, REGISTER_ACCOUNT, UPDATE_GUIDANCE_STAFF_ACCOUNT, UPDATE_STUDENT_ACCCOUNT } from "../../constants/api";
 
 
 
@@ -48,6 +48,30 @@ export async function getAllStudents(){
         console.log("Get All Student Error ", error)
     }
 }
+
+
+
+export async function getAllOrganizations(){
+    try {
+      const JWT_TOKEN = localStorage.getItem("jwtToken");
+      if(!JWT_TOKEN){return error;}
+
+      const response = await fetch(`${GET_ALL_ORGANIZATIONS}`, {
+        method : "GET",
+        headers: {
+        "Content-Type" : "application/json",
+        "Authorization" : "Bearer " + JWT_TOKEN,
+        },
+      })
+      if(response.ok){
+        return await response.json();
+      }
+
+    }catch(error){
+        console.log("Failed to fetch all organizations Error ", error)
+    }
+}
+
 
 
 /**

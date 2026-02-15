@@ -126,17 +126,9 @@ const ExitInterview = () => {
     const students801 = data.filter(student => {
       const sectionName = student.section?.sectionName ?? student.sectionName ?? '';
       const is801Section = sectionName.endsWith('-801');
-      if (is801Section) {
-        console.log('✓ Including 801 student:', student.studentNumber, 'Section:', sectionName);
-      } else {
-        console.log('✗ Excluding non-801 student:', student.studentNumber, 'Section:', sectionName);
-      }
       return is801Section;
     });
-    
-    console.log('Filtered to 801 sections only:', students801.length, 'students');
-    console.log('Sample 801 student:', students801[0]);
-    
+
     setAllStudents(students801);
   } catch (e) {
     console.error('Error fetching students:', e);
