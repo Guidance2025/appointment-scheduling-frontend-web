@@ -13,6 +13,8 @@ export const DELETE_STUDENT_ACCCOUNT = (studentNumber) => (`${API_BASE_URL}/admi
 export const DELETE_GUIDANCESTAFF_ACCCOUNT = (employeeNumber) => (`${API_BASE_URL}/admin/delete-employee/${employeeNumber}`);
 export const UPDATE_STUDENT_ACCCOUNT = (`${API_BASE_URL}/admin/students/update`);
 export const UPDATE_GUIDANCE_STAFF_ACCOUNT = (`${API_BASE_URL}/admin/guidance-staff/update`);
+export const GET_ALL_ORGANIZATIONS = (`${API_BASE_URL}/admin/retrieve-all/organization`);
+
 
 //GUIDANCE
 export const GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF = (guidanceStaffId) => (`${API_BASE_URL}/counselor/find/appointment/${guidanceStaffId}`);
