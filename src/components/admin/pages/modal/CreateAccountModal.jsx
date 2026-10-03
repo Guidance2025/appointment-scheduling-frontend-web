@@ -249,7 +249,6 @@ const CreateAccountModal = ({ isOpen, onClose, activeTab, onAccountCreated }) =>
     }
   }, [isOpen, activeTab]);
 
-  // Auto-generate section name and related fields when prefix or number changes
   useEffect(() => {
     if (sectionPrefix && sectionNumber) {
       const combinedSection = `${sectionPrefix}-${sectionNumber}`;

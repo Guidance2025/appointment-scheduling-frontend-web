@@ -1,59 +1,169 @@
-import React, { useEffect, useState } from "react";
-import "../../css/Dashboard.css";
-import CreatePostModal from "./modal/CreatePostModal";
-import PostCard from "./PostCard";
-import ConfirmDialog from "../../helper/ConfirmDialog";  
-import "../../css/ConfirmDialog.css";
-import { normalizePost, normalizeCategory } from "../../utils/normalize";
-import { POSTS_URL, POST_BY_ID_URL, QUOTE_OF_THE_DAY_URL, LATEST_POSTS_URL,
-  DELETE_POST_URL,
-  UPDATE_POST_URL,
-  CATEGORIES_URL,
-} from "../../../constants/api";
+import React, { useCallback, useEffect, useState } from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Paper from '@mui/material/Paper';
+import Tabs from '@mui/material/Tabs';
+import Tab from '@mui/material/Tab';
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
+import AddIcon from '@mui/icons-material/Add';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined';
+import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
+
+import DashboardCard from './Card/DashboardCard';
+import CreatePostModal from './modal/CreatePostModal';
+import PostCard from './PostCard';
+import EventCard from './Card/EventCard';
+import ConfirmDialog from '../../helper/ConfirmDialog';
+import '../../css/ConfirmDialog.css';
+import useFetch from '../../hooks/useFetch';
+import { normalizePost, normalizeCategory } from '../../utils/normalize';
+import {
+  API_BASE_URL,
+  MOODS_URL,
+  GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF,
+} from '../../../constants/api';
 import {
   fetchLatestPosts,
   fetchQuoteOfTheDay,
   fetchCategories,
   createPost,
   deletePost,
-} from "../../service/post";
-import { API_BASE_URL } from '../../../constants/api';
-import { MOODS_URL } from "../../../constants/api";
+} from '../../service/post';
 
-const toJson = async (res) => {
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${res.statusText} ${text}`);
-  }
-  return res.json();
+const theme = createTheme({
+  palette: {
+    primary: { main: '#2F8A63', dark: '#256B4B', light: '#5FB48C' },
+    secondary: { main: '#7BA85A' },
+    success: { main: '#5FB48C' },
+    warning: { main: '#D9962B' },
+    error: { main: '#C25B66' },
+    info: { main: '#3A9A9A' },
+    background: { default: '#F3F9F6', paper: '#FFFFFF' },
+    text: { primary: '#1A2B23', secondary: '#5A6B62' },
+    divider: '#DCEBE2',
+  },
+  shape: { borderRadius: 12 },
+  typography: {
+    fontFamily: '"Figtree", "Segoe UI", system-ui, sans-serif',
+    button: { textTransform: 'none', fontWeight: 600 },
+  },
+});
+
+
+const getCategory = (p) => (p.category_name || p.CATEGORY_NAME || '').toLowerCase();
+
+const authFetch = (url, token) =>
+  fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+const countAnswered = (items) =>
+  Array.isArray(items)
+    ? items.filter((i) => i.responseText && i.responseText.trim() !== '').length
+    : 0;
+
+const POSITIVE = ['happy', 'excited', 'hopeful', 'calm'];
+const NEGATIVE = ['angry', 'frustrated', 'worried', 'sad'];
+
+const EMPTY_NEW_POST = {
+  category_name: '',
+  post_content: '',
+  section_id: null,
+  section_code: '',
 };
 
+
+const PostList = ({
+  posts,
+  emptyIcon,
+  emptyTitle,
+  emptyHint,
+  onDelete,
+  isGuidanceStaff,
+  CardComponent = PostCard,
+}) => {
+  if (!posts.length) {
+    return (
+      <Stack alignItems="center" spacing={1} sx={{ py: 8, color: 'text.secondary', textAlign: 'center' }}>
+        {emptyIcon}
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          {emptyTitle}
+        </Typography>
+        <Typography variant="body2">{emptyHint}</Typography>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack spacing={2}>
+      {posts.map((post) => (
+        <CardComponent
+          key={post.post_id}
+          post={post}
+          onDelete={onDelete}
+          isGuidanceStaff={isGuidanceStaff}
+        />
+      ))}
+    </Stack>
+  );
+};
+
+const MoodRow = ({ label, percent, color }) => (
+  <Stack direction="row" alignItems="center" spacing={1.5}>
+    <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
+    <Typography variant="body2" sx={{ flex: 1 }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" sx={{ fontWeight: 700 }}>
+      {percent}%
+    </Typography>
+  </Stack>
+);
+
 const Dashboard = () => {
+  const guidanceStaffId = localStorage.getItem('guidanceStaffId');
+  const {
+    data: appointments,
+    loading: appointmentsLoading,
+    error: appointmentsError,
+  } = useFetch(GET_ALL_APPOINTMENT_BY_GUIDANCESTAFF(guidanceStaffId));
+
   const [posts, setPosts] = useState([]);
   const [quoteOfTheDay, setQuoteOfTheDay] = useState(null);
   const [categories, setCategories] = useState([]);
   const [sections, setSections] = useState([]);
-  const [newPost, setNewPost] = useState({category_name: "",post_content: "",section_id: null,  section_code: "",});
+  const [newPost, setNewPost] = useState(EMPTY_NEW_POST);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [isGuidanceStaff, setIsGuidanceStaff] = useState(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false); 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-  
+
   const [selfAssessmentCount, setSelfAssessmentCount] = useState(0);
   const [exitInterviewCount, setExitInterviewCount] = useState(0);
   const [moodTrendCount, setMoodTrendCount] = useState(0);
   const [moodDistribution, setMoodDistribution] = useState({ happy: 0, neutral: 0, sad: 0 });
 
-  const loadPosts = async () => {
+  const loadPosts = useCallback(async () => {
     const data = await fetchLatestPosts();
-    const normalized = (data || []).map(normalizePost);
-    setPosts(normalized);
-  };
+    setPosts((data || []).map(normalizePost));
+  }, []);
 
-  const loadQuote = async () => {
+  const loadQuote = useCallback(async () => {
     const q = await fetchQuoteOfTheDay();
     setQuoteOfTheDay(
       q && Object.keys(q).length
@@ -65,140 +175,130 @@ const Dashboard = () => {
           }
         : null
     );
-  };
+  }, []);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     const data = await fetchCategories();
     const normalized = (data || []).map(normalizeCategory);
-    const uniqueCategories = [];
-    const seenNames = new Set();
+    const unique = [];
+    const seen = new Set();
     for (const cat of normalized) {
-      const name = cat.category_name;
-      if (!seenNames.has(name)) {
-        seenNames.add(name);
-        uniqueCategories.push(cat);
+      if (!seen.has(cat.category_name)) {
+        seen.add(cat.category_name);
+        unique.push(cat);
       }
     }
-    setCategories(uniqueCategories);
-  };
+    setCategories(unique);
+  }, []);
 
-  const loadSections = async () => {
+  const loadSections = useCallback(async () => {
     try {
-      const token = localStorage.getItem("jwtToken");
+      const token = localStorage.getItem('jwtToken');
       const res = await fetch(`${API_BASE_URL}/api/sections`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) {
-        console.warn("Failed to load sections, status:", res.status);
-        return setSections([]);
+        console.warn('Failed to load sections, status:', res.status);
+        setSections([]);
+        return;
       }
       const data = await res.json();
-      console.log("[Dashboard] Raw sections from API:", data);
-      const normalized = (data || []).map((s) => ({
-        id: s.section_id || s.id,
-        code: s.section_code || s.code,
-        name: s.section_name || s.name,
-      }));
-      console.log("[Dashboard] Normalized sections:", normalized);
-      setSections(normalized);
+      setSections(
+        (data || []).map((s) => ({
+          id: s.section_id || s.id,
+          code: s.section_code || s.code,
+          name: s.section_name || s.name,
+        }))
+      );
     } catch (e) {
-      console.error("Load sections failed:", e);
+      console.error('Load sections failed:', e);
     }
-  };
+  }, []);
 
-  const loadAnalytics = async () => {
-    const token = localStorage.getItem("jwtToken");
+  const loadAnalytics = useCallback(async () => {
+    const token = localStorage.getItem('jwtToken');
     if (!token) return;
 
     try {
-      const selfAssessmentRes = await fetch(`${API_BASE_URL}/self-assessment/student-response`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (selfAssessmentRes.ok) {
-        const selfAssessmentData = await selfAssessmentRes.json();
-        const answeredCount = selfAssessmentData.filter(item => item.responseText && item.responseText.trim() !== '').length;
-        setSelfAssessmentCount(answeredCount);
-      }
+      const [selfRes, exitRes, moodRes] = await Promise.all([
+        authFetch(`${API_BASE_URL}/self-assessment/student-response`, token),
+        authFetch(`${API_BASE_URL}/exit-interview/student-response`, token),
+        authFetch(MOODS_URL, token),
+      ]);
 
-      const exitInterviewRes = await fetch(`${API_BASE_URL}/exit-interview/student-response`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (exitInterviewRes.ok) {
-        const exitInterviewData = await exitInterviewRes.json();
-        const answeredCount = exitInterviewData.filter(item => item.responseText && item.responseText.trim() !== '').length;
-        setExitInterviewCount(answeredCount);
-      }
+      if (selfRes.ok) setSelfAssessmentCount(countAnswered(await selfRes.json()));
+      if (exitRes.ok) setExitInterviewCount(countAnswered(await exitRes.json()));
 
-      const moodRes = await fetch(MOODS_URL, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
       if (moodRes.ok) {
         const moodData = await moodRes.json();
-        const moodEntries = Array.isArray(moodData) ? moodData : [];
-        setMoodTrendCount(moodEntries.length);
+        const entries = Array.isArray(moodData) ? moodData : [];
+        setMoodTrendCount(entries.length);
 
-        let happy = 0, neutral = 0, sad = 0;
-        moodEntries.forEach(entry => {
+        let happy = 0;
+        let neutral = 0;
+        let sad = 0;
+        entries.forEach((entry) => {
           const emotions = entry.emotions || [];
-          const hasPositive = emotions.some(e => ["happy", "excited", "hopeful", "calm"].includes(e));
-          const hasNegative = emotions.some(e => ["angry", "frustrated", "worried", "sad"].includes(e));
-          
+          const hasPositive = emotions.some((e) => POSITIVE.includes(e));
+          const hasNegative = emotions.some((e) => NEGATIVE.includes(e));
           if (hasPositive && !hasNegative) happy++;
           else if (hasNegative && !hasPositive) sad++;
-          else if (emotions.length > 0) neutral++;
           else neutral++;
         });
 
-        const total = moodEntries.length || 1;
+        const total = entries.length || 1;
         setMoodDistribution({
           happy: Math.round((happy / total) * 100),
           neutral: Math.round((neutral / total) * 100),
-          sad: Math.round((sad / total) * 100)
+          sad: Math.round((sad / total) * 100),
         });
       }
     } catch (error) {
-      console.error("Error loading analytics:", error);
+      console.error('Error loading analytics:', error);
     }
-  };
+  }, []);
 
-  const checkUserRole = () => {
+  const checkUserRole = useCallback(() => {
     try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const isStaff = user.role === "GUIDANCE_STAFF" || user.role === "guidance_staff" || user.role === "ADMIN" || user.role === "admin";
-      setIsGuidanceStaff(isStaff);
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const role = (user.role || '').toLowerCase();
+      setIsGuidanceStaff(role === 'guidance_staff' || role === 'admin');
     } catch (e) {
-      console.error("Check user role failed:", e);
-      setIsGuidanceStaff(true); 
+      console.error('Check user role failed:', e);
+      setIsGuidanceStaff(true);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
       try {
         checkUserRole();
-        await Promise.all([loadPosts(), loadQuote(), loadCategories(), loadSections(), loadAnalytics()]);
+        await Promise.all([
+          loadPosts(),
+          loadQuote(),
+          loadCategories(),
+          loadSections(),
+          loadAnalytics(),
+        ]);
       } catch (e) {
-        console.error("Init failed:", e);
+        console.error('Init failed:', e);
       } finally {
         setLoading(false);
       }
     };
     init();
-  }, []);
+  }, [checkUserRole, loadPosts, loadQuote, loadCategories, loadSections, loadAnalytics]);
+
+  
+  const openCreateModal = () => {
+    setNewPost(EMPTY_NEW_POST);
+    setIsModalOpen(true);
+  };
 
   const handleDeletePost = (postId) => {
-    setPostToDelete(postId); 
-    setIsConfirmOpen(true);  
+    setPostToDelete(postId);
+    setIsConfirmOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -206,12 +306,11 @@ const Dashboard = () => {
     try {
       await deletePost(postToDelete);
       setPosts((prev) => prev.filter((p) => p.post_id !== postToDelete));
-      setPostToDelete(null); 
-      setIsConfirmOpen(false);
     } catch (e) {
-      console.error("Delete failed:", e);
-      setIsConfirmOpen(false);  
+      console.error('Delete failed:', e);
+    } finally {
       setPostToDelete(null);
+      setIsConfirmOpen(false);
     }
   };
 
@@ -219,22 +318,18 @@ const Dashboard = () => {
     e.preventDefault();
     if (creating) return;
 
-    const postContent = (newPost.post_content || "").trim();
+    const postContent = (newPost.post_content || '').trim();
     if (!newPost.category_name || !postContent) {
-      console.error("Category and content are required.");
+      console.error('Category and content are required.');
       return;
     }
 
     setCreating(true);
     try {
-      const token = localStorage.getItem("jwtToken");
-      
+      const token = localStorage.getItem('jwtToken');
       if (!token) {
-        throw new Error("Authentication token not found. Please log in again.");
+        throw new Error('Authentication token not found. Please log in again.');
       }
-
-      console.log("Creating post with category:", newPost.category_name);
-      console.log("Token exists:", !!token);
 
       await createPost({
         categoryName: newPost.category_name.trim(),
@@ -243,227 +338,270 @@ const Dashboard = () => {
       });
 
       await Promise.all([loadPosts(), loadQuote()]);
-
-      setNewPost({
-        category_name: "",
-        post_content: "",
-        section_id: null,  
-        section_code: "",
-      });
+      setNewPost(EMPTY_NEW_POST);
       setIsModalOpen(false);
     } catch (err) {
-      console.error("Create error:", err);
+      console.error('Create error:', err);
     } finally {
       setCreating(false);
     }
   };
 
+  const announcements = posts.filter((p) => getCategory(p) === 'announcement');
+  const events = posts.filter((p) => getCategory(p) === 'events');
+  const appointmentCount = Array.isArray(appointments) ? appointments.length : 0;
+  const hasMoodData = moodTrendCount > 0;
+
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <div className="header-content">
-          <h1>Welcome</h1>  
-          <p className="header-subtitle">
-            {isGuidanceStaff ? "Guidance Staff Posts Management" : "Student Updates Feed"}
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            console.log("[Dashboard] Opening CreatePostModal with sections:", sections);
-            setNewPost({
-              category_name: "",
-              post_content: "",
-              section_id: null, 
-              section_code: "",
-            });
-            setIsModalOpen(true);
+    <ThemeProvider theme={theme}>
+      <Box
+        sx={{
+          minHeight: '100vh',
+          bgcolor: 'background.default',
+          py: { xs: 2, md: 4 },
+          px: { xs: 2, md: 4 },
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1280,
+            mx: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
           }}
-          className="btn-create-post"
-          disabled={loading || creating}
-          title="Create a new post"
         >
-          <span className="btn-icon">+</span>
-          <span className="btn-text">Create Post</span>
-        </button>
-      </div>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', sm: 'center' }}
+            spacing={90}
+          >
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                Welcome
+              </Typography>
+              <Typography variant="body1" color="text.secondary">
+                {isGuidanceStaff ? 'Manage guidance posts and student activity' : 'Updates from the guidance office'}
+              </Typography>
+            </Box>
 
-      {loading && (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p className="loading-text">Loading posts...</p>
-        </div>
-      )}
-
-      {quoteOfTheDay && (
-        <div className="quote-of-the-day">
-          <h3>Quote of the Day</h3>
-          <p>{quoteOfTheDay.post_content}</p>
-          {quoteOfTheDay.section_name && (
-            <small>— {quoteOfTheDay.section_name}</small>
-          )}
-        </div>
-      )}
-
-      {/* Analytics Cards Row - 3 Column Layout */}
-      <div className="analytics-cards-row">
-        <div className="analytics-stat-card analytics-primary">
-          <div className="analytics-stat-icon">📝</div>
-          <div className="analytics-stat-details">
-            <p className="analytics-stat-label">Self-Assessment</p>
-            <h3 className="analytics-stat-value">{selfAssessmentCount}</h3>
-            <p className="analytics-stat-change">Total responses</p>
-          </div>
-        </div>
-
-        <div className="analytics-stat-card analytics-success">
-          <div className="analytics-stat-icon">🚪</div>
-          <div className="analytics-stat-details">
-            <p className="analytics-stat-label">Exit Interviews</p>
-            <h3 className="analytics-stat-value">{exitInterviewCount}</h3>
-            <p className="analytics-stat-change">Completed interviews</p>
-          </div>
-        </div>
-
-        <div className="analytics-stat-card analytics-info">
-          <div className="analytics-stat-icon">😊</div>
-          <div className="analytics-stat-details">
-            <p className="analytics-stat-label">Mood Entries</p>
-            <h3 className="analytics-stat-value">{moodTrendCount}</h3>
-            <p className="analytics-stat-change">Student submissions</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Mood Distribution - Separate Full Width Card */}
-      <div className="analytics-cards-row" style={{ gridTemplateColumns: '1fr' }}>
-        <div className="analytics-stat-card analytics-mood">
-          <div className="analytics-mood-container">
-            <div className="analytics-mood-breakdown-mini">
-              <div className="analytics-mini-bar">
-                <div className="analytics-mini-segment analytics-happy" style={{ width: `${moodDistribution.happy}%` }}></div>
-                <div className="analytics-mini-segment analytics-neutral" style={{ width: `${moodDistribution.neutral}%` }}></div>
-                <div className="analytics-mini-segment analytics-sad" style={{ width: `${moodDistribution.sad}%` }}></div>
-              </div>
-            </div>
-            <h3 className="analytics-mood-title">Mood Distribution</h3>
-            <div className="analytics-mood-stats">
-              <span className="analytics-mood-stat">
-                <span className="analytics-dot analytics-happy-dot"></span>
-                {moodDistribution.happy}% Happy
-              </span>
-              <span className="analytics-mood-stat">
-                <span className="analytics-dot analytics-neutral-dot"></span>
-                {moodDistribution.neutral}% Neutral
-              </span>
-              <span className="analytics-mood-stat">
-                <span className="analytics-dot analytics-sad-dot"></span>
-                {moodDistribution.sad}% Sad
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Section */}
-      <div className="tabs-section">
-        <div className="tabs-header-container">
-          <div className="tabs-navigation">
-            <button
-              className={`tab-item ${activeTab === 0 ? 'active' : ''}`}
-              onClick={() => setActiveTab(0)}
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={openCreateModal}
+              disabled={loading || creating}
+              sx={{  borderRadius: 12 , px:4 , py: 1.5, fontSize: '0.9rem' }}
             >
-               Announcements
-            </button>
-            <button
-              className={`tab-item ${activeTab === 1 ? 'active' : ''}`}
-              onClick={() => setActiveTab(1)}
+              Create post
+            </Button>
+          </Stack>
+
+          {loading && <LinearProgress sx={{ borderRadius: 1 }} />}
+
+          {appointmentsError && (
+            <Alert severity="warning" variant="outlined">
+              Couldn&apos;t load appointments. Refresh the page to try again.
+            </Alert>
+          )}
+
+          {quoteOfTheDay && (
+            <Paper
+              elevation={0}
+              sx={{
+                bgcolor: 'primary.secondary',
+                color: 'primary.main',
+                borderRadius: 4,
+                px: { xs: 3, md: 5 },
+                py: { xs: 3, md: 4 },
+                border: '1px solid',
+                shadow: '0 2px 10px rgba(0,0,0,0.04)',
+              }}
             >
-               Events
-            </button>
-          </div>
-        </div>
-        
-        <div className="tab-content-container">
-          {activeTab === 0 && (
-            <div className="posts-container">
-              {posts && posts.some(p => 
-                (p.category_name?.toLowerCase() === "announcement" || 
-                 p.CATEGORY_NAME?.toLowerCase() === "announcement")
-              ) ? (
-                posts
-                  .filter(p => 
-                    p.category_name?.toLowerCase() === "announcement" || 
-                    p.CATEGORY_NAME?.toLowerCase() === "announcement"
-                  )
-                  .map((post) => (
-                    <PostCard
-                      key={post.post_id}
-                      post={post}
-                      onDelete={handleDeletePost}
-                      isGuidanceStaff={isGuidanceStaff}
-                    />
-                  ))
-              ) : (
-                <p className="no-posts-text">
-                  <span className="no-posts-icon">📢</span>
-                  No announcements yet.
-                </p>
+              <Typography variant="body2" sx={{ color: 'rgba(5, 5, 5, 0.88)', fontWeight: 600, mb: 1 }}>
+                Quote of the day
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 500, lineHeight: 1.45, maxWidth: 820, overflowWrap: 'break-word' , }}
+              >
+                {quoteOfTheDay.post_content}
+              </Typography> 
+              {quoteOfTheDay.section_name && (
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.88)', mt: 2 }}>
+                  {quoteOfTheDay.section_name}
+                </Typography>
               )}
-            </div>
+            </Paper>
           )}
 
-          {activeTab === 1 && (
-            <div className="posts-container">
-              {posts && posts.some(p => 
-                (p.category_name?.toLowerCase() === "events" || 
-                 p.CATEGORY_NAME?.toLowerCase() === "events")
-              ) ? (
-                posts
-                  .filter(p => 
-                    p.category_name?.toLowerCase() === "events" || 
-                    p.CATEGORY_NAME?.toLowerCase() === "events"
-                  )
-                  .map((post) => (
-                    <PostCard
-                      key={post.post_id}
-                      post={post}
-                      onDelete={handleDeletePost}
-                      isGuidanceStaff={isGuidanceStaff}
-                    />
-                  ))
-              ) : (
-                <p className="no-posts-text">
-                  <span className="no-posts-icon">📅</span>
-                  No events yet.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2,
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, minmax(0, 1fr))',
+                lg: 'repeat(4, minmax(0, 1fr))',
+              },
+            }}
+          >
+            <DashboardCard
+              title="Appointments"
+              data={appointmentCount}
+              subtitle="Assigned to you"
+              icon={<EventAvailableOutlinedIcon />}
+              color="primary"
+              loading={appointmentsLoading}
+            />
+            <DashboardCard
+              title="Self-assessment"
+              data={selfAssessmentCount}
+              subtitle="Total responses"
+              icon={<AssignmentOutlinedIcon />}
+              color="info"
+              loading={loading}
+            />
+            <DashboardCard
+              title="Exit interviews"
+              data={exitInterviewCount}
+              subtitle="Completed interviews"
+              icon={<MeetingRoomOutlinedIcon />}
+              color="warning"
+              loading={loading}
+            />
+            <DashboardCard
+              title="Mood entries"
+              data={moodTrendCount}
+              subtitle="Student submissions"
+              icon={<SentimentSatisfiedAltOutlinedIcon />}
+              color="secondary"
+              loading={loading}
+            />
+          </Box>
 
-      <CreatePostModal
-        newPost={newPost}
-        setNewPost={setNewPost}
-        categories={categories}
-        sections={sections}
-        creating={creating}
-        handleCreate={handleCreate}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 3,
+              alignItems: 'start',
+              gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 340px' },
+            }}
+          >
+            {/* Posts */}
+            <Paper variant="outlined" sx={{ borderRadius: 3, borderColor: 'divider', overflow: 'hidden' }}>
+              <Tabs
+                value={activeTab}
+                onChange={(_, value) => setActiveTab(value)}
+                sx={{ px: 1, borderBottom: 1, borderColor: 'divider' }}
+              >
+                <Tab
+                  label={
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <span>Announcements</span>
+                      <Chip size="small" label={announcements.length} />
+                    </Stack>
+                  }
+                />
+                <Tab
+                  label={
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <span>Events</span>
+                      <Chip size="small" label={events.length} />
+                    </Stack>
+                  }
+                />
+              </Tabs>
 
-      <ConfirmDialog
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Post"
-        message="Are you sure you want to delete this post? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        type="warning"
-      />
-    </div>
+              <Box sx={{ p: { xs: 2, md: 3 } }}>
+                {activeTab === 0 && (
+                  <PostList
+                    posts={announcements}
+                    emptyIcon={<CampaignOutlinedIcon sx={{ fontSize: 44 }} />}
+                    emptyTitle="No announcements yet"
+                    emptyHint='Use "Create post" to share one with students.'
+                    onDelete={handleDeletePost}
+                    isGuidanceStaff={isGuidanceStaff}
+                  />
+                )}
+                {activeTab === 1 && (
+                  <PostList
+                    posts={events}
+                    emptyIcon={<EventOutlinedIcon sx={{ fontSize: 44 }} />}
+                    emptyTitle="No events yet"
+                    emptyHint='Use "Create post" to add an upcoming event.'
+                    onDelete={handleDeletePost}
+                    isGuidanceStaff={isGuidanceStaff}
+                    CardComponent={EventCard}
+                  />
+                )}
+              </Box>
+            </Paper>
+
+            <Paper
+              variant="outlined"
+              sx={{ borderRadius: 3, borderColor: 'divider', p: 3, position: { lg: 'sticky' }, top: { lg: 24 } }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Mood distribution
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+                {hasMoodData
+                  ? `Based on ${moodTrendCount} student ${moodTrendCount === 1 ? 'entry' : 'entries'}`
+                  : 'No mood entries yet'}
+              </Typography>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  height: 14,
+                  borderRadius: 7,
+                  overflow: 'hidden',
+                  bgcolor: 'divider',
+                  mb: 3,
+                }}
+              >
+                {hasMoodData && (
+                  <>
+                    <Box sx={{ width: `${moodDistribution.happy}%`, bgcolor: 'success.main' }} />
+                    <Box sx={{ width: `${moodDistribution.neutral}%`, bgcolor: 'warning.main' }} />
+                    <Box sx={{ width: `${moodDistribution.sad}%`, bgcolor: 'error.main' }} />
+                  </>
+                )}
+              </Box>
+
+              <Stack spacing={1.5}>
+                <MoodRow label="Happy" percent={moodDistribution.happy} color="success.main" />
+                <MoodRow label="Neutral" percent={moodDistribution.neutral} color="warning.main" />
+                <MoodRow label="Sad" percent={moodDistribution.sad} color="error.main" />
+              </Stack>
+            </Paper>
+          </Box>
+        </Box>
+
+        <CreatePostModal
+          newPost={newPost}
+          setNewPost={setNewPost}
+          categories={categories}
+          sections={sections}
+          creating={creating}
+          handleCreate={handleCreate}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          onClose={() => setIsConfirmOpen(false)}
+          onConfirm={confirmDelete}
+          title="Delete Post"
+          message="Are you sure you want to delete this post? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="warning"
+        />
+      </Box>
+    </ThemeProvider>
   );
 };
 
