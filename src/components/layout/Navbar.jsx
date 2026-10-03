@@ -65,7 +65,7 @@ const Navbar = () => {
       if (event.data?.type === "FCM_BACKGROUND_MESSAGE") {
         console.log("SW background message received");
         fetchUnreadCount();
-        pendingSoundRef.current = true; // play sound on next focus
+        pendingSoundRef.current = true;
       }
     };
 
@@ -74,7 +74,7 @@ const Navbar = () => {
     }
 
     return () => {
-      unsubscribeFCM();
+      unsubscribeFCM(); 
       stopPolling();
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.removeEventListener("message", handleSWMessage);

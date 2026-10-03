@@ -5,11 +5,10 @@ import Sidebar from "../layout/Sidebar";
 import Calendar from "../calendar/Calendar";
 import Navbar from './../layout/Navbar';
 
-import Dashboard from "./Dashboard";
 import ExitInterview from "./ExitInterview";
 import MoodTrend from "./MoodTrend";
 import SelfAssesment from "./SelfAssessment";
-
+import Dashboard from "./Dashboard";
 function MainPage() {
   const [currentPage, setCurrentPage] = useState("Dashboard");
 
